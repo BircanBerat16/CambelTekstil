@@ -80,12 +80,17 @@ nav{
 .sidebar-section{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;color:var(--taupe);margin-bottom:.8rem;margin-top:1.5rem;padding-left:1rem;}
 .sidebar-section:first-of-type{margin-top:0;}
 .sidebar-cat{
-  display:block;padding:.5rem 1rem;font-size:.83rem;color:var(--mid);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.5rem 1rem;font-size:.83rem;color:var(--mid);
   cursor:pointer;border-radius:6px;transition:all .2s;border-left:2px solid transparent;
-  text-decoration:none;
+  text-decoration:none;user-select:none;
 }
 .sidebar-cat:hover{color:var(--charcoal);background:var(--cream);}
 .sidebar-cat.active{color:var(--charcoal);font-weight:500;border-left-color:var(--accent);background:var(--cream);}
+.sidebar-cat-arrow{font-size:.65rem;color:var(--taupe);transition:transform .25s;flex-shrink:0;margin-left:4px;}
+.sidebar-cat.open .sidebar-cat-arrow{transform:rotate(90deg);}
+.sidebar-subcats{max-height:0;overflow:hidden;transition:max-height .3s ease;}
+.sidebar-subcats.open{max-height:400px;}
 .sidebar-subcat{
   display:block;padding:.35rem 1rem .35rem 1.8rem;font-size:.78rem;color:var(--mid);
   cursor:pointer;border-radius:6px;transition:all .2s;text-decoration:none;
@@ -550,24 +555,53 @@ function renderSidebar() {
   const el = document.getElementById('sidebarCats');
   const navLinks = document.getElementById('navLinks');
   const mobileNav = document.getElementById('mobileNav');
-  let html = `
-    <div class="sidebar-cat active" id="cat-all" onclick="filterCat('','',this)">Tüm Ürünler</div>`;
+
+  let html = '<div class="sidebar-cat active" id="cat-all" onclick="filterCat(''  ,'',this)">Tüm Ürünler</div>';
   let navHtml = '';
-  let mobileHtml = "<a href='#' onclick=\"filterCat('','',null);toggleMobileNav()\">Tüm Ürünler</a>";
+  let mobileHtml = '';
+
   allCategories.forEach(cat => {
-    html += `<div class="sidebar-cat" id="cat-${cat.id}" onclick="filterCat('${cat.id}','',this)">${cat.name}</div>`;
-    if (cat.subcategories?.length) {
+    const hasSubs = cat.subcategories && cat.subcategories.length > 0;
+    // Ana kategori satırı
+    html += `<div class="sidebar-cat" id="cat-${cat.id}" onclick="toggleSidebarCat('${cat.id}',this)">
+      <span>${cat.name}</span>
+      ${hasSubs ? '<span class="sidebar-cat-arrow">›</span>' : ''}
+    </div>`;
+    // Alt kategoriler
+    if (hasSubs) {
+      html += `<div class="sidebar-subcats" id="subcats-${cat.id}">`;
       cat.subcategories.forEach(sub => {
         html += `<div class="sidebar-subcat" id="subcat-${sub.id}" onclick="filterSubcat('${cat.id}','${sub.id}',this)">${sub.name}</div>`;
       });
+      html += '</div>';
     }
     navHtml += `<li><a href="#" onclick="filterCat('${cat.id}','',null)">${cat.name}</a></li>`;
     mobileHtml += `<a href="#" onclick="filterCat('${cat.id}','',null);toggleMobileNav()">${cat.name}</a>`;
   });
+
   el.innerHTML = html;
   navLinks.innerHTML = navHtml;
   mobileNav.innerHTML = mobileHtml;
 }
+
+window.toggleSidebarCat = (catId, el) => {
+  const subsEl = document.getElementById('subcats-' + catId);
+  const isOpen = el.classList.contains('open');
+  // Tüm açık kategorileri kapat
+  document.querySelectorAll('.sidebar-cat.open').forEach(e => {
+    e.classList.remove('open');
+    const id = e.id.replace('cat-','');
+    const s = document.getElementById('subcats-' + id);
+    if (s) s.classList.remove('open');
+  });
+  // Tıklanan kapalıysa aç
+  if (!isOpen && subsEl) {
+    el.classList.add('open');
+    subsEl.classList.add('open');
+  }
+  // Kategoriyi filtrele
+  filterCat(catId, '', el);
+};
 
 window.filterCat = (catId, subId, el) => {
   currentFilter = {category:catId, subcategory:subId};
