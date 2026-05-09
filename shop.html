@@ -552,6 +552,90 @@ async function loadProducts() {
 }
 
 // ── SIDEBAR ──
+
+// ── BUNDLES ──
+let allBundles = {};
+async function loadBundles() {
+  try {
+    const snap = await getDocs(collection(db,'bundles'));
+    snap.docs.forEach(d => { allBundles[d.id] = d.data(); });
+  } catch(e) { console.log('bundle load error', e); }
+}
+
+function getBundlePrice(productId, qty, basePrice) {
+  const bundle = allBundles[productId];
+  if (!bundle || !bundle.rules || !bundle.rules.length) return basePrice;
+  const applicable = bundle.rules
+    .filter(r => qty >= r.minQty)
+    .sort((a,b) => b.minQty - a.minQty);
+  if (!applicable.length) return basePrice;
+  const rule = applicable[0];
+  if (rule.type === 'percent') return basePrice * (1 - rule.value / 100);
+  if (rule.type === 'fixed_price') return rule.value;
+  return basePrice;
+}
+
+function getBundleLabel(productId) {
+  const bundle = allBundles[productId];
+  if (!bundle || !bundle.rules || !bundle.rules.length) return '';
+  return bundle.rules.sort((a,b) => a.minQty - b.minQty)
+    .map(r => r.type === 'percent' ? r.minQty+'+ adet → %'+r.value+' indirim' : r.minQty+'+ adet → ₺'+r.value+'/adet')
+    .join(' · ');
+}
+
+// ── CAMPAIGNS ──
+let activeCampaigns = [];
+async function loadCampaigns() {
+  try {
+    const snap = await getDocs(collection(db,'campaigns'));
+    const now = new Date();
+    activeCampaigns = snap.docs.map(d=>({id:d.id,...d.data()})).filter(c => {
+      const start = c.startDate?.toDate ? c.startDate.toDate() : new Date(c.startDate);
+      const end = c.endDate?.toDate ? c.endDate.toDate() : new Date(c.endDate);
+      return now >= start && now <= end;
+    });
+  } catch(e) { console.log('campaign load error', e); }
+}
+
+function renderCampaignBanner() {
+  const existing = document.getElementById('campBanner');
+  if (existing) existing.remove();
+  if (!activeCampaigns.length || !activeCampaigns[0].banner) return;
+  const camp = activeCampaigns[0];
+  const end = camp.endDate?.toDate ? camp.endDate.toDate() : new Date(camp.endDate);
+  const banner = document.createElement('div');
+  banner.id = 'campBanner';
+  banner.style.cssText = 'position:fixed;top:68px;left:0;right:0;z-index:99;background:#2A2825;color:#fff;text-align:center;padding:10px 16px;font-size:.82rem;font-weight:500;display:flex;align-items:center;justify-content:center;gap:16px';
+  banner.innerHTML = '<span>'+camp.banner+'</span><span id="campCountdown" style="background:rgba(255,255,255,.15);padding:3px 10px;border-radius:20px;font-size:.75rem;font-family:monospace"></span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:1rem;margin-left:4px">✕</button>';
+  document.body.prepend(banner);
+  function tick() {
+    const diff = end - new Date();
+    if (diff <= 0) { banner.remove(); return; }
+    const d = Math.floor(diff/86400000);
+    const h = Math.floor((diff%86400000)/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    const s = Math.floor((diff%60000)/1000);
+    const el = document.getElementById('campCountdown');
+    if (el) el.textContent = (d>0 ? d+'g ' : '')+h+'s '+m+'d '+s+'sn';
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+function applyCampaignDiscount(price, productId, qty) {
+  if (!activeCampaigns.length) return price;
+  const camp = activeCampaigns[0];
+  if (camp.type === 'percent') return price * (1 - camp.value/100);
+  if (camp.type === 'fixed_price') return Math.max(0, price - camp.value/qty);
+  if (camp.type === 'buy_x_pay_y') {
+    const sets = Math.floor(qty / camp.buyX);
+    const rem = qty % camp.buyX;
+    const effectiveQty = sets * camp.payY + rem;
+    return price * effectiveQty / qty;
+  }
+  return price;
+}
+
 function renderSidebar() {
   const el = document.getElementById('sidebarCats');
   const navLinks = document.getElementById('navLinks');
