@@ -1007,6 +1007,25 @@
 </head>
 <body>
 
+<script>
+function switchPage(page) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  var el = document.getElementById('page-' + page);
+  if (el) el.classList.add('active');
+  window.scrollTo(0, 0);
+  var nl = document.getElementById('nav-landing');
+  var ns = document.getElementById('nav-shop');
+  if (nl) nl.classList.toggle('active', page === 'landing');
+  if (ns) ns.classList.toggle('active', page === 'shop');
+  if (page === 'shop' && typeof initShop === 'function' && !window._shopLoaded) {
+    window._shopLoaded = true; initShop();
+  }
+}
+function toggleMobileNav() {
+  var mn = document.getElementById('mobileNav');
+  if (mn) mn.classList.toggle('open');
+}
+</script>
 <!-- NAVBAR -->
 <nav id="navbar">
   <a href="#" class="nav-logo">Cambel<span>.</span></a>
@@ -1557,6 +1576,15 @@
 </html>
 </div><div style="font-size:.85rem;color:var(--mid);margin-bottom:1.5rem">Sipariş No: <strong>${orderNo}</strong></div><button class="btn-checkout" onclick="document.getElementById('checkoutOverlay').classList.remove('open')">Alışverişe Devam Et</button></div>`;
   document.getElementById('checkoutOverlay').classList.add('open');
+};
+
+window.switchPage = (page) => {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-landing').classList.toggle('active', page === 'landing');
+  document.getElementById('nav-shop').classList.toggle('active', page === 'shop');
+  window.scrollTo(0, 0);
+  if (page === 'shop' && !shopLoaded) { shopLoaded = true; initShop(); }
 };
 
 window.formatCard = (el) => { let v=el.value.replace(/\D/g,'').slice(0,16); el.value=v.match(/.{1,4}/g)?.join(' ')||v; };
