@@ -654,7 +654,8 @@ window.showPage = (page, el) => {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   if (el) el.classList.add('active');
   const titles = {dashboard:'Dashboard',products:'Ürünler',categories:'Kategoriler',
-    orders:'Siparişler',brandkit:'Brand Kit Ayarları',settings:'Ayarlar'};
+    orders:'Siparişler',bundles:'Bundle Fiyatları',campaigns:'Kampanyalar',
+    brandkit:'Brand Kit Ayarları',settings:'Ayarlar'};
   document.getElementById('pageTitle').textContent = titles[page] || page;
   const c = document.getElementById('pageContent');
   c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mid)">Yükleniyor...</div>';
@@ -663,6 +664,8 @@ window.showPage = (page, el) => {
     case 'products':  renderProducts();  break;
     case 'categories':renderCategories();break;
     case 'orders':    renderOrders();    break;
+    case 'bundles':   renderBundles();   break;
+    case 'campaigns': renderCampaigns(); break;
     case 'brandkit':  renderBrandKit();  break;
     case 'settings':  renderSettings();  break;
   }
@@ -1153,6 +1156,220 @@ window.filterOrdersByStatus = (s) => {
 };
 
 // ── BRAND KIT SETTINGS ──
+
+// ── BUNDLES ──
+async function renderBundles() {
+  const snap = await getDocs(collection(db,'products'));
+  const products = snap.docs.map(d=>({id:d.id,...d.data()}));
+  const bsnap = await getDocs(collection(db,'bundles'));
+  const bundles = {};
+  bsnap.docs.forEach(d => { bundles[d.id] = d.data(); });
+
+  const c = document.getElementById('pageContent');
+  c.innerHTML = `
+    <div style="margin-bottom:20px">
+      <p style="font-size:.85rem;color:var(--mid);line-height:1.7">
+        Her ürün için miktar bazlı fiyat kuralları tanımlayın. Müşteri sepete eklediğinde otomatik uygulanır.
+      </p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px" id="bundleList">
+      ${products.filter(p=>p.status==='active').map(p => {
+        const b = bundles[p.id] || {rules:[]};
+        const rules = b.rules || [];
+        return `
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">${p.name}</div>
+              <div style="font-size:.78rem;color:var(--mid)">₺${p.price} / adet</div>
+            </div>
+            <div class="panel-body">
+              <div id="rules-${p.id}" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+                ${rules.map((r,i) => `
+                  <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);padding:10px 14px;border-radius:8px;border:1px solid var(--border)">
+                    <span style="font-size:.8rem;color:var(--mid)">Min.</span>
+                    <input type="number" value="${r.minQty}" placeholder="Adet" style="width:70px" class="form-input-m" onchange="updateRule('${p.id}',${i},'minQty',this.value)">
+                    <span style="font-size:.8rem;color:var(--mid)">adet →</span>
+                    <select class="form-input-m" style="width:130px" onchange="updateRule('${p.id}',${i},'type',this.value)">
+                      <option value="percent" ${r.type==='percent'?'selected':''}>% İndirim</option>
+                      <option value="fixed_price" ${r.type==='fixed_price'?'selected':''}>Sabit Fiyat</option>
+                    </select>
+                    <input type="number" value="${r.value}" placeholder="Değer" style="width:90px" class="form-input-m" onchange="updateRule('${p.id}',${i},'value',this.value)">
+                    <span style="font-size:.8rem;color:var(--mid)">${r.type==='percent'?'%':'₺/adet'}</span>
+                    <button class="btn btn-red btn-sm" onclick="removeRule('${p.id}',${i})">✕</button>
+                  </div>`).join('')}
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-outline btn-sm" onclick="addRule('${p.id}')">+ Kural Ekle</button>
+                <button class="btn btn-dark btn-sm" onclick="saveBundleRules('${p.id}')">💾 Kaydet</button>
+              </div>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
+  
+  // Store rules in memory for editing
+  window._bundleRules = {};
+  products.filter(p=>p.status==='active').forEach(p => {
+    window._bundleRules[p.id] = (bundles[p.id]?.rules || []).map(r=>({...r}));
+  });
+}
+
+window.updateRule = (pid, idx, field, val) => {
+  if (!window._bundleRules[pid]) window._bundleRules[pid] = [];
+  if (window._bundleRules[pid][idx]) window._bundleRules[pid][idx][field] = field==='minQty'||field==='value' ? Number(val) : val;
+};
+
+window.addRule = (pid) => {
+  if (!window._bundleRules[pid]) window._bundleRules[pid] = [];
+  window._bundleRules[pid].push({minQty:5, type:'percent', value:10});
+  renderBundles();
+};
+
+window.removeRule = (pid, idx) => {
+  if (window._bundleRules[pid]) window._bundleRules[pid].splice(idx,1);
+  renderBundles();
+};
+
+window.saveBundleRules = async (pid) => {
+  const rules = window._bundleRules[pid] || [];
+  await setDoc(doc(db,'bundles',pid), {rules, updatedAt: serverTimestamp()});
+  showToast('Bundle kuralları kaydedildi ✓','success');
+};
+
+// ── CAMPAIGNS ──
+async function renderCampaigns() {
+  const snap = await getDocs(collection(db,'campaigns'));
+  const campaigns = snap.docs.map(d=>({id:d.id,...d.data()}));
+  const c = document.getElementById('pageContent');
+  c.innerHTML = `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:20px">
+      <button class="btn btn-dark" onclick="openCampaignModal()">+ Kampanya Ekle</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      ${!campaigns.length ? '<div class="empty-state"><div class="empty-state-icon">🏷️</div><div class="empty-state-text">Henüz kampanya yok</div></div>' :
+        campaigns.map(camp => {
+          const now = new Date();
+          const start = camp.startDate?.toDate ? camp.startDate.toDate() : new Date(camp.startDate);
+          const end = camp.endDate?.toDate ? camp.endDate.toDate() : new Date(camp.endDate);
+          const isActive = now >= start && now <= end;
+          const typeLabel = {percent:'% İndirim', fixed_price:'Sabit Fiyat', buy_x_pay_y:'X Al Y Öde'}[camp.type] || camp.type;
+          return `
+            <div class="panel">
+              <div class="panel-header">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="panel-title">${camp.name}</div>
+                  <span class="badge ${isActive?'badge-green':'badge-gray'}">${isActive?'Aktif':'Pasif'}</span>
+                </div>
+                <div style="display:flex;gap:6px">
+                  <button class="btn btn-red btn-sm" onclick="deleteCampaign('${camp.id}')">🗑️</button>
+                </div>
+              </div>
+              <div class="panel-body" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+                <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--light);margin-bottom:4px">Tür</div><div style="font-weight:500">${typeLabel}</div></div>
+                <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--light);margin-bottom:4px">Değer</div><div style="font-weight:500">${camp.type==='percent'?'%'+camp.value:camp.type==='buy_x_pay_y'?camp.buyX+' al '+camp.payY+' öde':'₺'+camp.value}</div></div>
+                <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--light);margin-bottom:4px">Başlangıç</div><div style="font-weight:500">${start.toLocaleDateString('tr-TR')}</div></div>
+                <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--light);margin-bottom:4px">Bitiş</div><div style="font-weight:500">${end.toLocaleDateString('tr-TR')}</div></div>
+              </div>
+              ${camp.banner ? `<div style="padding:0 20px 16px;font-size:.82rem;color:var(--mid)">📢 ${camp.banner}</div>` : ''}
+            </div>`;
+        }).join('')}
+    </div>
+
+    <!-- Campaign Modal -->
+    <div id="campModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:20px">
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:520px;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border)">
+          <div style="font-size:1rem;font-weight:600">Yeni Kampanya</div>
+          <button class="modal-close" onclick="document.getElementById('campModal').style.display='none'">✕</button>
+        </div>
+        <div style="padding:24px">
+          <div class="form-group-m"><label class="form-label-m">Kampanya Adı</label><input class="form-input-m" id="c_name" placeholder="Örn: Yaz İndirimi"></div>
+          <div class="form-group-m"><label class="form-label-m">Banner Metni (Navbar'da gösterilir)</label><input class="form-input-m" id="c_banner" placeholder="Örn: 🔥 3 al 2 öde kampanyası başladı!"></div>
+          <div class="form-group-m">
+            <label class="form-label-m">Kampanya Türü</label>
+            <select class="form-input-m" id="c_type" onchange="updateCampFields()">
+              <option value="percent">% İndirim</option>
+              <option value="fixed_price">Sabit Fiyat İndirimi</option>
+              <option value="buy_x_pay_y">X Al Y Öde</option>
+            </select>
+          </div>
+          <div id="c_fields">
+            <div class="form-group-m"><label class="form-label-m">İndirim Oranı (%)</label><input type="number" class="form-input-m" id="c_value" placeholder="10"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group-m"><label class="form-label-m">Başlangıç Tarihi</label><input type="date" class="form-input-m" id="c_start"></div>
+            <div class="form-group-m"><label class="form-label-m">Bitiş Tarihi</label><input type="date" class="form-input-m" id="c_end"></div>
+          </div>
+          <div class="form-group-m">
+            <label class="form-label-m">Uygulanacak Ürünler</label>
+            <select class="form-input-m" id="c_scope">
+              <option value="all">Tüm Ürünler</option>
+              <option value="category">Belirli Kategori</option>
+            </select>
+          </div>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px">
+          <button class="btn btn-outline" onclick="document.getElementById('campModal').style.display='none'">İptal</button>
+          <button class="btn btn-dark" onclick="saveCampaign()">💾 Kaydet</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+window.updateCampFields = () => {
+  const type = document.getElementById('c_type').value;
+  const el = document.getElementById('c_fields');
+  if (type === 'percent') {
+    el.innerHTML = '<div class="form-group-m"><label class="form-label-m">İndirim Oranı (%)</label><input type="number" class="form-input-m" id="c_value" placeholder="10"></div>';
+  } else if (type === 'fixed_price') {
+    el.innerHTML = '<div class="form-group-m"><label class="form-label-m">İndirim Tutarı (₺)</label><input type="number" class="form-input-m" id="c_value" placeholder="50"></div>';
+  } else if (type === 'buy_x_pay_y') {
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group-m"><label class="form-label-m">Kaç Adet Alınsın</label><input type="number" class="form-input-m" id="c_buyX" placeholder="3"></div>
+        <div class="form-group-m"><label class="form-label-m">Kaç Adet Ödesin</label><input type="number" class="form-input-m" id="c_payY" placeholder="2"></div>
+      </div>`;
+  }
+};
+
+window.openCampaignModal = () => {
+  const modal = document.getElementById('campModal');
+  modal.style.display = 'flex';
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('c_start').value = today;
+};
+
+window.saveCampaign = async () => {
+  const type = document.getElementById('c_type').value;
+  const data = {
+    name: document.getElementById('c_name').value.trim(),
+    banner: document.getElementById('c_banner').value.trim(),
+    type,
+    startDate: new Date(document.getElementById('c_start').value),
+    endDate: new Date(document.getElementById('c_end').value),
+    scope: document.getElementById('c_scope').value,
+    createdAt: serverTimestamp()
+  };
+  if (!data.name || !data.startDate || !data.endDate) { showToast('Zorunlu alanları doldurun','error'); return; }
+  if (type === 'buy_x_pay_y') {
+    data.buyX = Number(document.getElementById('c_buyX').value);
+    data.payY = Number(document.getElementById('c_payY').value);
+  } else {
+    data.value = Number(document.getElementById('c_value').value);
+  }
+  await addDoc(collection(db,'campaigns'), data);
+  showToast('Kampanya eklendi ✓','success');
+  document.getElementById('campModal').style.display = 'none';
+  renderCampaigns();
+};
+
+window.deleteCampaign = async (id) => {
+  if (!confirm('Kampanyayı silmek istediğinden emin misin?')) return;
+  await deleteDoc(doc(db,'campaigns',id));
+  showToast('Kampanya silindi','');
+  renderCampaigns();
+};
+
 async function renderBrandKit() {
   const snap = await getDoc(doc(db,'settings','brandkit'));
   const data = snap.exists() ? snap.data() : {};
