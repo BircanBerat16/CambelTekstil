@@ -707,21 +707,21 @@ function renderPmodal() {
         ? `<span style="color:var(--red)">₺${Number(p.salePrice).toLocaleString('tr-TR')}</span> <span style="font-size:.85rem;color:var(--taupe);text-decoration:line-through;font-weight:400">₺${Number(p.price).toLocaleString('tr-TR')}</span>`
         : `₺${Number(p.price).toLocaleString('tr-TR')}`}
     </div>
-    ${p.description ? `<div class="pmodal-desc">${p.description}</div>` : ''}
-    ${p.material ? `<div class="pmodal-material">🧵 ${p.material}</div>` : ''}
     ${p.sizes?.length ? `
       <div class="pmodal-label">Beden</div>
       <div class="size-options">${p.sizes.map(s=>`<div class="size-opt${s===selectedSize?' sel':''}" onclick="selectSize('${s}',this)">${s}</div>`).join('')}</div>` : ''}
     ${p.colors?.length ? `
       <div class="pmodal-label">Renk</div>
       <div class="color-options">${p.colors.map(co=>`<div class="color-opt${co===selectedColor?' sel':''}" onclick="selectColor('${co}',this)">${co}</div>`).join('')}</div>` : ''}
-    <div style="margin-top:auto;padding-top:1.2rem">
+    <div style="padding-top:1rem">
       ${p.buybox ? '<div style="display:inline-flex;align-items:center;gap:.4rem;background:var(--green);color:#fff;padding:.3rem .9rem;border-radius:50px;font-size:.72rem;font-weight:500;margin-bottom:.8rem">✓ Trendyol Buybox Avantajı</div><br>' : ''}
       ${p.brandKit ? '<div style="display:inline-flex;align-items:center;gap:.4rem;background:var(--charcoal);color:#fff;padding:.3rem .9rem;border-radius:50px;font-size:.72rem;font-weight:500;margin-bottom:.8rem;margin-left:.4rem">✏️ Brand Kit Uyumlu</div>' : ''}
-      <button class="btn-add-cart" style="margin-top:.8rem" onclick="addToCartFromModal()" ${!p.stock?'disabled':''}>
+      <button class="btn-add-cart" style="margin-top:.8rem;width:100%" onclick="addToCartFromModal()" ${!p.stock?'disabled':''}>
         ${p.stock ? '🛒 Sepete Ekle' : 'Stok Yok'}
       </button>
-    </div>`;
+    </div>
+    ${p.description ? `<div class="pmodal-desc" style="margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--border)">${p.description}</div>` : ''}
+    ${p.material ? `<div class="pmodal-material">🧵 ${p.material}</div>` : ''}`;
 }
 
 window.setMainImg = (src, el) => {
