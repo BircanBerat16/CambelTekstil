@@ -503,11 +503,12 @@ let freeShippingLimit = 500;
 
 // ── INIT ──
 async function init() {
-  await Promise.all([loadSettings(), loadCategories(), loadProducts()]);
+  await Promise.all([loadSettings(), loadCategories(), loadProducts(), loadBundles(), loadCampaigns()]);
   renderSidebar();
   renderNav();
   applyFilters();
   renderCart();
+  renderCampaignBanner();
 }
 
 async function loadSettings() {
@@ -658,6 +659,8 @@ function productCard(p) {
           ${p.salePrice ? '<span class="p-badge p-badge-sale">İndirim</span>' : ''}
           ${p.buybox ? '<span class="p-badge p-badge-buybox">Buybox</span>' : ''}
           ${p.brandKit ? '<span class="p-badge p-badge-kit">Brand Kit</span>' : ''}
+          ${getBundleLabel(p.id) ? '<span class="p-badge" style="background:#5C6A7A;color:#fff">📦 Bundle</span>' : ''}
+          ${activeCampaigns.length ? '<span class="p-badge" style="background:#8B5E2A;color:#fff">🏷️ Kampanya</span>' : ''}
         </div>
       </div>
       <div class="product-body">
@@ -716,6 +719,19 @@ function renderPmodal() {
     <div style="padding-top:1rem">
       ${p.buybox ? '<div style="display:inline-flex;align-items:center;gap:.4rem;background:var(--green);color:#fff;padding:.3rem .9rem;border-radius:50px;font-size:.72rem;font-weight:500;margin-bottom:.8rem">✓ Trendyol Buybox Avantajı</div><br>' : ''}
       ${p.brandKit ? '<div style="display:inline-flex;align-items:center;gap:.4rem;background:var(--charcoal);color:#fff;padding:.3rem .9rem;border-radius:50px;font-size:.72rem;font-weight:500;margin-bottom:.8rem;margin-left:.4rem">✏️ Brand Kit Uyumlu</div>' : ''}
+      ${(() => {
+        const bundle = allBundles[p.id];
+        if (!bundle || !bundle.rules || !bundle.rules.length) return '';
+        const sorted = [...bundle.rules].sort((a,b)=>a.minQty-b.minQty);
+        return '<div style="background:var(--cream);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:.78rem">' +
+          '<div style="font-weight:500;margin-bottom:6px;color:var(--charcoal)">📦 Toplu Alım Fiyatları</div>' +
+          sorted.map(r => {
+            const label = r.type==='percent' ? '%'+r.value+' indirim' : '₺'+r.value+'/adet';
+            return '<div style="display:flex;justify-content:space-between;padding:3px 0;color:var(--mid)">' +
+              '<span>'+r.minQty+'+ adet</span><span style="font-weight:600;color:var(--charcoal)">'+label+'</span></div>';
+          }).join('') + '</div>';
+      })()}
+      ${activeCampaigns.length ? '<div style="background:#FFF8EC;border:1px solid #F0D9A8;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:.78rem;color:#8B5E2A">🏷️ <strong>'+activeCampaigns[0].banner+'</strong></div>' : ''}
       <button class="btn-add-cart" style="margin-top:.8rem;width:100%" onclick="addToCartFromModal()" ${!p.stock?'disabled':''}>
         ${p.stock ? '🛒 Sepete Ekle' : 'Stok Yok'}
       </button>
@@ -790,7 +806,11 @@ function renderCart() {
         <button class="cart-remove" onclick="removeFromCart('${item.key}')">✕ Kaldır</button>
       </div>
     </div>`).join('');
-  const subtotal = cart.reduce((s,i)=>s+(i.price*i.qty),0);
+  const subtotal = cart.reduce((s,i) => {
+    const bundlePrice = getBundlePrice(i.id, i.qty, i.price);
+    const finalPrice = applyCampaignDiscount(bundlePrice, i.id, i.qty);
+    return s + (finalPrice * i.qty);
+  }, 0);
   const shipping = subtotal >= freeShippingLimit ? 0 : shippingFee;
   const total = subtotal + shipping;
   document.getElementById('cartSubtotal').textContent = `₺${subtotal.toLocaleString('tr-TR')}`;
