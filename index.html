@@ -1028,9 +1028,9 @@ function toggleMobileNav() {
 </script>
 <!-- NAVBAR -->
 <nav id="navbar">
-  <a href="#" class="nav-logo">Cambel<span>.</span></a>
+  <a href="#" class="nav-logo" href="/">Cambel<span>.</span></a>
   <ul class="nav-links">
-    <li><a href="#" onclick="switchPage('shop')">Mağaza</a></li>
+    <li><a href="#" onclick="location.href='shop.html'">Mağaza</a></li>
     <li><a href="#brand-kit">Brand Kit</a></li>
     <li><a href="#trendyol">Trendyol</a></li>
     <li><a href="#nasil">Nasıl Çalışır</a></li>
@@ -1045,7 +1045,7 @@ function toggleMobileNav() {
   </div>
 </nav>
 <div class="mobile-nav" id="mobileNav">
-  <a href="#" onclick="switchPage('shop')" onclick="toggleMobileNav()">Mağaza</a>
+  <a href="#" onclick="location.href='shop.html'" onclick="toggleMobileNav()">Mağaza</a>
   <a href="#brand-kit" onclick="toggleMobileNav()">Brand Kit</a>
   <a href="#trendyol" onclick="toggleMobileNav()">Trendyol</a>
   <a href="#nasil" onclick="toggleMobileNav()">Nasıl Çalışır</a>
@@ -1063,7 +1063,7 @@ function toggleMobileNav() {
     </h1>
     <p class="hero-sub">Cambel'in blank koleksiyonunu seç, kendi Brand Kit'inle markalaştır ve satışa başla. Minimum sipariş adedi yok — tek parçadan marka kalitesi.</p>
     <div class="hero-actions">
-      <a href="#" onclick="switchPage('shop')" class="btn-primary">
+      <a href="#" onclick="location.href='shop.html'" class="btn-primary">
         Koleksiyonu Keşfet
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
@@ -1144,7 +1144,7 @@ function toggleMobileNav() {
     <p class="section-sub">Blank ve premium kalite. Tamamen kendi markanla çıkarmaya hazır.</p>
   </div>
   <div class="cat-grid reveal reveal-d1">
-    <div class="cat-card" onclick="switchPage('shop')">
+    <div class="cat-card" onclick="location.href='shop.html'">
       <div class="cat-img"><div class="cat-img-inner c1"></div></div>
       <div class="cat-body">
         <div class="cat-name">Body</div>
@@ -1152,7 +1152,7 @@ function toggleMobileNav() {
       </div>
       <div class="cat-arrow">→</div>
     </div>
-    <div class="cat-card" onclick="switchPage('shop')">
+    <div class="cat-card" onclick="location.href='shop.html'">
       <div class="cat-img"><div class="cat-img-inner c2"></div></div>
       <div class="cat-body">
         <div class="cat-name">Müslin</div>
@@ -1160,7 +1160,7 @@ function toggleMobileNav() {
       </div>
       <div class="cat-arrow">→</div>
     </div>
-    <div class="cat-card" onclick="switchPage('shop')">
+    <div class="cat-card" onclick="location.href='shop.html'">
       <div class="cat-img"><div class="cat-img-inner c3"></div></div>
       <div class="cat-body">
         <div class="cat-name">Pijama Takımı</div>
@@ -1168,7 +1168,7 @@ function toggleMobileNav() {
       </div>
       <div class="cat-arrow">→</div>
     </div>
-    <div class="cat-card" onclick="switchPage('shop')">
+    <div class="cat-card" onclick="location.href='shop.html'">
       <div class="cat-img"><div class="cat-img-inner c4"></div></div>
       <div class="cat-body">
         <div class="cat-name">Blank Basic</div>
@@ -1176,7 +1176,7 @@ function toggleMobileNav() {
       </div>
       <div class="cat-arrow">→</div>
     </div>
-    <div class="cat-card" onclick="switchPage('shop')">
+    <div class="cat-card" onclick="location.href='shop.html'">
       <div class="cat-img"><div class="cat-img-inner c5"></div></div>
       <div class="cat-body">
         <div class="cat-name">Sezonluk</div>
@@ -1573,37 +1573,3 @@ function toggleMobileNav() {
   });
 </script>
 </body>
-</html>
-</div><div style="font-size:.85rem;color:var(--mid);margin-bottom:1.5rem">Sipariş No: <strong>${orderNo}</strong></div><button class="btn-checkout" onclick="document.getElementById('checkoutOverlay').classList.remove('open')">Alışverişe Devam Et</button></div>`;
-  document.getElementById('checkoutOverlay').classList.add('open');
-};
-
-window.switchPage = (page) => {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
-  document.getElementById('nav-landing').classList.toggle('active', page === 'landing');
-  document.getElementById('nav-shop').classList.toggle('active', page === 'shop');
-  window.scrollTo(0, 0);
-  if (page === 'shop' && !shopLoaded) { shopLoaded = true; initShop(); }
-};
-
-window.formatCard = (el) => { let v=el.value.replace(/\D/g,'').slice(0,16); el.value=v.match(/.{1,4}/g)?.join(' ')||v; };
-window.formatExpiry = (el) => { let v=el.value.replace(/\D/g,''); if(v.length>=3) v=v.slice(0,2)+'/'+v.slice(2,4); el.value=v; };
-window.toggleMobileNav = () => document.getElementById('mobileNav').classList.toggle('open');
-window.showToast = (msg, type='') => { const t=document.getElementById('toast'); t.textContent=msg; t.className=`toast ${type} show`; setTimeout(()=>t.classList.remove('show'),3000); };
-
-// ── LANDING PAGE ──
-window.toggleFaq = (el) => { const item=el.parentElement; const isOpen=item.classList.contains('open'); document.querySelectorAll('.faq-item').forEach(i=>i.classList.remove('open')); if(!isOpen) item.classList.add('open'); };
-
-let bkStep=0;
-window.setFlowStep = (idx) => { document.querySelectorAll('.flow-step').forEach((s,i)=>s.classList.toggle('active',i===idx)); ['chip0','chip1','chip2','chip3','chip4'].forEach((id,i)=>{ const el=document.getElementById(id); el.classList.toggle('hidden',i>idx); el.classList.toggle('visible',i<=idx); }); };
-setInterval(()=>{ bkStep=(bkStep+1)%5; setFlowStep(bkStep); },2500);
-
-const revealEls=document.querySelectorAll('.reveal');
-const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')}),{threshold:.12});
-revealEls.forEach(el=>observer.observe(el));
-
-window.addEventListener('scroll',()=>{ document.getElementById('navbar').style.boxShadow=window.scrollY>20?'0 2px 20px rgba(42,40,37,.08)':'none'; });
-</script>
-</body>
-</html>
