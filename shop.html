@@ -553,7 +553,7 @@ function renderSidebar() {
   let html = `
     <div class="sidebar-cat active" id="cat-all" onclick="filterCat('','',this)">Tüm Ürünler</div>`;
   let navHtml = '';
-  let mobileHtml = '<a href="#" onclick="filterCat(\\'\\',\\'\\',null);toggleMobileNav()">Tüm Ürünler</a>';
+  let mobileHtml = "<a href='#' onclick=\"filterCat('','',null);toggleMobileNav()\">Tüm Ürünler</a>";
   allCategories.forEach(cat => {
     html += `<div class="sidebar-cat" id="cat-${cat.id}" onclick="filterCat('${cat.id}','',this)">${cat.name}</div>`;
     if (cat.subcategories?.length) {
