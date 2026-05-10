@@ -989,7 +989,7 @@ function renderPmodal() {
         <div style="background:var(--cream);padding:12px 14px;font-size:.78rem;font-weight:600;color:var(--charcoal);letter-spacing:.04em;text-transform:uppercase">Kişiselleştirme</div>
         
         <!-- Kendin Uygula -->
-        <div id="opt-self" onclick="selectCustomization('self')" style="padding:14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .2s;display:flex;gap:12px;align-items:flex-start;background:var(--green-light, #EAF5EF)">
+        <div id="opt-self" onclick="selectCustomization('self')" style="padding:14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .2s;display:flex;gap:12px;align-items:flex-start;background:#EAF5EF">
           <div style="width:20px;height:20px;border-radius:50%;border:2px solid #5C7A5C;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px" id="radio-self">
             <div style="width:10px;height:10px;border-radius:50%;background:#5C7A5C"></div>
           </div>
@@ -1000,7 +1000,6 @@ function renderPmodal() {
             </div>
             <div style="font-size:.78rem;color:#3d8a60;line-height:1.6">Brand Kit'ten DTF tabakası al, kendin yapıştır.</div>
             <div style="display:flex;gap:12px;margin-top:6px">
-              <span style="font-size:.75rem;color:#2D7A50">✓ Ücretsiz</span>
               <span style="font-size:.75rem;color:#2D7A50">✓ Aynı gün kargo</span>
               <span style="font-size:.75rem;color:#2D7A50">✓ Kolay uygulama</span>
             </div>
@@ -1012,13 +1011,18 @@ function renderPmodal() {
         <div id="opt-cambel" onclick="selectCustomization('cambel')" style="padding:14px;cursor:pointer;transition:background .2s;display:flex;gap:12px;align-items:flex-start;background:#fff">
           <div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px" id="radio-cambel"></div>
           <div style="flex:1">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
               <span style="font-size:.88rem;font-weight:600;color:var(--mid)">Cambel Uygulasın</span>
             </div>
-            <div style="font-size:.78rem;color:var(--mid);line-height:1.6">Ekibimiz sizinle iletişime geçer, tasarımı birlikte onaylarsınız.</div>
-            <div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap">
-              <span style="font-size:.75rem;color:var(--red);font-weight:600">+₺${p.cambelFee} ek ücret</span>
-              <span style="font-size:.75rem;color:var(--red);font-weight:600">+${p.cambelDays||7} iş günü gecikme</span>
+            <div style="font-size:.78rem;color:var(--mid);line-height:1.6;margin-bottom:8px">Ekibimiz sizinle iletişime geçer, tasarımı birlikte onaylarsınız.</div>
+            ${p.customizations.map(id => {
+              const labels = {'ense-baskisi':'Ense Baskısı','yikama-talimat':'Yıkama Talimatı','sallanti-kart':'Sallantı Kart','ambalaj':'Baskılı Ambalaj','sticker':'Marka Stickeri','barkod':'Barkod Etiketi'};
+              const price = (p.customizationPrices||{})[id];
+              return price ? `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:.78rem;color:var(--mid)"><span>${labels[id]||id}</span><span style="font-weight:600;color:var(--charcoal)">+₺${Number(price).toLocaleString('tr-TR')}</span></div>` : '';
+            }).join('')}
+            <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;display:flex;gap:12px;flex-wrap:wrap">
+              <span style="font-size:.75rem;color:var(--red);font-weight:600">Toplam: +₺${p.cambelFee}</span>
+              <span style="font-size:.75rem;color:var(--red);font-weight:600">+${p.cambelDays||7} iş günü</span>
               <span style="font-size:.75rem;color:var(--mid)">⚠️ Stok yoğunluğuna göre değişir</span>
             </div>
           </div>
