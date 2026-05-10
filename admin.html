@@ -904,13 +904,18 @@ window.saveProduct = async () => {
   if (!name || isNaN(price)) { showToast('Ürün adı ve fiyat zorunludur','error'); return; }
   showToast('Kaydediliyor...','');
 
-  // Upload new images
+  // Upload new images to Cloudinary
+  showToast('Görseller yükleniyor...','');
   const uploadedUrls = [];
   for (const im of pendingImages) {
     if (im.existing) { uploadedUrls.push(im.url); continue; }
-    const storageRef = ref(storage, `products/${Date.now()}_${im.file.name}`);
-    const snap = await uploadBytes(storageRef, im.file);
-    uploadedUrls.push(await getDownloadURL(snap.ref));
+    try {
+      const url = await uploadToCloudinary(im.file);
+      uploadedUrls.push(url);
+    } catch(e) {
+      showToast('Görsel yüklenemedi: ' + im.file.name, 'error');
+      return;
+    }
   }
 
   const data = {
@@ -951,6 +956,24 @@ window.deleteProduct = async (id, name) => {
   showToast('Ürün silindi','');
   renderProducts();
 };
+
+// ── CLOUDINARY CONFIG ──
+const CLOUDINARY_CLOUD = 'dplns9Y0e';
+const CLOUDINARY_PRESET = 'CambelTekstil';
+
+async function uploadToCloudinary(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_PRESET);
+  formData.append('folder', 'cambel-products');
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+    method: 'POST',
+    body: formData
+  });
+  const data = await res.json();
+  if (data.secure_url) return data.secure_url;
+  throw new Error('Cloudinary upload failed: ' + JSON.stringify(data));
+}
 
 // Image handling
 window.handleFiles = (files) => addFilesToPending(Array.from(files));
