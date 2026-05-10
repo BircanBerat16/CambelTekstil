@@ -513,7 +513,6 @@ async function init() {
   } else if (hash && hash !== 'all') {
     const parts = hash.split('-');
     if (parts.length >= 2) {
-      // subcat olabilir — önce tam eşleşme dene
       const catId = parts[0];
       const subId = parts.slice(1).join('-');
       const cat = allCategories.find(c=>c.id===catId);
@@ -527,6 +526,7 @@ async function init() {
       currentFilter = {category:hash, subcategory:''};
     }
   }
+  // Önce ürünleri render et, sonra sidebar'ı ayarla
   applyFilters();
   renderCart();
   renderCampaignBanner();
@@ -756,8 +756,12 @@ window.filterSubcat = (catId, subId, el) => {
 // ── FILTER / SORT ──
 function applyFilters() {
   let prods = [...allProducts];
-  if (currentFilter.category) prods = prods.filter(p => p.category === currentFilter.category);
-  if (currentFilter.subcategory) prods = prods.filter(p => p.subcategory === currentFilter.subcategory);
+  if (currentFilter.category === '__buybox__') {
+    prods = prods.filter(p => p.buybox);
+  } else {
+    if (currentFilter.category) prods = prods.filter(p => p.category === currentFilter.category);
+    if (currentFilter.subcategory) prods = prods.filter(p => p.subcategory === currentFilter.subcategory);
+  }
   if (searchQuery) prods = prods.filter(p => p.name.toLowerCase().includes(searchQuery));
   switch(currentSort) {
     case 'price-asc': prods.sort((a,b)=>(a.salePrice||a.price)-(b.salePrice||b.price)); break;
