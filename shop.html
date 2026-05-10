@@ -838,14 +838,16 @@ function productCard(p) {
         <div class="product-cat">${getCatName(p.category)}</div>
         <div class="product-name">${p.name}</div>
         <div class="product-price">
-          ${p.salePrice
-            ? `<span class="price-sale">₺${Number(p.salePrice).toLocaleString('tr-TR')}</span><span class="price-old">₺${Number(p.price).toLocaleString('tr-TR')}</span>`
-            : `<span class="price-main">₺${Number(p.price).toLocaleString('tr-TR')}</span>`}
+          ${currentMember
+            ? (p.salePrice
+                ? `<span class="price-sale">₺${Number(p.salePrice).toLocaleString('tr-TR')}</span><span class="price-old">₺${Number(p.price).toLocaleString('tr-TR')}</span>`
+                : `<span class="price-main">₺${Number(p.price).toLocaleString('tr-TR')}</span>`)
+            : `<a href="account.html" style="display:inline-flex;align-items:center;gap:4px;background:var(--charcoal);color:#fff;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:500;text-decoration:none">🔒 Fiyatı Gör</a>`}
         </div>
         ${p.sizes?.length ? `<div class="product-sizes">${p.sizes.slice(0,4).map(s=>`<span class="size-chip">${s}</span>`).join('')}</div>` : ''}
-        <button class="btn-add-cart" onclick="event.stopPropagation();quickAddToCart('${p.id}')" ${!p.stock?'disabled':''}>
-          ${p.stock ? 'Sepete Ekle' : 'Stok Yok'}
-        </button>
+        ${currentMember
+          ? `<button class="btn-add-cart" onclick="event.stopPropagation();quickAddToCart('${p.id}')" ${!p.stock?'disabled':''}>${p.stock?'Sepete Ekle':'Stok Yok'}</button>`
+          : `<a href="account.html" style="display:block;width:100%;padding:.7rem;background:var(--charcoal);color:#fff;border-radius:8px;text-align:center;text-decoration:none;font-size:.82rem;font-weight:500">Üye Ol, Alışveriş Yap</a>`}
       </div>
     </div>`;
 }
