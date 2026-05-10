@@ -616,8 +616,7 @@ async function initApp() {
 
 // Siparişleri canlı dinle — yeni sipariş gelince dashboard güncellenir
 function startOrdersListener() {
-  const q = query(collection(db,'orders'), orderBy('createdAt','desc'));
-  onSnapshot(q, snap => {
+  onSnapshot(collection(db,'orders'), snap => {
     allOrders = snap.docs.map(d => ({id:d.id,...d.data()}));
     // Aktif sayfa dashboard veya orders ise güncelle
     const title = document.getElementById('pageTitle').textContent;
@@ -670,7 +669,7 @@ async function loadProducts() {
 }
 
 async function loadOrders() {
-  const snap = await getDocs(query(collection(db,'orders'), orderBy('createdAt','desc')));
+  const snap = await getDocs(collection(db,'orders'));
   allOrders = snap.docs.map(d => ({id:d.id,...d.data()}));
   return allOrders;
 }
