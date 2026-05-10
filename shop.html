@@ -1061,10 +1061,53 @@ window.handleCartOverlayClick = (e) => { if(e.target===document.getElementById('
 // ── CHECKOUT ──
 window.openCheckout = () => {
   if (!cart.length) return;
+
+  // "Kendin Uygula" seçen müşterilere Brand Kit hatırlatması
+  const selfItems = cart.filter(i => i.customization === 'self');
+  if (selfItems.length > 0) {
+    document.getElementById('cartOverlay').classList.remove('open');
+    const overlay = document.createElement('div');
+    overlay.id = 'brandKitWarning';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:16px;max-width:440px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+        <div style="background:#2A2825;padding:20px 24px;text-align:center">
+          <div style="font-size:2rem;margin-bottom:8px">🏷️</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:400;color:#fff">Brand Kit'i Unutmayın!</div>
+        </div>
+        <div style="padding:24px">
+          <p style="font-size:.88rem;line-height:1.75;color:#6B6560;margin-bottom:16px">
+            Sepetinizdeki <strong style="color:#2A2825">${selfItems.length} ürün</strong> için 
+            <strong style="color:#5C7A5C">"Kendin Uygula"</strong> seçtiniz.<br>
+            Kişiselleştirme için <strong>DTF baskı tabakası</strong> almanız gerekiyor.
+          </p>
+          <div style="background:#EAF5EF;border-radius:8px;padding:12px 14px;margin-bottom:20px">
+            <div style="font-size:.8rem;color:#2D7A50;font-weight:600;margin-bottom:4px">Brand Kit ile neler alabilirsin?</div>
+            <div style="font-size:.78rem;color:#3d8a60;line-height:1.65">DTF tabakası · Ense baskısı · Yıkama etiketi · Sallantı kart · Ambalaj · Barkod</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button onclick="document.getElementById('brandKitWarning').remove();filterCat('marka-kiti','',document.getElementById('cat-marka-kiti'));toggleCart();" 
+              style="width:100%;padding:12px;background:#2A2825;color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:500;cursor:pointer">
+              Brand Kit'e Git →
+            </button>
+            <button onclick="document.getElementById('brandKitWarning').remove();proceedToCheckout();" 
+              style="width:100%;padding:12px;background:transparent;color:#6B6560;border:1px solid #E8E2D8;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.85rem;cursor:pointer">
+              Sonra alacağım, ödemeye devam et
+            </button>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    return;
+  }
+  proceedToCheckout();
+};
+
+function proceedToCheckout() {
   document.getElementById('cartOverlay').classList.remove('open');
   renderCheckoutSummary();
   document.getElementById('checkoutOverlay').classList.add('open');
-};
+}
 window.closeCheckout = () => document.getElementById('checkoutOverlay').classList.remove('open');
 
 function renderCheckoutSummary() {
