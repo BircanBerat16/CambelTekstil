@@ -495,14 +495,24 @@ const auth = getAuth(app);
 
 let currentMember = null;
 
-// Auth durumunu dinle — init'ten önce auth state'i çöz
-let authResolved = false;
+// Auth durumunu dinle
 const authReady = new Promise(resolve => {
+  let resolved = false;
+  // Firebase en fazla 2 saniye içinde auth state'i döndürür
+  // Timeout ile garantiye al
+  const timeout = setTimeout(() => {
+    if (!resolved) { resolved = true; resolve(); }
+  }, 2000);
   onAuthStateChanged(auth, user => {
     currentMember = user && user.emailVerified ? user : null;
     updateAuthUI();
-    if (!authResolved) { authResolved = true; resolve(); }
-    else if (allProducts.length) renderProducts();
+    if (!resolved) {
+      resolved = true;
+      clearTimeout(timeout);
+      resolve();
+    } else if (allProducts.length) {
+      renderProducts();
+    }
   });
 });
 
