@@ -505,7 +505,6 @@ let freeShippingLimit = 500;
 async function init() {
   await Promise.all([loadSettings(), loadCategories(), loadProducts(), loadBundles(), loadCampaigns()]);
   renderSidebar();
-  renderNav();
   // Hash'ten kategori filtresi geri yükle
   const hash = window.location.hash.replace('#','');
   if (hash === 'buybox') {
