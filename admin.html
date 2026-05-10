@@ -521,6 +521,36 @@ select.filter-select{
           <input type="number" class="form-input-m" id="pSalePrice" placeholder="Opsiyonel">
         </div>
       </div>
+      <div class="form-group-m">
+        <label class="form-label-m">Satış Tipi</label>
+        <select class="form-input-m" id="pSaleType" onchange="toggleSerialFields()">
+          <option value="single">Tekli — Adet bazlı satış</option>
+          <option value="serial">Serili — Paket halinde satış</option>
+        </select>
+      </div>
+      <div id="serialFields" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:4px">
+        <div class="form-group-m">
+          <label class="form-label-m">Paket İçeriği (Bedenler)</label>
+          <input type="text" class="form-input-m" id="pSerialSizes" placeholder="Örn: 0-3ay, 3-6ay, 6-9ay, 9-12ay">
+          <div class="form-hint">Virgülle ayır — kaç beden varsa paket o kadar adettir</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group-m">
+            <label class="form-label-m">Paket Fiyatı (₺) *</label>
+            <input type="number" class="form-input-m" id="pSerialPrice" placeholder="Paketin toplam fiyatı" oninput="calcUnitPrice()">
+            <div class="form-hint">Müşteriye gösterilen fiyat</div>
+          </div>
+          <div class="form-group-m">
+            <label class="form-label-m">Birim Fiyat (₺)</label>
+            <input type="number" class="form-input-m" id="pUnitPrice" placeholder="Otomatik hesaplanır" readonly style="opacity:.7;background:var(--bg)">
+            <div class="form-hint">Paket fiyatı ÷ adet</div>
+          </div>
+        </div>
+        <div class="form-group-m" style="margin-bottom:0">
+          <label class="form-label-m">Paket İndirimli Fiyat (₺)</label>
+          <input type="number" class="form-input-m" id="pSerialSalePrice" placeholder="Opsiyonel">
+        </div>
+      </div>
       <div class="form-row">
         <div class="form-group-m">
           <label class="form-label-m">Stok Adedi *</label>
@@ -913,16 +943,24 @@ function renderProductRows(prods) {
   return prods.map(p => {
     const cat = allCategories.find(c=>c.id===p.category);
     const img = p.images && p.images[0];
-    const priceHtml = p.salePrice
-      ? `<span style="color:var(--red);font-weight:600">₺${Number(p.salePrice).toLocaleString('tr-TR')}</span>`
-      : `<span style="font-weight:500">₺${Number(p.price||0).toLocaleString('tr-TR')}</span>`;
+    const isSerial = p.saleType === 'serial';
+    const priceHtml = isSerial
+      ? `<span style="font-weight:600">₺${Number(p.serialSalePrice||p.serialPrice||0).toLocaleString('tr-TR')}</span><div style="font-size:.72rem;color:var(--mid)">Birim: ₺${Number(p.unitPrice||0).toLocaleString('tr-TR')}</div>`
+      : (p.salePrice
+          ? `<span style="color:var(--red);font-weight:600">₺${Number(p.salePrice).toLocaleString('tr-TR')}</span>`
+          : `<span style="font-weight:500">₺${Number(p.price||0).toLocaleString('tr-TR')}</span>`);
     return `<tr>
       <td>
         <div style="display:flex;align-items:center;gap:10px">
           ${img ? `<img class="td-img" src="${img}" alt="${p.name}">` : '<div class="td-img-placeholder">👕</div>'}
           <div>
             <div style="font-weight:600">${p.name}</div>
-            <div style="font-size:.72rem;color:var(--mid);margin-top:2px">${p.sku||''} ${p.brandKit?'<span class="badge badge-blue" style="font-size:.65rem">Brand Kit</span>':''} ${p.buybox?'<span class="badge badge-green" style="font-size:.65rem">Buybox</span>':''}</div>
+            <div style="font-size:.72rem;color:var(--mid);margin-top:2px;display:flex;flex-wrap:wrap;gap:3px">
+              ${p.sku||''}
+              ${isSerial ? `<span class="badge badge-blue" style="font-size:.65rem">📦 ${(p.serialSizes||[]).length}'li Set</span>` : '<span class="badge badge-gray" style="font-size:.65rem">Tekli</span>'}
+              ${p.brandKit?'<span class="badge badge-blue" style="font-size:.65rem">Brand Kit</span>':''}
+              ${p.buybox?'<span class="badge badge-green" style="font-size:.65rem">Buybox</span>':''}
+            </div>
           </div>
         </div>
       </td>
@@ -950,6 +988,19 @@ window.filterProducts = () => {
   document.getElementById('productsTbody').innerHTML = renderProductRows(filtered);
 };
 
+window.toggleSerialFields = () => {
+  const isSerial = document.getElementById('pSaleType').value === 'serial';
+  document.getElementById('serialFields').style.display = isSerial ? 'block' : 'none';
+};
+
+window.calcUnitPrice = () => {
+  const sizes = document.getElementById('pSerialSizes').value.split(',').filter(s=>s.trim());
+  const total = parseFloat(document.getElementById('pSerialPrice').value);
+  if (sizes.length && total) {
+    document.getElementById('pUnitPrice').value = (total / sizes.length).toFixed(2);
+  }
+};
+
 // ── PRODUCT MODAL ──
 window.openAddProduct = () => {
   document.getElementById('productModalTitle').textContent = 'Yeni Ürün Ekle';
@@ -959,6 +1010,12 @@ window.openAddProduct = () => {
   document.getElementById('pFeatured').value = 'false';
   document.getElementById('pBrandKit').value = 'true';
   document.getElementById('pBuybox').value = 'false';
+  document.getElementById('pSaleType').value = 'single';
+  document.getElementById('serialFields').style.display = 'none';
+  document.getElementById('pSerialSizes').value = '';
+  document.getElementById('pSerialPrice').value = '';
+  document.getElementById('pSerialSalePrice').value = '';
+  document.getElementById('pUnitPrice').value = '';
   document.getElementById('pCambelFee').value = '';
   document.getElementById('pCambelDays').value = '';
   ['ense-baskisi','yikama-talimat','sallanti-kart','ambalaj','sticker','barkod'].forEach(id => {
@@ -990,6 +1047,12 @@ window.openEditProduct = async (id) => {
   document.getElementById('pFeatured').value = p.featured?'true':'false';
   document.getElementById('pBrandKit').value = p.brandKit!==false?'true':'false';
   document.getElementById('pBuybox').value = p.buybox?'true':'false';
+  document.getElementById('pSaleType').value = p.saleType||'single';
+  document.getElementById('pSerialSizes').value = (p.serialSizes||[]).join(', ');
+  document.getElementById('pSerialPrice').value = p.serialPrice||'';
+  document.getElementById('pSerialSalePrice').value = p.serialSalePrice||'';
+  document.getElementById('pUnitPrice').value = p.unitPrice||'';
+  document.getElementById('serialFields').style.display = p.saleType==='serial' ? 'block' : 'none';
   document.getElementById('pCambelFee').value = p.cambelFee||'';
   document.getElementById('pCambelDays').value = p.cambelDays||'';
   ['ense-baskisi','yikama-talimat','sallanti-kart','ambalaj','sticker','barkod'].forEach(id => {
@@ -1057,6 +1120,13 @@ window.saveProduct = async () => {
     featured: document.getElementById('pFeatured').value === 'true',
     brandKit: document.getElementById('pBrandKit').value === 'true',
     buybox: document.getElementById('pBuybox').value === 'true',
+    saleType: document.getElementById('pSaleType').value,
+    serialSizes: document.getElementById('pSaleType').value === 'serial'
+      ? document.getElementById('pSerialSizes').value.split(',').map(s=>s.trim()).filter(Boolean)
+      : [],
+    serialPrice: parseFloat(document.getElementById('pSerialPrice').value)||null,
+    serialSalePrice: parseFloat(document.getElementById('pSerialSalePrice').value)||null,
+    unitPrice: parseFloat(document.getElementById('pUnitPrice').value)||null,
     customizations: ['ense-baskisi','yikama-talimat','sallanti-kart','ambalaj','sticker','barkod'].filter(id => {
       const el = document.getElementById('cust_'+id);
       return el && el.checked;
