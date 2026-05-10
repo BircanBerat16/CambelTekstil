@@ -324,7 +324,7 @@ footer{background:var(--charcoal);color:rgba(250,248,245,.5);padding:3rem 8vw;di
 
 <!-- NAV -->
 <nav id="navbar">
-  <a href="#" class="nav-logo">Cambel<span>.</span></a>
+  <a href="index.html" class="nav-logo">Cambel<span>.</span></a>
   <ul class="nav-links" id="navLinks"></ul>
   <div class="nav-right">
     <button class="cart-btn" onclick="toggleCart()">
@@ -682,8 +682,8 @@ function renderSidebar() {
     <div class="sidebar-cat" id="cat-buybox" onclick="filterBuybox(this)" style="color:#5C7A5C;font-weight:600">
       <span>🏆 Trendyol Buybox</span>
     </div>`;
-  let navHtml = '';
-  let mobileHtml = '';
+  let navHtml = '<li><a href="index.html">Ana Sayfa</a></li>';
+  let mobileHtml = '<a href="index.html">Ana Sayfa</a>';
 
   allCategories.forEach(cat => {
     const hasSubs = cat.subcategories && cat.subcategories.length > 0;
