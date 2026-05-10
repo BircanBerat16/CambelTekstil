@@ -489,6 +489,8 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+let currentMember = null;
+
 // Auth durumunu dinle — init'ten önce auth state'i çöz
 let authResolved = false;
 const authReady = new Promise(resolve => {
