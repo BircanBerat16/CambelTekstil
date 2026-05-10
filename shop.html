@@ -827,6 +827,10 @@ window.openProduct = (id) => {
   selectedColor = selectedProduct.colors?.[0] || '';
   renderPmodal();
   document.getElementById('pmodalOverlay').classList.add('open');
+  // Default olarak "Kendin Uygula" seçili gelsin
+  if (selectedProduct.customizations?.length) {
+    setTimeout(() => selectCustomization('self'), 50);
+  }
 };
 
 function renderPmodal() {
@@ -874,6 +878,53 @@ function renderPmodal() {
           }).join('') + '</div>';
       })()}
       ${activeCampaigns.length ? '<div style="background:#FFF8EC;border:1px solid #F0D9A8;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:.78rem;color:#8B5E2A">🏷️ <strong>'+activeCampaigns[0].banner+'</strong></div>' : ''}
+      ${(p.customizations && p.customizations.length) ? `
+      <div style="margin-top:1rem;border:1px solid var(--border);border-radius:12px;overflow:hidden">
+        <div style="background:var(--cream);padding:12px 14px;font-size:.78rem;font-weight:600;color:var(--charcoal);letter-spacing:.04em;text-transform:uppercase">Kişiselleştirme</div>
+        
+        <!-- Kendin Uygula -->
+        <div id="opt-self" onclick="selectCustomization('self')" style="padding:14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .2s;display:flex;gap:12px;align-items:flex-start;background:var(--green-light, #EAF5EF)">
+          <div style="width:20px;height:20px;border-radius:50%;border:2px solid #5C7A5C;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px" id="radio-self">
+            <div style="width:10px;height:10px;border-radius:50%;background:#5C7A5C"></div>
+          </div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <span style="font-size:.88rem;font-weight:700;color:#2D7A50">Kendin Uygula</span>
+              <span style="background:#5C7A5C;color:#fff;font-size:.65rem;font-weight:600;padding:2px 8px;border-radius:20px">ÖNERİLEN</span>
+            </div>
+            <div style="font-size:.78rem;color:#3d8a60;line-height:1.6">Brand Kit'ten DTF tabakası al, kendin yapıştır.</div>
+            <div style="display:flex;gap:12px;margin-top:6px">
+              <span style="font-size:.75rem;color:#2D7A50">✓ Ücretsiz</span>
+              <span style="font-size:.75rem;color:#2D7A50">✓ Aynı gün kargo</span>
+              <span style="font-size:.75rem;color:#2D7A50">✓ Kolay uygulama</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cambel Uygulasın -->
+        ${p.cambelFee ? `
+        <div id="opt-cambel" onclick="selectCustomization('cambel')" style="padding:14px;cursor:pointer;transition:background .2s;display:flex;gap:12px;align-items:flex-start;background:#fff">
+          <div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px" id="radio-cambel"></div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <span style="font-size:.88rem;font-weight:600;color:var(--mid)">Cambel Uygulasın</span>
+            </div>
+            <div style="font-size:.78rem;color:var(--mid);line-height:1.6">Ekibimiz sizinle iletişime geçer, tasarımı birlikte onaylarsınız.</div>
+            <div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap">
+              <span style="font-size:.75rem;color:var(--red);font-weight:600">+₺${p.cambelFee} ek ücret</span>
+              <span style="font-size:.75rem;color:var(--red);font-weight:600">+${p.cambelDays||7} iş günü gecikme</span>
+              <span style="font-size:.75rem;color:var(--mid)">⚠️ Stok yoğunluğuna göre değişir</span>
+            </div>
+          </div>
+        </div>` : ''}
+
+        <!-- Kişiselleştirme İstemiyorum -->
+        <div id="opt-none" onclick="selectCustomization('none')" style="padding:14px;border-top:1px solid var(--border);cursor:pointer;transition:background .2s;display:flex;gap:12px;align-items:center;background:#fff">
+          <div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0" id="radio-none"></div>
+          <span style="font-size:.82rem;color:var(--mid)">Kişiselleştirme istemiyorum</span>
+        </div>
+      </div>` : ''}
+
       <button class="btn-add-cart" style="margin-top:.8rem;width:100%" onclick="addToCartFromModal()" ${!p.stock?'disabled':''}>
         ${p.stock ? '🛒 Sepete Ekle' : 'Stok Yok'}
       </button>
@@ -887,6 +938,25 @@ window.setMainImg = (src, el) => {
   document.querySelectorAll('.pmodal-thumb').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
 };
+window.selectCustomization = (type) => {
+  selectedCustomization = type;
+  const opts = ['self','cambel','none'];
+  opts.forEach(o => {
+    const wrap = document.getElementById('opt-'+o);
+    const radio = document.getElementById('radio-'+o);
+    if (!wrap || !radio) return;
+    if (o === type) {
+      wrap.style.background = o === 'self' ? '#EAF5EF' : o === 'cambel' ? '#FFF8F8' : '#F5F5F5';
+      radio.innerHTML = `<div style="width:10px;height:10px;border-radius:50%;background:${o==='self'?'#5C7A5C':o==='cambel'?'#C0392B':'#6B6560'}"></div>`;
+      radio.style.borderColor = o === 'self' ? '#5C7A5C' : o === 'cambel' ? '#C0392B' : '#6B6560';
+    } else {
+      wrap.style.background = '#fff';
+      radio.innerHTML = '';
+      radio.style.borderColor = 'var(--border)';
+    }
+  });
+};
+
 window.selectSize = (s, el) => { selectedSize = s; document.querySelectorAll('.size-opt').forEach(e=>e.classList.remove('sel')); el.classList.add('sel'); };
 window.selectColor = (c, el) => { selectedColor = c; document.querySelectorAll('.color-opt').forEach(e=>e.classList.remove('sel')); el.classList.add('sel'); };
 window.closePmodal = () => document.getElementById('pmodalOverlay').classList.remove('open');
@@ -894,22 +964,36 @@ window.handlePmodalClick = (e) => { if(e.target===document.getElementById('pmoda
 
 window.addToCartFromModal = () => {
   if (!selectedProduct) return;
-  addToCart(selectedProduct, selectedSize, selectedColor);
+  // Kişiselleştirme seçimi zorunlu (seçenek varsa)
+  if (selectedProduct.customizations?.length && !selectedCustomization) {
+    showToast('Lütfen kişiselleştirme seçeneği seçin','');
+    return;
+  }
+  addToCart(selectedProduct, selectedSize, selectedColor, selectedCustomization);
   closePmodal();
 };
 
 window.quickAddToCart = (id) => {
   const p = allProducts.find(p=>p.id===id);
   if (!p) return;
-  addToCart(p, p.sizes?.[0]||'', p.colors?.[0]||'');
+  // Kişiselleştirme seçeneği varsa modalı aç
+  if (p.customizations?.length) {
+    openProduct(id);
+    return;
+  }
+  addToCart(p, p.sizes?.[0]||'', p.colors?.[0]||'', null);
 };
 
 // ── CART ──
-function addToCart(product, size, color) {
-  const key = `${product.id}_${size}_${color}`;
+function addToCart(product, size, color, customization) {
+  const custKey = customization || 'none';
+  const key = `${product.id}_${size}_${color}_${custKey}`;
   const existing = cart.find(i=>i.key===key);
+  // Cambel uygulasın seçildiyse ek ücret ekle
+  const cambelExtra = (customization === 'cambel' && product.cambelFee) ? product.cambelFee : 0;
+  const basePrice = (product.salePrice || product.price) + cambelExtra;
   if (existing) { existing.qty++; }
-  else { cart.push({ key, id:product.id, name:product.name, price:product.salePrice||product.price, size, color, qty:1, image:product.images?.[0]||'' }); }
+  else { cart.push({ key, id:product.id, name:product.name, price:basePrice, size, color, qty:1, image:product.images?.[0]||'', customization, cambelFee: cambelExtra, cambelDays: customization==='cambel'?product.cambelDays:null }); }
   saveCart();
   renderCart();
   showToast(`${product.name} sepete eklendi ✓`,'success');
@@ -936,7 +1020,8 @@ function renderCart() {
       <div class="cart-item-img">${item.image ? `<img src="${item.image}" alt="${item.name}">` : ''}</div>
       <div class="cart-item-info">
         <div class="cart-item-name">${item.name}</div>
-        <div class="cart-item-meta">${[item.size,item.color].filter(Boolean).join(' · ')}</div>
+        <div class="cart-item-meta">${[item.size,item.color].filter(Boolean).join(' · ')}${item.customization==='self'?' · <span style="color:#5C7A5C;font-weight:600">Kendin Uygula</span>':item.customization==='cambel'?` · <span style="color:#C0392B;font-weight:600">Cambel Uygulasın (+${item.cambelDays||7} gün)</span>`:''}
+        </div>
         <div class="cart-item-controls">
           <button class="qty-btn" onclick="changeQty('${item.key}',-1)">−</button>
           <span class="qty-num">${item.qty}</span>
@@ -1026,7 +1111,7 @@ window.processPayment = async () => {
   const orderData = {
     orderNo, customerName:`${name} ${surname}`, customerEmail:email, customerPhone:phone,
     shippingAddress:`${address}, ${document.getElementById('co_district').value}, ${city}`,
-    items:cart.map(i=>({name:i.name,size:i.size,color:i.color,qty:i.qty,price:i.price})),
+    items:cart.map(i=>({name:i.name,size:i.size,color:i.color,qty:i.qty,price:i.price,customization:i.customization||null,cambelFee:i.cambelFee||0})),
     subtotal, shipping, total,
     status:'pending', paymentStatus:'pending',
     createdAt:serverTimestamp()
