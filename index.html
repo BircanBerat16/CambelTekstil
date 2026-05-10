@@ -1295,28 +1295,42 @@ function toggleMobileNav() {
     <div class="reveal">
       <div class="section-label">Pazar Avantajı</div>
       <h2 class="section-title" style="max-width:none;color:var(--warm-white);">Trendyol'da<br><em>sıfırdan başlamak</em><br>zorunda değilsin</h2>
-      <p class="section-sub">Bazı ürünlerimiz zaten Trendyol'da satış geçmişine ve yorumlarına sahip. Sen sadece markanı koy.</p>
-      <a href="https://wa.me/905000000000?text=Trendyol%20avantaj%C4%B1%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum." class="btn-primary" style="margin-top:2rem;" target="_blank">
-        Detay Al →
+      <p class="section-sub">Ürünlerimiz Trendyol'da satış geçmişi, gerçek yorumlar ve buybox avantajıyla geliyor. Sen sadece markanı koy, satışa başla.</p>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:1.8rem">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;background:rgba(255,255,255,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">⭐</div>
+          <div>
+            <div style="font-size:.88rem;font-weight:500;color:#fff">Hazır Yorum & Satış Geçmişi</div>
+            <div style="font-size:.78rem;color:rgba(255,255,255,.5);margin-top:2px">Sıfır yorumlu ürünle yarışmak zorunda değilsin</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;background:rgba(255,255,255,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">🏆</div>
+          <div>
+            <div style="font-size:.88rem;font-weight:500;color:#fff">Buybox Pozisyonu</div>
+            <div style="font-size:.78rem;color:rgba(255,255,255,.5);margin-top:2px">Trendyol algoritmasında öne çıkan ürünler</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;background:rgba(255,255,255,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">🚀</div>
+          <div>
+            <div style="font-size:.88rem;font-weight:500;color:#fff">Hızlı Başlangıç</div>
+            <div style="font-size:.78rem;color:rgba(255,255,255,.5);margin-top:2px">Markını ekle, satışa başla — bu hafta</div>
+          </div>
+        </div>
+      </div>
+      <a href="https://wa.me/905000000000?text=Trendyol%20avantaj%C4%B1%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum." class="btn-primary" style="margin-top:2rem;display:inline-flex" target="_blank">
+        Buybox Ürünleri Keşfet →
       </a>
     </div>
-    <div class="ty-cards reveal reveal-d1">
-      <div class="ty-card">
-        <div class="ty-icon">📦</div>
-        <div class="ty-card-title">Hazır Satış Geçmişi</div>
-        <p class="ty-card-desc">Belirli ürünlerimiz Trendyol'da halihazırda satış geçmişine sahip. Sıfır yorumlu bir ürünle yarışmak yerine, güçlü bir zemine bas.</p>
-        <span class="ty-badge">✓ Trendyol Uyumlu</span>
+    <div class="reveal reveal-d1">
+      <div style="font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:1.2rem">Trendyol'da Öne Çıkan Ürünler</div>
+      <div id="buyboxProducts" style="display:flex;flex-direction:column;gap:12px">
+        <div style="color:rgba(255,255,255,.3);font-size:.85rem">Yükleniyor...</div>
       </div>
-      <div class="ty-card">
-        <div class="ty-icon">⭐</div>
-        <div class="ty-card-title">Mevcut Yorumlar</div>
-        <p class="ty-card-desc">Gerçek müşteri yorumlarına sahip ürünler. Güven oluşturmak için yorum beklemene gerek yok.</p>
-      </div>
-      <div class="ty-card">
-        <div class="ty-icon">🏆</div>
-        <div class="ty-card-title">Buybox Avantajı</div>
-        <p class="ty-card-desc">Trendyol algoritmasında öne çıkan ürünler. Daha yüksek görünürlük, daha fazla satış.</p>
-      </div>
+      <a href="shop.html#all" style="display:inline-flex;align-items:center;gap:.4rem;margin-top:1.5rem;font-size:.8rem;color:rgba(255,255,255,.5);text-decoration:none;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.2);padding-bottom:2px" onclick="if(window.switchPage)switchPage('shop')">
+        Tüm Ürünleri Gör →
+      </a>
     </div>
   </div>
 </section>
