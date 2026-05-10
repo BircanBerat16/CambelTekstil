@@ -611,7 +611,9 @@ onAuthStateChanged(auth, user => {
 async function initApp() {
   await loadCategories();
   startOrdersListener();
-  showPage('dashboard', document.querySelector('.nav-item.active'));
+  // Sayfa yenilenince hash'ten sayfayı yükle
+  const hash = window.location.hash.replace('#','') || 'dashboard';
+  showPage(hash, null);
 }
 
 // Siparişleri canlı dinle — yeni sipariş gelince dashboard güncellenir
@@ -678,6 +680,13 @@ async function loadOrders() {
 window.showPage = (page, el) => {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   if (el) el.classList.add('active');
+  else {
+    // Hash'ten geliniyorsa aktif nav item'ı bul ve işaretle
+    const navItem = [...document.querySelectorAll('.nav-item')].find(n => n.getAttribute('onclick')?.includes(`'${page}'`));
+    if (navItem) navItem.classList.add('active');
+  }
+  // URL hash'i güncelle
+  window.location.hash = page;
   const titles = {dashboard:'Dashboard',products:'Ürünler',categories:'Kategoriler',
     orders:'Siparişler',bundles:'Bundle Fiyatları',campaigns:'Kampanyalar',
     brandkit:'Brand Kit Ayarları',settings:'Ayarlar'};
@@ -958,7 +967,7 @@ window.deleteProduct = async (id, name) => {
 };
 
 // ── CLOUDINARY CONFIG ──
-const CLOUDINARY_CLOUD = 'dplns9Y0e';
+const CLOUDINARY_CLOUD = 'dplns9y0e';
 const CLOUDINARY_PRESET = 'CambelTekstil';
 
 async function uploadToCloudinary(file) {
