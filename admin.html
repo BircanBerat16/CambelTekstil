@@ -303,7 +303,7 @@ select.filter-select{
 /* ── RESPONSIVE ── */
 /* ── HAMBURGER ── */
 .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;background:none;border:none;flex-shrink:0;}
-.hamburger span{width:22px;height:1.5px;background:rgba(255,255,255,.7);display:block;transition:all .3s;}
+.hamburger span{width:22px;height:1.5px;background:var(--text);display:block;transition:all .3s;}
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:49;}
 .sidebar-overlay.open{display:block;}
 
@@ -880,23 +880,26 @@ function renderProductRows(prods) {
   return prods.map(p => {
     const cat = allCategories.find(c=>c.id===p.category);
     const img = p.images && p.images[0];
+    const priceHtml = p.salePrice
+      ? `<span style="color:var(--red);font-weight:600">₺${Number(p.salePrice).toLocaleString('tr-TR')}</span>`
+      : `<span style="font-weight:500">₺${Number(p.price||0).toLocaleString('tr-TR')}</span>`;
     return `<tr>
-      <td>${img ? `<img class="td-img" src="${img}" alt="${p.name}">` : '<div class="td-img-placeholder">👕</div>'}</td>
       <td>
-        <div style="font-weight:500">${p.name}</div>
-        <div style="font-size:.72rem;color:var(--mid)">${p.sku||''} ${p.brandKit?'<span class="badge badge-blue" style="font-size:.65rem">Brand Kit</span>':''} ${p.buybox?'<span class="badge badge-green" style="font-size:.65rem">Buybox</span>':''}</div>
-      </td>
-      <td>${cat?cat.name:p.category||'-'}</td>
-      <td>
-        ${p.salePrice ? `<span style="color:var(--red);font-weight:600">₺${Number(p.salePrice).toLocaleString('tr-TR')}</span> <span style="text-decoration:line-through;color:var(--light);font-size:.8rem">₺${Number(p.price).toLocaleString('tr-TR')}</span>` : `<span style="font-weight:500">₺${Number(p.price||0).toLocaleString('tr-TR')}</span>`}
-      </td>
-      <td><span class="badge ${p.stock>10?'badge-green':p.stock>0?'badge-warn':'badge-red'}">${p.stock||0}</span></td>
-      <td>${statusBadge(p.status)}</td>
-      <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-outline btn-sm" onclick="openEditProduct('${p.id}')">✏️</button>
-          <button class="btn btn-red btn-sm" onclick="deleteProduct('${p.id}','${p.name}')">🗑️</button>
+        <div style="display:flex;align-items:center;gap:10px">
+          ${img ? `<img class="td-img" src="${img}" alt="${p.name}">` : '<div class="td-img-placeholder">👕</div>'}
+          <div>
+            <div style="font-weight:600">${p.name}</div>
+            <div style="font-size:.72rem;color:var(--mid);margin-top:2px">${p.sku||''} ${p.brandKit?'<span class="badge badge-blue" style="font-size:.65rem">Brand Kit</span>':''} ${p.buybox?'<span class="badge badge-green" style="font-size:.65rem">Buybox</span>':''}</div>
+          </div>
         </div>
+      </td>
+      <td data-label="Kategori">${cat?cat.name:p.category||'-'}</td>
+      <td data-label="Fiyat">${priceHtml}</td>
+      <td data-label="Stok"><span class="badge ${p.stock>10?'badge-green':p.stock>0?'badge-warn':'badge-red'}">${p.stock||0}</span></td>
+      <td data-label="Durum">${statusBadge(p.status)}</td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="openEditProduct('${p.id}')">✏️ Düzenle</button>
+        <button class="btn btn-red btn-sm" onclick="deleteProduct('${p.id}','${p.name}')">🗑️ Sil</button>
       </td>
     </tr>`;
   }).join('');
@@ -1202,17 +1205,22 @@ function renderOrderRows(ords) {
   if (!ords.length) return `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-text">Henüz sipariş yok</div></div></td></tr>`;
   return ords.map(o => `
     <tr>
-      <td><strong>#${(o.orderNo||o.id.slice(-6)).toUpperCase()}</strong></td>
-      <td style="font-size:.8rem;color:var(--mid)">${o.createdAt?.toDate ? o.createdAt.toDate().toLocaleDateString('tr-TR') : '-'}</td>
       <td>
-        <div style="font-weight:500">${o.customerName||'-'}</div>
-        <div style="font-size:.75rem;color:var(--mid)">${o.customerEmail||''}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:4px">
+          <strong>#${(o.orderNo||o.id.slice(-6)).toUpperCase()}</strong>
+          <span style="font-size:.75rem;color:var(--mid)">${o.createdAt?.toDate ? o.createdAt.toDate().toLocaleDateString('tr-TR') : '-'}</span>
+        </div>
       </td>
-      <td style="font-size:.8rem;color:var(--mid)">${(o.items||[]).length} kalem</td>
-      <td><strong>₺${(o.total||0).toLocaleString('tr-TR')}</strong></td>
-      <td>${o.paymentStatus==='paid'?'<span class="badge badge-green">Ödendi</span>':'<span class="badge badge-warn">Bekliyor</span>'}</td>
-      <td>${statusBadge(o.status)}</td>
-      <td><button class="btn btn-outline btn-sm" onclick="openOrder('${o.id}')">Detay</button></td>
+      <td data-label="Müşteri">
+        <div>
+          <div style="font-weight:500">${o.customerName||'-'}</div>
+          <div style="font-size:.73rem;color:var(--mid)">${o.customerEmail||''}</div>
+        </div>
+      </td>
+      <td data-label="Tutar"><strong>₺${(o.total||0).toLocaleString('tr-TR')}</strong></td>
+      <td data-label="Ödeme">${o.paymentStatus==='paid'?'<span class="badge badge-green">Ödendi</span>':'<span class="badge badge-warn">Bekliyor</span>'}</td>
+      <td data-label="Durum">${statusBadge(o.status)}</td>
+      <td><button class="btn btn-outline btn-sm" style="width:100%" onclick="openOrder('${o.id}')">Detayı Gör</button></td>
     </tr>`).join('');
 }
 
