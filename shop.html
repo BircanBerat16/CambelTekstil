@@ -506,9 +506,45 @@ async function init() {
   await Promise.all([loadSettings(), loadCategories(), loadProducts(), loadBundles(), loadCampaigns()]);
   renderSidebar();
   renderNav();
+  // Hash'ten kategori filtresi geri yükle
+  const hash = window.location.hash.replace('#','');
+  if (hash === 'buybox') {
+    currentFilter = {category:'__buybox__', subcategory:''};
+  } else if (hash && hash !== 'all') {
+    const parts = hash.split('-');
+    if (parts.length >= 2) {
+      // subcat olabilir — önce tam eşleşme dene
+      const catId = parts[0];
+      const subId = parts.slice(1).join('-');
+      const cat = allCategories.find(c=>c.id===catId);
+      const sub = cat?.subcategories?.find(s=>s.id===subId);
+      if (sub) {
+        currentFilter = {category:catId, subcategory:subId};
+      } else {
+        currentFilter = {category:hash, subcategory:''};
+      }
+    } else {
+      currentFilter = {category:hash, subcategory:''};
+    }
+  }
   applyFilters();
   renderCart();
   renderCampaignBanner();
+  // Sidebar'da aktif kategoriyi göster
+  setTimeout(() => {
+    const {category, subcategory} = currentFilter;
+    if (subcategory) {
+      const el = document.getElementById('subcat-'+subcategory);
+      if (el) { el.classList.add('active'); const parent = document.getElementById('subcats-'+category); if(parent) parent.classList.add('open'); const catEl = document.getElementById('cat-'+category); if(catEl) catEl.classList.add('open'); }
+    } else if (category) {
+      document.getElementById('cat-'+category)?.classList.add('active');
+    } else {
+      document.getElementById('cat-all')?.classList.add('active');
+    }
+    const cat = allCategories.find(c=>c.id===currentFilter.category);
+    const sub = cat?.subcategories?.find(s=>s.id===currentFilter.subcategory);
+    document.getElementById('shopTopbarTitle').textContent = sub?.name || cat?.name || 'Tüm Ürünler';
+  }, 100);
 }
 
 async function loadSettings() {
@@ -641,7 +677,11 @@ function renderSidebar() {
   const navLinks = document.getElementById('navLinks');
   const mobileNav = document.getElementById('mobileNav');
 
-  let html = `<div class="sidebar-cat active" id="cat-all" onclick="filterCat('','',this)">Tüm Ürünler</div>`;
+  let html = `
+    <div class="sidebar-cat active" id="cat-all" onclick="filterCat('','',this)">Tüm Ürünler</div>
+    <div class="sidebar-cat" id="cat-buybox" onclick="filterBuybox(this)" style="color:#5C7A5C;font-weight:600">
+      <span>🏆 Trendyol Buybox</span>
+    </div>`;
   let navHtml = '';
   let mobileHtml = '';
 
@@ -686,6 +726,15 @@ window.toggleSidebarCat = (catId, el) => {
   }
   // Kategoriyi filtrele
   filterCat(catId, '', el);
+};
+
+window.filterBuybox = (el) => {
+  currentFilter = {category:'__buybox__', subcategory:''};
+  document.querySelectorAll('.sidebar-cat,.sidebar-subcat').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('shopTopbarTitle').textContent = '🏆 Trendyol Buybox Ürünleri';
+  window.location.hash = 'buybox';
+  applyFilters();
 };
 
 window.filterCat = (catId, subId, el) => {
@@ -801,7 +850,13 @@ function renderPmodal() {
       <div class="pmodal-label">Renk</div>
       <div class="color-options">${p.colors.map(co=>`<div class="color-opt${co===selectedColor?' sel':''}" onclick="selectColor('${co}',this)">${co}</div>`).join('')}</div>` : ''}
     <div style="padding-top:1rem">
-      ${p.buybox ? '<div style="display:inline-flex;align-items:center;gap:.4rem;background:var(--green);color:#fff;padding:.3rem .9rem;border-radius:50px;font-size:.72rem;font-weight:500;margin-bottom:.8rem">✓ Trendyol Buybox Avantajı</div><br>' : ''}
+      ${p.buybox ? `<div style="background:#EAF5EF;border:1px solid #5C7A5C;border-radius:10px;padding:12px 14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-size:1.1rem">🏆</span>
+          <span style="font-weight:700;font-size:.85rem;color:#2D7A50">Trendyol Buybox Ürünü</span>
+        </div>
+        <div style="font-size:.78rem;color:#3d8a60;line-height:1.6">Bu ürün Trendyol'da <strong>satış geçmişine</strong> ve <strong>gerçek yorumlara</strong> sahip. Markını ekle, buybox avantajıyla satışa başla.</div>
+      </div>` : ''}
       ${p.brandKit ? '<div style="display:inline-flex;align-items:center;gap:.4rem;background:var(--charcoal);color:#fff;padding:.3rem .9rem;border-radius:50px;font-size:.72rem;font-weight:500;margin-bottom:.8rem;margin-left:.4rem">✏️ Brand Kit Uyumlu</div>' : ''}
       ${(() => {
         const bundle = allBundles[p.id];
