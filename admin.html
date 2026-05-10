@@ -384,7 +384,10 @@ select.filter-select{
     <div class="nav-item" onclick="showPage('products',this)"><span class="icon">👕</span> Ürünler</div>
     <div class="nav-item" onclick="showPage('categories',this)"><span class="icon">📁</span> Kategoriler</div>
     <div class="nav-section">Satış</div>
-    <div class="nav-item" onclick="showPage('orders',this)"><span class="icon">📦</span> Siparişler</div>
+    <div class="nav-item" onclick="showPage('orders',this)" style="justify-content:space-between">
+      <span><span class="icon">📦</span> Siparişler</span>
+      <span id="pendingBadge" style="display:none;background:#C0392B;color:#fff;border-radius:50%;width:18px;height:18px;font-size:.65rem;align-items:center;justify-content:center;font-weight:600"></span>
+    </div>
     <div class="nav-item" onclick="showPage('bundles',this)"><span class="icon">📦</span> Bundle</div>
     <div class="nav-item" onclick="showPage('campaigns',this)"><span class="icon">🏷️</span> Kampanyalar</div>
     <div class="nav-item" onclick="showPage('brandkit',this)"><span class="icon">✏️</span> Brand Kit</div>
@@ -607,7 +610,28 @@ onAuthStateChanged(auth, user => {
 // ── INIT ──
 async function initApp() {
   await loadCategories();
+  startOrdersListener();
   showPage('dashboard', document.querySelector('.nav-item.active'));
+}
+
+// Siparişleri canlı dinle — yeni sipariş gelince dashboard güncellenir
+function startOrdersListener() {
+  const q = query(collection(db,'orders'), orderBy('createdAt','desc'));
+  onSnapshot(q, snap => {
+    allOrders = snap.docs.map(d => ({id:d.id,...d.data()}));
+    // Aktif sayfa dashboard veya orders ise güncelle
+    const title = document.getElementById('pageTitle').textContent;
+    if (title === 'Dashboard') renderDashboard();
+    if (title === 'Siparişler') {
+      const tbody = document.getElementById('ordersTbody');
+      if (tbody) tbody.innerHTML = renderOrderRows(allOrders);
+    }
+    // Bekleyen sipariş rozetini nav'da göster
+    const pending = allOrders.filter(o=>o.status==='pending').length;
+    const badge = document.getElementById('pendingBadge');
+    if (badge) badge.textContent = pending || '';
+    if (badge) badge.style.display = pending ? 'flex' : 'none';
+  });
 }
 
 // ── CATEGORIES ──
