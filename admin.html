@@ -561,7 +561,10 @@ select.filter-select{
         </div>
         <div class="form-group-m">
           <label class="form-label-m">SKU / Stok Kodu</label>
-          <input type="text" class="form-input-m" id="pSku" placeholder="CBL-001">
+          <div style="display:flex;gap:6px">
+            <input type="text" class="form-input-m" id="pSku" placeholder="CBL-001" style="flex:1">
+            <button type="button" class="btn btn-outline btn-sm" onclick="generateSku()" style="white-space:nowrap;flex-shrink:0">⚡ Oluştur</button>
+          </div>
         </div>
       </div>
       <div id="singleSizesField">
@@ -993,10 +996,20 @@ window.filterProducts = () => {
   document.getElementById('productsTbody').innerHTML = renderProductRows(filtered);
 };
 
+window.generateSku = () => {
+  const name = document.getElementById('pName').value.trim();
+  const cat = document.getElementById('pCategory').value;
+  const catCode = cat ? cat.slice(0,3).toUpperCase() : 'GEN';
+  const nameCode = name ? name.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,3) : 'PRD';
+  const rand = Math.floor(Math.random()*900+100);
+  document.getElementById('pSku').value = `CBL-${catCode}-${nameCode}${rand}`;
+};
+
 window.toggleSerialFields = () => {
   const isSerial = document.getElementById('pSaleType').value === 'serial';
   document.getElementById('serialFields').style.display = isSerial ? 'block' : 'none';
   document.getElementById('singleFields').style.display = isSerial ? 'none' : 'block';
+  document.getElementById('singleSizesField').style.display = isSerial ? 'none' : 'block';
 };
 
 window.calcUnitPrice = () => {
