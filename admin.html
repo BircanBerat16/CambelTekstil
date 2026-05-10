@@ -302,7 +302,7 @@ select.filter-select{
 
 /* ── RESPONSIVE ── */
 /* ── HAMBURGER ── */
-.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;background:none;border:none;}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;background:none;border:none;flex-shrink:0;}
 .hamburger span{width:22px;height:1.5px;background:rgba(255,255,255,.7);display:block;transition:all .3s;}
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:49;}
 .sidebar-overlay.open{display:block;}
@@ -312,7 +312,7 @@ select.filter-select{
   .sidebar.open{transform:translateX(0);}
   .main{margin-left:0;}
   .form-row{grid-template-columns:1fr;}
-  .hamburger{display:flex !important;}
+  .hamburger{display:flex !important;flex-direction:column !important;}
   .topbar{padding:0 14px;}
   .content{padding:12px;}
   .modal{max-width:100%;border-radius:12px;}
@@ -443,7 +443,7 @@ select.filter-select{
 <main class="main" id="mainArea" style="display:none;">
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:12px">
-      <button class="hamburger" onclick="toggleSidebar()" id="hamburgerBtn">
+      <button class="hamburger" onclick="toggleSidebar()" id="hamburgerBtn" style="display:none;">
         <span></span><span></span><span></span>
       </button>
       <div class="topbar-title" id="pageTitle">Dashboard</div>
@@ -1643,7 +1643,15 @@ window.closeSidebar = () => {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebarOverlay').classList.remove('open');
 };
-// Hamburger CSS ile yönetiliyor
+// Hamburger göster/gizle
+function updateHamburger() {
+  const btn = document.getElementById('hamburgerBtn');
+  if (!btn) return;
+  btn.style.display = window.innerWidth <= 900 ? 'flex' : 'none';
+  btn.style.flexDirection = 'column';
+}
+updateHamburger();
+window.addEventListener('resize', updateHamburger);
 
 // Sayfa değişince sidebar'ı kapat (mobile)
 const _origShowPage = window.showPage;
