@@ -327,9 +327,13 @@ footer{background:var(--charcoal);color:rgba(250,248,245,.5);padding:3rem 8vw;di
   <a href="index.html" class="nav-logo">Cambel<span>.</span></a>
   <ul class="nav-links" id="navLinks"></ul>
   <div class="nav-right">
-    <button class="cart-btn" onclick="toggleCart()">
-      🛒 Sepet <span class="cart-count" id="cartCount">0</span>
-    </button>
+    <div style="display:flex;align-items:center;gap:.6rem">
+      <a href="account.html" id="shopLoginBtn" style="display:flex;align-items:center;gap:.4rem;padding:.5rem 1.1rem;border-radius:50px;border:1px solid var(--border);background:transparent;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;color:var(--mid);text-decoration:none">👤 Giriş Yap</a>
+      <a href="account.html" id="shopAccountBtn" style="display:none;align-items:center;gap:.4rem;padding:.5rem 1.1rem;border-radius:50px;border:1px solid var(--charcoal);background:var(--charcoal);font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;color:#fff;text-decoration:none"></a>
+      <button class="cart-btn" onclick="toggleCart()">
+        🛒 Sepet <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </div>
   </div>
   <div class="hamburger" onclick="toggleMobileNav()"><span></span><span></span><span></span></div>
 </nav>
