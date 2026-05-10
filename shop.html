@@ -1013,12 +1013,19 @@ function renderPmodal() {
           <div style="flex:1">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
               <span style="font-size:.88rem;font-weight:600;color:var(--mid)">Cambel Uygulasın</span>
+              ${p.saleType==='serial' && p.serialSizes?.length ? `<span style="background:#EBF2FF;color:#2C5282;font-size:.65rem;font-weight:600;padding:2px 7px;border-radius:20px">${p.serialSizes.length} beden × fiyat</span>` : ''}
             </div>
             <div style="font-size:.78rem;color:var(--mid);line-height:1.6;margin-bottom:8px">Ekibimiz sizinle iletişime geçer, tasarımı birlikte onaylarsınız.</div>
             ${p.customizations.map(id => {
               const labels = {'ense-baskisi':'Ense Baskısı','yikama-talimat':'Yıkama Talimatı','sallanti-kart':'Sallantı Kart','ambalaj':'Baskılı Ambalaj','sticker':'Marka Stickeri','barkod':'Barkod Etiketi'};
-              const price = (p.customizationPrices||{})[id];
-              return price ? `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:.78rem;color:var(--mid)"><span>${labels[id]||id}</span><span style="font-weight:600;color:var(--charcoal)">+₺${Number(price).toLocaleString('tr-TR')}</span></div>` : '';
+              const unitPrice = (p.customizationPrices||{})[id];
+              if (!unitPrice) return '';
+              const qty = (p.saleType==='serial' && p.serialSizes?.length) ? p.serialSizes.length : 1;
+              const total = unitPrice * qty;
+              return `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:.78rem;color:var(--mid)">
+                <span>${labels[id]||id}${qty>1?' × '+qty+' beden':''}</span>
+                <span style="font-weight:600;color:var(--charcoal)">+₺${Number(total).toLocaleString('tr-TR')}</span>
+              </div>`;
             }).join('')}
             <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;display:flex;gap:12px;flex-wrap:wrap">
               <span style="font-size:.75rem;color:var(--red);font-weight:600">Toplam: +₺${p.cambelFee}</span>
@@ -1099,7 +1106,11 @@ function addToCart(product, size, color, customization) {
   const custKey = customization || 'none';
   const key = `${product.id}_${size}_${color}_${custKey}`;
   const existing = cart.find(i=>i.key===key);
-  const cambelExtra = (customization === 'cambel' && product.cambelFee) ? product.cambelFee : 0;
+  const cambelExtra = (customization === 'cambel' && product.cambelFee)
+    ? (product.saleType === 'serial' && product.serialSizes?.length
+        ? product.cambelFee  // zaten beden sayısı × birim fiyat olarak admin'de girilmiş
+        : product.cambelFee)
+    : 0;
   // Seri ürünse seri fiyatını kullan
   const basePrice = product.saleType === 'serial'
     ? (product.serialSalePrice || product.serialPrice || product.price)
