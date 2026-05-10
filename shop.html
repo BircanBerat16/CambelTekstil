@@ -489,12 +489,15 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// Auth durumunu dinle
-onAuthStateChanged(auth, user => {
-  currentMember = user && user.emailVerified ? user : null;
-  updateAuthUI();
-  // Ürünler yüklendiyse fiyatları güncelle
-  if (allProducts.length) renderProducts();
+// Auth durumunu dinle — init'ten önce auth state'i çöz
+let authResolved = false;
+const authReady = new Promise(resolve => {
+  onAuthStateChanged(auth, user => {
+    currentMember = user && user.emailVerified ? user : null;
+    updateAuthUI();
+    if (!authResolved) { authResolved = true; resolve(); }
+    else if (allProducts.length) renderProducts();
+  });
 });
 
 function updateAuthUI() {
@@ -528,7 +531,8 @@ let freeShippingLimit = 500;
 
 // ── INIT ──
 async function init() {
-  await Promise.all([loadSettings(), loadCategories(), loadProducts(), loadBundles(), loadCampaigns()]);
+  // Auth state ve veri yüklemesini paralel bekle
+  await Promise.all([authReady, loadSettings(), loadCategories(), loadProducts(), loadBundles(), loadCampaigns()]);
   renderSidebar();
   // Hash'ten kategori filtresi geri yükle
   const hash = window.location.hash.replace('#','');
