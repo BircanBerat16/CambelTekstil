@@ -391,6 +391,8 @@ select.filter-select{
     <div class="nav-item" onclick="showPage('bundles',this)"><span class="icon">📦</span> Bundle</div>
     <div class="nav-item" onclick="showPage('campaigns',this)"><span class="icon">🏷️</span> Kampanyalar</div>
     <div class="nav-item" onclick="showPage('brandkit',this)"><span class="icon">✏️</span> Brand Kit</div>
+    <div class="nav-section">Üyeler</div>
+    <div class="nav-item" onclick="showPage('members',this)"><span class="icon">👥</span> Üyeler</div>
     <div class="nav-section">Sistem</div>
     <div class="nav-item" onclick="showPage('settings',this)"><span class="icon">⚙️</span> Ayarlar</div>
   </nav>
@@ -711,7 +713,7 @@ window.showPage = (page, el) => {
   // URL hash'i güncelle
   window.location.hash = page;
   const titles = {dashboard:'Dashboard',products:'Ürünler',categories:'Kategoriler',
-    orders:'Siparişler',bundles:'Bundle Fiyatları',campaigns:'Kampanyalar',
+    orders:'Siparişler',members:'Üye Listesi',bundles:'Bundle Fiyatları',campaigns:'Kampanyalar',
     brandkit:'Brand Kit Ayarları',settings:'Ayarlar'};
   document.getElementById('pageTitle').textContent = titles[page] || page;
   const c = document.getElementById('pageContent');
@@ -721,6 +723,7 @@ window.showPage = (page, el) => {
     case 'products':  renderProducts();  break;
     case 'categories':renderCategories();break;
     case 'orders':    renderOrders();    break;
+    case 'members':   renderMembers();   break;
     case 'bundles':   renderBundles();   break;
     case 'campaigns': renderCampaigns(); break;
     case 'brandkit':  renderBrandKit();  break;
@@ -1254,6 +1257,36 @@ window.filterOrdersByStatus = (s) => {
 };
 
 // ── BRAND KIT SETTINGS ──
+
+// ── MEMBERS ──
+async function renderMembers() {
+  const snap = await getDocs(collection(db,'users'));
+  const members = snap.docs.map(d=>({id:d.id,...d.data()}));
+  const c = document.getElementById('pageContent');
+  c.innerHTML = `
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Üye Listesi (${members.length})</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Marka</th><th>Ad Soyad</th><th>E-posta</th><th>Telefon</th><th>Kayıt Tarihi</th></tr></thead>
+          <tbody>
+            ${!members.length
+              ? '<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-text">Henüz üye yok</div></div></td></tr>'
+              : members.map(m => `
+                <tr>
+                  <td><strong>${m.brandName||'-'}</strong></td>
+                  <td>${m.name||'-'}</td>
+                  <td>${m.email||'-'}</td>
+                  <td>${m.phone||'-'}</td>
+                  <td style="font-size:.78rem;color:var(--mid)">${m.createdAt?.toDate ? m.createdAt.toDate().toLocaleDateString('tr-TR') : '-'}</td>
+                </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
 
 // ── BUNDLES ──
 async function renderBundles() {
