@@ -633,14 +633,24 @@ select.filter-select{
       </div>
       <div class="form-group-m">
         <label class="form-label-m">Kişiselleştirme Seçenekleri</label>
-        <div class="form-hint" style="margin-bottom:10px">Bu ürüne uygulanabilecek kişiselleştirmeleri seç.</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:.83rem"><input type="checkbox" id="cust_ense-baskisi" style="width:15px;height:15px"> Ense Baskısı</label>
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:.83rem"><input type="checkbox" id="cust_yikama-talimat" style="width:15px;height:15px"> Yıkama Talimatı</label>
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:.83rem"><input type="checkbox" id="cust_sallanti-kart" style="width:15px;height:15px"> Sallantı Kart</label>
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:.83rem"><input type="checkbox" id="cust_ambalaj" style="width:15px;height:15px"> Baskılı Ambalaj</label>
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:.83rem"><input type="checkbox" id="cust_sticker" style="width:15px;height:15px"> Marka Stickeri</label>
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:.83rem"><input type="checkbox" id="cust_barkod" style="width:15px;height:15px"> Barkod Etiketi</label>
+        <div class="form-hint" style="margin-bottom:10px">Aktif olanları işaretle ve ücretini gir. Boş = ücretsiz.</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${[
+            ['ense-baskisi','Ense Baskısı'],
+            ['yikama-talimat','Yıkama Talimatı'],
+            ['sallanti-kart','Sallantı Kart'],
+            ['ambalaj','Baskılı Ambalaj'],
+            ['sticker','Marka Stickeri'],
+            ['barkod','Barkod Etiketi']
+          ].map(([id,label]) => `
+            <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+              <input type="checkbox" id="cust_${id}" style="width:15px;height:15px;flex-shrink:0">
+              <span style="font-size:.83rem;flex:1">${label}</span>
+              <div style="display:flex;align-items:center;gap:4px">
+                <span style="font-size:.78rem;color:var(--mid)">₺</span>
+                <input type="number" id="cust_price_${id}" class="form-input-m" placeholder="Fiyat" style="width:80px;padding:5px 8px;font-size:.82rem">
+              </div>
+            </div>`).join('')}
         </div>
       </div>
       <div class="form-row">
@@ -1042,6 +1052,8 @@ window.openAddProduct = () => {
   ['ense-baskisi','yikama-talimat','sallanti-kart','ambalaj','sticker','barkod'].forEach(id => {
     const el = document.getElementById('cust_'+id);
     if (el) el.checked = false;
+    const pr = document.getElementById('cust_price_'+id);
+    if (pr) pr.value = '';
   });
   pendingImages = [];
   document.getElementById('imgPreviews').innerHTML = '';
@@ -1081,6 +1093,8 @@ window.openEditProduct = async (id) => {
   ['ense-baskisi','yikama-talimat','sallanti-kart','ambalaj','sticker','barkod'].forEach(id => {
     const el = document.getElementById('cust_'+id);
     if (el) el.checked = (p.customizations||[]).includes(id);
+    const pr = document.getElementById('cust_price_'+id);
+    if (pr) pr.value = (p.customizationPrices||{})[id] || '';
   });
   pendingImages = (p.images||[]).map(url => ({url, existing:true}));
   document.getElementById('imgPreviews').innerHTML = pendingImages.map((im,i) =>
@@ -1154,6 +1168,10 @@ window.saveProduct = async () => {
       const el = document.getElementById('cust_'+id);
       return el && el.checked;
     }),
+    customizationPrices: Object.fromEntries(['ense-baskisi','yikama-talimat','sallanti-kart','ambalaj','sticker','barkod'].map(id => {
+      const pr = document.getElementById('cust_price_'+id);
+      return [id, pr && pr.value ? parseFloat(pr.value) : null];
+    }).filter(([,v]) => v !== null)),
     cambelFee: parseFloat(document.getElementById('pCambelFee').value)||null,
     cambelDays: parseInt(document.getElementById('pCambelDays').value)||null,
     images: uploadedUrls,
