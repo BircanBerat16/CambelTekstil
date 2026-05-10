@@ -498,6 +498,13 @@ select.filter-select{
     <div class="modal-body">
       <input type="hidden" id="editProductId">
       <div class="form-group-m">
+        <label class="form-label-m">Satış Tipi *</label>
+        <select class="form-input-m" id="pSaleType" onchange="toggleSerialFields()">
+          <option value="single">Tekli — Adet bazlı satış</option>
+          <option value="serial">Serili — Paket halinde satış</option>
+        </select>
+      </div>
+      <div class="form-group-m">
         <label class="form-label-m">Ürün Adı *</label>
         <input type="text" class="form-input-m" id="pName" placeholder="Örn: Organik Pamuk Body Set">
       </div>
@@ -523,13 +530,7 @@ select.filter-select{
           </div>
         </div>
       </div>
-      <div class="form-group-m">
-        <label class="form-label-m">Satış Tipi</label>
-        <select class="form-input-m" id="pSaleType" onchange="toggleSerialFields()">
-          <option value="single">Tekli — Adet bazlı satış</option>
-          <option value="serial">Serili — Paket halinde satış</option>
-        </select>
-      </div>
+
       <div id="serialFields" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:4px">
         <div class="form-group-m">
           <label class="form-label-m">Paket İçeriği (Bedenler)</label>
@@ -995,6 +996,7 @@ window.filterProducts = () => {
 window.toggleSerialFields = () => {
   const isSerial = document.getElementById('pSaleType').value === 'serial';
   document.getElementById('serialFields').style.display = isSerial ? 'block' : 'none';
+  document.getElementById('singleFields').style.display = isSerial ? 'none' : 'block';
 };
 
 window.calcUnitPrice = () => {
