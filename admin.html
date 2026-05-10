@@ -677,7 +677,7 @@ select.filter-select{
         <div class="form-group-m">
           <label class="form-label-m">Cambel Uygulasın — Ek Ücret (₺)</label>
           <input type="number" class="form-input-m" id="pCambelFee" placeholder="Örn: 150">
-          <div class="form-hint">Boş = bu ürün için seçenek görünmez</div>
+          <div class="form-hint" id="cambelFeeHint">Boş = bu ürün için seçenek görünmez</div>
         </div>
         <div class="form-group-m">
           <label class="form-label-m">Ek Süre (İş Günü)</label>
@@ -1047,6 +1047,20 @@ window.calcUnitPrice = () => {
   const total = parseFloat(document.getElementById('pSerialPrice').value);
   if (sizes.length && total) {
     document.getElementById('pUnitPrice').value = (total / sizes.length).toFixed(2);
+  }
+  // Serili üründe cambelFee'yi beden sayısına göre güncelle
+  updateCambelFeeHint();
+};
+
+window.updateCambelFeeHint = () => {
+  const isSerial = document.getElementById('pSaleType').value === 'serial';
+  const sizes = document.getElementById('pSerialSizes').value.split(',').filter(s=>s.trim());
+  const hint = document.getElementById('cambelFeeHint');
+  if (!hint) return;
+  if (isSerial && sizes.length > 0) {
+    hint.textContent = `Serili ürün: ${sizes.length} beden × birim fiyat = toplam. Admin birim fiyat girebilir, sistem otomatik çarpar.`;
+  } else {
+    hint.textContent = 'Boş = bu ürün için seçenek görünmez';
   }
 };
 
