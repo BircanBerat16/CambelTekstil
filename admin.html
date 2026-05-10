@@ -635,22 +635,42 @@ select.filter-select{
         <label class="form-label-m">Kişiselleştirme Seçenekleri</label>
         <div class="form-hint" style="margin-bottom:10px">Aktif olanları işaretle ve ücretini gir. Boş = ücretsiz.</div>
         <div style="display:flex;flex-direction:column;gap:6px">
-          ${[
-            ['ense-baskisi','Ense Baskısı'],
-            ['yikama-talimat','Yıkama Talimatı'],
-            ['sallanti-kart','Sallantı Kart'],
-            ['ambalaj','Baskılı Ambalaj'],
-            ['sticker','Marka Stickeri'],
-            ['barkod','Barkod Etiketi']
-          ].map(([id,label]) => `
-            <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
-              <input type="checkbox" id="cust_${id}" style="width:15px;height:15px;flex-shrink:0">
-              <span style="font-size:.83rem;flex:1">${label}</span>
-              <div style="display:flex;align-items:center;gap:4px">
-                <span style="font-size:.78rem;color:var(--mid)">₺</span>
-                <input type="number" id="cust_price_${id}" class="form-input-m" placeholder="Fiyat" style="width:80px;padding:5px 8px;font-size:.82rem">
-              </div>
-            </div>`).join('')}
+          <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+            <input type="checkbox" id="cust_ense-baskisi" style="width:15px;height:15px;flex-shrink:0">
+            <span style="font-size:.83rem;flex:1">Ense Baskısı</span>
+            <span style="font-size:.78rem;color:var(--mid)">₺</span>
+            <input type="number" id="cust_price_ense-baskisi" class="form-input-m" placeholder="Fiyat" style="width:80px;padding:5px 8px;font-size:.82rem">
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+            <input type="checkbox" id="cust_yikama-talimat" style="width:15px;height:15px;flex-shrink:0">
+            <span style="font-size:.83rem;flex:1">Yıkama Talimatı</span>
+            <span style="font-size:.78rem;color:var(--mid)">₺</span>
+            <input type="number" id="cust_price_yikama-talimat" class="form-input-m" placeholder="Fiyat" style="width:80px;padding:5px 8px;font-size:.82rem">
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+            <input type="checkbox" id="cust_sallanti-kart" style="width:15px;height:15px;flex-shrink:0">
+            <span style="font-size:.83rem;flex:1">Sallantı Kart</span>
+            <span style="font-size:.78rem;color:var(--mid)">₺</span>
+            <input type="number" id="cust_price_sallanti-kart" class="form-input-m" placeholder="Fiyat" style="width:80px;padding:5px 8px;font-size:.82rem">
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+            <input type="checkbox" id="cust_ambalaj" style="width:15px;height:15px;flex-shrink:0">
+            <span style="font-size:.83rem;flex:1">Baskılı Ambalaj</span>
+            <span style="font-size:.78rem;color:var(--mid)">₺</span>
+            <input type="number" id="cust_price_ambalaj" class="form-input-m" placeholder="Fiyat" style="width:80px;padding:5px 8px;font-size:.82rem">
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+            <input type="checkbox" id="cust_sticker" style="width:15px;height:15px;flex-shrink:0">
+            <span style="font-size:.83rem;flex:1">Marka Stickeri</span>
+            <span style="font-size:.78rem;color:var(--mid)">₺</span>
+            <input type="number" id="cust_price_sticker" class="form-input-m" placeholder="Fiyat" style="width:80px;padding:5px 8px;font-size:.82rem">
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+            <input type="checkbox" id="cust_barkod" style="width:15px;height:15px;flex-shrink:0">
+            <span style="font-size:.83rem;flex:1">Barkod Etiketi</span>
+            <span style="font-size:.78rem;color:var(--mid)">₺</span>
+            <input type="number" id="cust_price_barkod" class="form-input-m" placeholder="Fiyat" style="width:80px;padding:5px 8px;font-size:.82rem">
+          </div>
         </div>
       </div>
       <div class="form-row">
