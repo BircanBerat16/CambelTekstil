@@ -311,22 +311,34 @@ select.filter-select{
   .sidebar{transform:translateX(-100%);z-index:50;}
   .sidebar.open{transform:translateX(0);}
   .main{margin-left:0;}
-  .stats-grid{grid-template-columns:1fr 1fr;}
   .form-row{grid-template-columns:1fr;}
   .hamburger{display:flex;}
-  .topbar{padding:0 16px;}
-  .content{padding:16px;}
-  .modal{max-width:100%;margin:0;border-radius:12px;}
-  .co-body{grid-template-columns:1fr;}
-  .panel-body{padding:14px;}
-  table th,table td{padding:8px;}
-  .stats-grid{grid-template-columns:1fr 1fr;gap:10px;}
+  .topbar{padding:0 14px;}
+  .content{padding:14px;}
+  .modal{max-width:100%;border-radius:12px;}
+  .panel-body{padding:12px;}
+  table th,table td{padding:7px 8px;font-size:.78rem;}
+  .stats-grid{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-bottom:16px;
+  }
+  .stat-card{padding:12px 14px;}
+  .stat-card-num{font-size:1.5rem;}
+  .stat-card-label{font-size:.65rem;}
+  .stat-card-sub{font-size:.68rem;}
+  .stat-card-icon{font-size:1.1rem;}
+  .btn{padding:6px 12px;font-size:.78rem;}
+  .btn-sm{padding:4px 8px;font-size:.7rem;}
 }
 
 @media(max-width:480px){
-  .stats-grid{grid-template-columns:1fr;}
+  .stats-grid{grid-template-columns:1fr 1fr;gap:6px;}
+  .stat-card{padding:10px 12px;}
+  .stat-card-num{font-size:1.3rem;}
   .filter-bar{flex-direction:column;}
-  .filter-bar .search-input{width:100%;}
+  .filter-bar .search-input,.filter-bar .filter-select{width:100%;}
+  .topbar-title{font-size:.88rem;}
 }
 
 /* ── TOAST ── */
@@ -431,7 +443,7 @@ select.filter-select{
 <main class="main" id="mainArea" style="display:none;">
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:12px">
-      <button class="hamburger" onclick="toggleSidebar()" id="hamburgerBtn" style="display:none">
+      <button class="hamburger" onclick="toggleSidebar()" id="hamburgerBtn">
         <span></span><span></span><span></span>
       </button>
       <div class="topbar-title" id="pageTitle">Dashboard</div>
@@ -1631,13 +1643,7 @@ window.closeSidebar = () => {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebarOverlay').classList.remove('open');
 };
-// Hamburger'ı mobile'da göster
-function checkMobile() {
-  const hbg = document.getElementById('hamburgerBtn');
-  if (hbg) hbg.style.display = window.innerWidth <= 900 ? 'flex' : 'none';
-}
-window.addEventListener('resize', checkMobile);
-checkMobile();
+// Hamburger CSS ile yönetiliyor
 
 // Sayfa değişince sidebar'ı kapat (mobile)
 const _origShowPage = window.showPage;
