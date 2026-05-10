@@ -511,14 +511,16 @@ select.filter-select{
           <select class="form-input-m" id="pSubcategory"></select>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group-m">
-          <label class="form-label-m">Fiyat (₺) *</label>
-          <input type="number" class="form-input-m" id="pPrice" placeholder="0.00">
-        </div>
-        <div class="form-group-m">
-          <label class="form-label-m">İndirimli Fiyat (₺)</label>
-          <input type="number" class="form-input-m" id="pSalePrice" placeholder="Opsiyonel">
+      <div id="singleFields">
+        <div class="form-row">
+          <div class="form-group-m">
+            <label class="form-label-m">Fiyat (₺) *</label>
+            <input type="number" class="form-input-m" id="pPrice" placeholder="0.00">
+          </div>
+          <div class="form-group-m">
+            <label class="form-label-m">İndirimli Fiyat (₺)</label>
+            <input type="number" class="form-input-m" id="pSalePrice" placeholder="Opsiyonel">
+          </div>
         </div>
       </div>
       <div class="form-group-m">
@@ -561,10 +563,12 @@ select.filter-select{
           <input type="text" class="form-input-m" id="pSku" placeholder="CBL-001">
         </div>
       </div>
-      <div class="form-group-m">
-        <label class="form-label-m">Beden Seçenekleri</label>
-        <input type="text" class="form-input-m" id="pSizes" placeholder="0-3ay, 3-6ay, 6-9ay, 9-12ay">
-        <div class="form-hint">Virgülle ayır</div>
+      <div id="singleSizesField">
+        <div class="form-group-m">
+          <label class="form-label-m">Beden Seçenekleri</label>
+          <input type="text" class="form-input-m" id="pSizes" placeholder="0-3ay, 3-6ay, 6-9ay, 9-12ay">
+          <div class="form-hint">Virgülle ayır</div>
+        </div>
       </div>
       <div class="form-group-m">
         <label class="form-label-m">Renk Seçenekleri</label>
@@ -1012,6 +1016,8 @@ window.openAddProduct = () => {
   document.getElementById('pBuybox').value = 'false';
   document.getElementById('pSaleType').value = 'single';
   document.getElementById('serialFields').style.display = 'none';
+  document.getElementById('singleFields').style.display = 'block';
+  document.getElementById('singleSizesField').style.display = 'block';
   document.getElementById('pSerialSizes').value = '';
   document.getElementById('pSerialPrice').value = '';
   document.getElementById('pSerialSalePrice').value = '';
@@ -1053,6 +1059,8 @@ window.openEditProduct = async (id) => {
   document.getElementById('pSerialSalePrice').value = p.serialSalePrice||'';
   document.getElementById('pUnitPrice').value = p.unitPrice||'';
   document.getElementById('serialFields').style.display = p.saleType==='serial' ? 'block' : 'none';
+  document.getElementById('singleFields').style.display = p.saleType==='serial' ? 'none' : 'block';
+  document.getElementById('singleSizesField').style.display = p.saleType==='serial' ? 'none' : 'block';
   document.getElementById('pCambelFee').value = p.cambelFee||'';
   document.getElementById('pCambelDays').value = p.cambelDays||'';
   ['ense-baskisi','yikama-talimat','sallanti-kart','ambalaj','sticker','barkod'].forEach(id => {
