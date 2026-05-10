@@ -486,6 +486,29 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+
+// Auth durumunu dinle
+onAuthStateChanged(auth, user => {
+  currentMember = user && user.emailVerified ? user : null;
+  updateAuthUI();
+  // Ürünler yüklendiyse fiyatları güncelle
+  if (allProducts.length) renderProducts();
+});
+
+function updateAuthUI() {
+  const loginBtn = document.getElementById('shopLoginBtn');
+  const accountBtn = document.getElementById('shopAccountBtn');
+  if (!loginBtn) return;
+  if (currentMember) {
+    loginBtn.style.display = 'none';
+    accountBtn.style.display = 'flex';
+    accountBtn.textContent = '👤 ' + (currentMember.displayName || currentMember.email.split('@')[0]);
+  } else {
+    loginBtn.style.display = 'flex';
+    accountBtn.style.display = 'none';
+  }
+}
 
 // ── STATE ──
 let allProducts = [];
