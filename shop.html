@@ -847,11 +847,19 @@ function productCard(p) {
       <div class="product-body">
         <div class="product-cat">${getCatName(p.category)}</div>
         <div class="product-name">${p.name}</div>
+        ${p.saleType === 'serial' ? `<div style="font-size:.72rem;color:var(--gr);font-weight:600;margin-bottom:4px">📦 ${p.serialSizes?.length||0}li Set</div>` : ''}
         <div class="product-price">
           ${currentMember
-            ? (p.salePrice
-                ? `<span class="price-sale">₺${Number(p.salePrice).toLocaleString('tr-TR')}</span><span class="price-old">₺${Number(p.price).toLocaleString('tr-TR')}</span>`
-                : `<span class="price-main">₺${Number(p.price).toLocaleString('tr-TR')}</span>`)
+            ? (p.saleType === 'serial'
+                ? `<div>
+                    ${p.serialSalePrice
+                      ? `<span class="price-sale">₺${Number(p.serialSalePrice).toLocaleString('tr-TR')}</span><span class="price-old">₺${Number(p.serialPrice).toLocaleString('tr-TR')}</span>`
+                      : `<span class="price-main">₺${Number(p.serialPrice||p.price).toLocaleString('tr-TR')}</span>`}
+                    <span style="font-size:.72rem;color:var(--mid);display:block">Birim: ₺${Number(p.unitPrice||0).toLocaleString('tr-TR')}</span>
+                  </div>`
+                : (p.salePrice
+                    ? `<span class="price-sale">₺${Number(p.salePrice).toLocaleString('tr-TR')}</span><span class="price-old">₺${Number(p.price).toLocaleString('tr-TR')}</span>`
+                    : `<span class="price-main">₺${Number(p.price).toLocaleString('tr-TR')}</span>`))
             : `<a href="account.html" style="display:inline-flex;align-items:center;gap:4px;background:var(--charcoal);color:#fff;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:500;text-decoration:none">🔒 Fiyatı Gör</a>`}
         </div>
         ${p.sizes?.length ? `<div class="product-sizes">${p.sizes.slice(0,4).map(s=>`<span class="size-chip">${s}</span>`).join('')}</div>` : ''}
@@ -892,12 +900,26 @@ function renderPmodal() {
   document.getElementById('pmodalInfo').innerHTML = `
     <div class="pmodal-cat">${getCatName(p.category)}</div>
     <div class="pmodal-name">${p.name}</div>
+    ${p.saleType === 'serial' && p.serialSizes?.length ? `
+      <div style="background:#EAF5EF;border-radius:8px;padding:10px 14px;margin-bottom:10px">
+        <div style="font-size:.75rem;font-weight:600;color:#2D7A50;margin-bottom:6px">📦 ${p.serialSizes.length}li Set — Paket İçeriği</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px">
+          ${p.serialSizes.map(s=>`<span style="background:#fff;border:1px solid #5C7A5C;border-radius:4px;padding:2px 8px;font-size:.75rem;color:#2D7A50">${s}</span>`).join('')}
+        </div>
+      </div>` : ''}
     <div class="pmodal-price">
-      ${p.salePrice
-        ? `<span style="color:var(--red)">₺${Number(p.salePrice).toLocaleString('tr-TR')}</span> <span style="font-size:.85rem;color:var(--taupe);text-decoration:line-through;font-weight:400">₺${Number(p.price).toLocaleString('tr-TR')}</span>`
-        : `₺${Number(p.price).toLocaleString('tr-TR')}`}
+      ${p.saleType === 'serial'
+        ? `<div>
+            ${p.serialSalePrice
+              ? `<span style="color:var(--red);font-weight:700">₺${Number(p.serialSalePrice).toLocaleString('tr-TR')}</span> <span style="font-size:.85rem;color:var(--taupe);text-decoration:line-through;font-weight:400">₺${Number(p.serialPrice).toLocaleString('tr-TR')}</span>`
+              : `<span style="font-weight:700">₺${Number(p.serialPrice||p.price).toLocaleString('tr-TR')}</span>`}
+            <span style="font-size:.78rem;color:var(--mid);display:block;margin-top:2px">Birim fiyat: ₺${Number(p.unitPrice||0).toLocaleString('tr-TR')} / adet</span>
+          </div>`
+        : (p.salePrice
+            ? `<span style="color:var(--red)">₺${Number(p.salePrice).toLocaleString('tr-TR')}</span> <span style="font-size:.85rem;color:var(--taupe);text-decoration:line-through;font-weight:400">₺${Number(p.price).toLocaleString('tr-TR')}</span>`
+            : `₺${Number(p.price).toLocaleString('tr-TR')}`)}
     </div>
-    ${p.sizes?.length ? `
+    ${p.saleType !== 'serial' && p.sizes?.length ? `
       <div class="pmodal-label">Beden</div>
       <div class="size-options">${p.sizes.map(s=>`<div class="size-opt${s===selectedSize?' sel':''}" onclick="selectSize('${s}',this)">${s}</div>`).join('')}</div>` : ''}
     ${p.colors?.length ? `
@@ -1036,11 +1058,14 @@ function addToCart(product, size, color, customization) {
   const custKey = customization || 'none';
   const key = `${product.id}_${size}_${color}_${custKey}`;
   const existing = cart.find(i=>i.key===key);
-  // Cambel uygulasın seçildiyse ek ücret ekle
   const cambelExtra = (customization === 'cambel' && product.cambelFee) ? product.cambelFee : 0;
-  const basePrice = (product.salePrice || product.price) + cambelExtra;
+  // Seri ürünse seri fiyatını kullan
+  const basePrice = product.saleType === 'serial'
+    ? (product.serialSalePrice || product.serialPrice || product.price)
+    : (product.salePrice || product.price);
+  const finalPrice = basePrice + cambelExtra;
   if (existing) { existing.qty++; }
-  else { cart.push({ key, id:product.id, name:product.name, price:basePrice, size, color, qty:1, image:product.images?.[0]||'', customization, cambelFee: cambelExtra, cambelDays: customization==='cambel'?product.cambelDays:null }); }
+  else { cart.push({ key, id:product.id, name:product.name, price:finalPrice, size, color, qty:1, image:product.images?.[0]||'', customization, cambelFee: cambelExtra, cambelDays: customization==='cambel'?product.cambelDays:null, saleType:product.saleType, serialSizes:product.serialSizes }); }
   saveCart();
   renderCart();
   showToast(`${product.name} sepete eklendi ✓`,'success');
@@ -1066,7 +1091,7 @@ function renderCart() {
     <div class="cart-item">
       <div class="cart-item-img">${item.image ? `<img src="${item.image}" alt="${item.name}">` : ''}</div>
       <div class="cart-item-info">
-        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-name">${item.name}${item.saleType==='serial' ? ' <span style="background:#EAF5EF;color:#2D7A50;font-size:.65rem;font-weight:600;padding:1px 6px;border-radius:10px">'+(item.serialSizes?.length||0)+'li Set</span>' : ''}</div>
         <div class="cart-item-meta">${[item.size,item.color].filter(Boolean).join(' · ')}${item.customization==='self'?' · <span style="color:#5C7A5C;font-weight:600">Kendin Uygula</span>':item.customization==='cambel'?` · <span style="color:#C0392B;font-weight:600">Cambel Uygulasın (+${item.cambelDays||7} gün)</span>`:''}
         </div>
         <div class="cart-item-controls">
