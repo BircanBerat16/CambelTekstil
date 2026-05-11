@@ -579,6 +579,7 @@ let selectedProduct = null;
 let selectedSize = '';
 let selectedColor = '';
 let selectedCustomization = null;
+let selectedQty = 1;
 let shippingFee = 0;
 let freeShippingLimit = 500;
 
@@ -673,11 +674,17 @@ async function loadProducts() {
 
 // ── ORTAK FİYAT HESAPLAMA ──
 function calcItemPrice(item) {
-  // Bundle indirimini uygula (basePrice üzerinden)
-  const bundleBase = getBundlePrice(item.id, item.qty, item.basePrice || item.price);
-  // Kampanya indirimini uygula
-  const discounted = applyCampaignDiscount(bundleBase, item.id, item.qty);
-  // Cambel extra'yı ekle (indirimden etkilenmez)
+  const bundle = getBundlePrice(item.id, item.qty, item.basePrice || item.price);
+  // X al Y öde için toplam tutarı hesapla, sonra birime böl
+  if (activeCampaigns.length && activeCampaigns[0].type === 'buy_x_pay_y') {
+    const camp = activeCampaigns[0];
+    const sets = Math.floor(item.qty / camp.buyX);
+    const rem = item.qty % camp.buyX;
+    const payQty = sets * camp.payY + rem;
+    const totalDiscounted = bundle * payQty + (item.cambelExtra || 0) * item.qty;
+    return totalDiscounted / item.qty; // birim fiyat döndür
+  }
+  const discounted = applyCampaignDiscount(bundle, item.id, item.qty);
   return discounted + (item.cambelExtra || 0);
 }
 
@@ -932,9 +939,10 @@ window.openProduct = (id) => {
   if (!selectedProduct) return;
   selectedSize = selectedProduct.sizes?.[0] || '';
   selectedColor = selectedProduct.colors?.[0] || '';
+  selectedQty = 1;
+  selectedCustomization = null;
   renderPmodal();
   document.getElementById('pmodalOverlay').classList.add('open');
-  // Default olarak "Kendin Uygula" seçili gelsin
   if (selectedProduct.customizations?.length) {
     setTimeout(() => selectCustomization('self'), 50);
   }
@@ -978,6 +986,15 @@ function renderPmodal() {
       <div class="pmodal-label">Renk</div>
       <div class="color-options">${p.colors.map(co=>`<div class="color-opt${co===selectedColor?' sel':''}" onclick="selectColor('${co}',this)">${co}</div>`).join('')}</div>` : ''}
     ${p.variantStock ? `<div id="variantStockInfo" style="font-size:.78rem;margin-bottom:.5rem;font-weight:500"></div>` : ''}
+    <div style="margin-top:.8rem;margin-bottom:.2rem">
+      <div class="pmodal-label">Adet</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button onclick="changeModalQty(-1)" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.borderColor='var(--charcoal)'" onmouseout="this.style.borderColor='var(--border)'">−</button>
+        <span id="modalQtyNum" style="font-size:1rem;font-weight:600;min-width:28px;text-align:center">1</span>
+        <button onclick="changeModalQty(1)" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.borderColor='var(--charcoal)'" onmouseout="this.style.borderColor='var(--border)'">+</button>
+        <span style="font-size:.75rem;color:var(--mid)">adet</span>
+      </div>
+    </div>
     <div style="padding-top:1rem">
       ${p.buybox ? `<div style="background:#EAF5EF;border:1px solid #5C7A5C;border-radius:10px;padding:12px 14px;margin-bottom:12px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
@@ -1121,14 +1138,19 @@ function updateVariantStock() {
 window.closePmodal = () => document.getElementById('pmodalOverlay').classList.remove('open');
 window.handlePmodalClick = (e) => { if(e.target===document.getElementById('pmodalOverlay')) closePmodal(); };
 
+window.changeModalQty = (delta) => {
+  selectedQty = Math.max(1, selectedQty + delta);
+  const el = document.getElementById('modalQtyNum');
+  if (el) el.textContent = selectedQty;
+};
+
 window.addToCartFromModal = () => {
   if (!selectedProduct) return;
-  // Kişiselleştirme seçimi zorunlu (seçenek varsa)
   if (selectedProduct.customizations?.length && !selectedCustomization) {
     showToast('Lütfen kişiselleştirme seçeneği seçin','');
     return;
   }
-  addToCart(selectedProduct, selectedSize, selectedColor, selectedCustomization);
+  addToCart(selectedProduct, selectedSize, selectedColor, selectedCustomization, selectedQty);
   closePmodal();
 };
 
@@ -1144,47 +1166,6 @@ window.quickAddToCart = (id) => {
 };
 
 // ── CART ──
-function addToCart(product, size, color, customization) {
-  const custKey = customization || 'none';
-  const key = `${product.id}_${size}_${color}_${custKey}`;
-  const existing = cart.find(i=>i.key===key);
-
-  // Base fiyat
-  const basePrice = product.saleType === 'serial'
-    ? (product.serialSalePrice || product.serialPrice || product.price)
-    : (product.salePrice || product.price);
-
-  // Cambel uygulasın: kişiselleştirme fiyatlarını topla
-  let cambelExtra = 0;
-  if (customization === 'cambel') {
-    const prices = product.customizationPrices || {};
-    const custIds = product.customizations || [];
-    const sizeQty = (product.saleType === 'serial' && product.serialSizes?.length)
-      ? product.serialSizes.length : 1;
-    cambelExtra = custIds.reduce((s, id) => s + (Number(prices[id]) || 0) * sizeQty, 0);
-    if (cambelExtra === 0 && product.cambelFee) cambelExtra = product.cambelFee;
-  }
-
-  const finalPrice = basePrice + cambelExtra;
-
-  if (existing) {
-    existing.qty++;
-  } else {
-    cart.push({
-      key, id: product.id, name: product.name,
-      price: finalPrice, basePrice, cambelExtra,
-      size, color, qty: 1,
-      image: product.images?.[0] || '',
-      customization,
-      cambelDays: customization === 'cambel' ? product.cambelDays : null,
-      saleType: product.saleType,
-      serialSizes: product.serialSizes
-    });
-  }
-  saveCart();
-  renderCart();
-  showToast(`${product.name} sepete eklendi ✓`,'success');
-}
 
 function saveCart() {
   localStorage.setItem('cambel_cart', JSON.stringify(cart));
@@ -1289,7 +1270,46 @@ window.openCheckout = () => {
   proceedToCheckout();
 };
 
-window.proceedToCheckout = function proceedToCheckout() {
+function addToCart(product, size, color, customization, qty) {
+  qty = qty || 1;
+  const custKey = customization || 'none';
+  const key = `${product.id}_${size}_${color}_${custKey}`;
+  const existing = cart.find(i=>i.key===key);
+
+  const basePrice = product.saleType === 'serial'
+    ? (product.serialSalePrice || product.serialPrice || product.price)
+    : (product.salePrice || product.price);
+
+  let cambelExtra = 0;
+  if (customization === 'cambel') {
+    const prices = product.customizationPrices || {};
+    const custIds = product.customizations || [];
+    const sizeQty = (product.saleType === 'serial' && product.serialSizes?.length)
+      ? product.serialSizes.length : 1;
+    cambelExtra = custIds.reduce((s, id) => s + (Number(prices[id]) || 0) * sizeQty, 0);
+    if (cambelExtra === 0 && product.cambelFee) cambelExtra = product.cambelFee;
+  }
+
+  const finalPrice = basePrice + cambelExtra;
+
+  if (existing) {
+    existing.qty += qty;
+  } else {
+    cart.push({
+      key, id: product.id, name: product.name,
+      price: finalPrice, basePrice, cambelExtra,
+      size, color, qty,
+      image: product.images?.[0] || '',
+      customization,
+      cambelDays: customization === 'cambel' ? product.cambelDays : null,
+      saleType: product.saleType,
+      serialSizes: product.serialSizes
+    });
+  }
+  saveCart();
+  renderCart();
+  showToast(`${product.name} sepete eklendi ✓`, 'success');
+}
   document.getElementById('cartOverlay').classList.remove('open');
   renderCheckoutSummary();
   document.getElementById('checkoutOverlay').classList.add('open');
