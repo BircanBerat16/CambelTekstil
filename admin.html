@@ -556,10 +556,6 @@ select.filter-select{
       </div>
       <div class="form-row">
         <div class="form-group-m">
-          <label class="form-label-m">Stok Adedi *</label>
-          <input type="number" class="form-input-m" id="pStock" placeholder="0">
-        </div>
-        <div class="form-group-m">
           <label class="form-label-m">SKU / Stok Kodu</label>
           <div style="display:flex;gap:6px">
             <input type="text" class="form-input-m" id="pSku" placeholder="CBL-001" style="flex:1">
@@ -570,14 +566,27 @@ select.filter-select{
       <div id="singleSizesField">
         <div class="form-group-m">
           <label class="form-label-m">Beden Seçenekleri</label>
-          <input type="text" class="form-input-m" id="pSizes" placeholder="0-3ay, 3-6ay, 6-9ay, 9-12ay">
+          <input type="text" class="form-input-m" id="pSizes" placeholder="0-3ay, 3-6ay, 6-9ay, 9-12ay" oninput="buildVariantGrid()">
           <div class="form-hint">Virgülle ayır</div>
         </div>
       </div>
       <div class="form-group-m">
         <label class="form-label-m">Renk Seçenekleri</label>
-        <input type="text" class="form-input-m" id="pColors" placeholder="Beyaz, Krem, Gri, Pembe">
+        <input type="text" class="form-input-m" id="pColors" placeholder="Beyaz, Krem, Gri, Pembe" oninput="buildVariantGrid()">
         <div class="form-hint">Virgülle ayır</div>
+      </div>
+
+      <!-- Varyasyon Stok Grid -->
+      <div id="variantGridWrap" style="display:none" class="form-group-m">
+        <label class="form-label-m">Varyasyon Stok Tablosu</label>
+        <div class="form-hint" style="margin-bottom:8px">Her renk × beden kombinasyonu için stok girin. Toplam stok otomatik hesaplanır.</div>
+        <div id="variantGrid" style="overflow-x:auto"></div>
+        <div style="margin-top:8px;font-size:.82rem;color:var(--mid)">Toplam Stok: <strong id="totalStockDisplay">0</strong></div>
+      </div>
+      <!-- Stok (renk/beden yoksa) -->
+      <div id="simpleStockWrap" class="form-group-m">
+        <label class="form-label-m">Stok Adedi *</label>
+        <input type="number" class="form-input-m" id="pStock" placeholder="0">
       </div>
       <div class="form-group-m">
         <label class="form-label-m">Açıklama</label>
@@ -1026,6 +1035,121 @@ window.filterProducts = () => {
   document.getElementById('productsTbody').innerHTML = renderProductRows(filtered);
 };
 
+window.buildVariantGrid = () => {
+  const sizes = document.getElementById('pSizes').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const colors = document.getElementById('pColors').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const gridWrap = document.getElementById('variantGridWrap');
+  const simpleStock = document.getElementById('simpleStockWrap');
+  const grid = document.getElementById('variantGrid');
+
+  if (!sizes.length || !colors.length) {
+    gridWrap.style.display = 'none';
+    simpleStock.style.display = 'block';
+    return;
+  }
+
+  gridWrap.style.display = 'block';
+  simpleStock.style.display = 'none';
+
+  // Mevcut değerleri sakla
+  const existing = {};
+  grid.querySelectorAll('input[data-key]').forEach(inp => {
+    existing[inp.dataset.key] = inp.value;
+  });
+
+  // Grid oluştur
+  let html = `<table style="border-collapse:collapse;width:100%;font-size:.82rem">
+    <thead><tr>
+      <th style="padding:8px 10px;background:var(--surface2);border:1px solid var(--border);text-align:left;font-weight:500;color:var(--mid);white-space:nowrap">Renk / Beden</th>
+      ${sizes.map(s=>`<th style="padding:8px 10px;background:var(--surface2);border:1px solid var(--border);text-align:center;font-weight:500;color:var(--mid);white-space:nowrap">${s}</th>`).join('')}
+      <th style="padding:8px 10px;background:var(--surface2);border:1px solid var(--border);text-align:center;font-weight:500;color:var(--mid)">Toplam</th>
+    </tr></thead>
+    <tbody>
+      ${colors.map(color => `
+        <tr>
+          <td style="padding:8px 10px;border:1px solid var(--border);font-weight:500;white-space:nowrap">${color}</td>
+          ${sizes.map(size => {
+            const key = `${color}__${size}`;
+            const val = existing[key] || '';
+            return `<td style="padding:4px;border:1px solid var(--border);text-align:center">
+              <input type="number" data-key="${key}" data-color="${color}" data-size="${size}"
+                value="${val}" min="0" placeholder="0"
+                style="width:60px;padding:5px;border:1px solid var(--border);border-radius:6px;text-align:center;font-family:DM Sans,sans-serif;font-size:.82rem;outline:none"
+                oninput="updateStockTotals()">
+            </td>`;
+          }).join('')}
+          <td id="row-total-${color.replace(/\s/g,'_')}" style="padding:8px 10px;border:1px solid var(--border);text-align:center;font-weight:600;color:var(--mid)">0</td>
+        </tr>`).join('')}
+    </tbody>
+    <tfoot><tr>
+      <td style="padding:8px 10px;border:1px solid var(--border);font-weight:600">Toplam</td>
+      ${sizes.map(size=>`<td id="col-total-${size.replace(/\s/g,'_')}" style="padding:8px 10px;border:1px solid var(--border);text-align:center;font-weight:600;color:var(--mid)">0</td>`).join('')}
+      <td id="grand-total" style="padding:8px 10px;border:1px solid var(--border);text-align:center;font-weight:700;color:var(--accent)">0</td>
+    </tr></tfoot>
+  </table>`;
+  grid.innerHTML = html;
+  updateStockTotals();
+};
+
+window.updateStockTotals = () => {
+  const grid = document.getElementById('variantGrid');
+  if (!grid) return;
+  const inputs = grid.querySelectorAll('input[data-key]');
+  const colorTotals = {}, sizeTotals = {};
+  let grand = 0;
+  inputs.forEach(inp => {
+    const val = parseInt(inp.value)||0;
+    const color = inp.dataset.color;
+    const size = inp.dataset.size;
+    colorTotals[color] = (colorTotals[color]||0) + val;
+    sizeTotals[size] = (sizeTotals[size]||0) + val;
+    grand += val;
+  });
+  Object.entries(colorTotals).forEach(([color, total]) => {
+    const el = document.getElementById('row-total-'+color.replace(/\s/g,'_'));
+    if (el) el.textContent = total;
+  });
+  Object.entries(sizeTotals).forEach(([size, total]) => {
+    const el = document.getElementById('col-total-'+size.replace(/\s/g,'_'));
+    if (el) el.textContent = total;
+  });
+  const gt = document.getElementById('grand-total');
+  if (gt) gt.textContent = grand;
+  const disp = document.getElementById('totalStockDisplay');
+  if (disp) disp.textContent = grand;
+  // pStock'a toplam stoku yaz
+  const pStock = document.getElementById('pStock');
+  if (pStock) pStock.value = grand;
+};
+
+// Varyasyon verilerini al
+function getVariantStock() {
+  const grid = document.getElementById('variantGrid');
+  if (!grid || grid.style.display === 'none') return null;
+  const inputs = grid.querySelectorAll('input[data-key]');
+  if (!inputs.length) return null;
+  const variants = {};
+  inputs.forEach(inp => {
+    variants[inp.dataset.key] = parseInt(inp.value)||0;
+  });
+  return variants;
+}
+
+// Varyasyon verilerini yükle
+function loadVariantStock(variants, sizes, colors) {
+  if (!variants || !sizes.length || !colors.length) return;
+  // Grid'i önce kur
+  buildVariantGrid();
+  // Sonra değerleri doldur
+  setTimeout(() => {
+    Object.entries(variants).forEach(([key, val]) => {
+      const inp = document.querySelector(`input[data-key="${key}"]`);
+      if (inp) inp.value = val;
+    });
+    updateStockTotals();
+  }, 50);
+}
+
 window.generateSku = () => {
   const name = document.getElementById('pName').value.trim();
   const cat = document.getElementById('pCategory').value;
@@ -1069,6 +1193,9 @@ window.openAddProduct = () => {
   document.getElementById('productModalTitle').textContent = 'Yeni Ürün Ekle';
   document.getElementById('editProductId').value = '';
   ['pName','pPrice','pSalePrice','pStock','pSku','pSizes','pColors','pDesc','pMaterial'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('variantGridWrap').style.display = 'none';
+  document.getElementById('simpleStockWrap').style.display = 'block';
+  document.getElementById('variantGrid').innerHTML = '';
   document.getElementById('pStatus').value = 'active';
   document.getElementById('pFeatured').value = 'false';
   document.getElementById('pBrandKit').value = 'true';
@@ -1108,6 +1235,13 @@ window.openEditProduct = async (id) => {
   document.getElementById('pSku').value = p.sku||'';
   document.getElementById('pSizes').value = (p.sizes||[]).join(', ');
   document.getElementById('pColors').value = (p.colors||[]).join(', ');
+  // Varyasyon stoğunu yükle
+  if (p.variantStock && (p.sizes||[]).length && (p.colors||[]).length) {
+    loadVariantStock(p.variantStock, p.sizes||[], p.colors||[]);
+  } else {
+    document.getElementById('pStock').value = p.stock||'';
+    buildVariantGrid();
+  }
   document.getElementById('pDesc').value = p.description||'';
   document.getElementById('pMaterial').value = p.material||'';
   document.getElementById('pStatus').value = p.status||'active';
@@ -1157,7 +1291,10 @@ window.saveProduct = async () => {
   const id = document.getElementById('editProductId').value;
   const name = document.getElementById('pName').value.trim();
   const price = parseFloat(document.getElementById('pPrice').value);
-  const stock = parseInt(document.getElementById('pStock').value);
+  const variantStock = getVariantStock();
+  const stock = variantStock
+    ? Object.values(variantStock).reduce((s,v)=>s+v,0)
+    : parseInt(document.getElementById('pStock').value)||0;
   if (!name || isNaN(price)) { showToast('Ürün adı ve fiyat zorunludur','error'); return; }
   showToast('Kaydediliyor...','');
 
@@ -1180,6 +1317,7 @@ window.saveProduct = async () => {
     price,
     salePrice: parseFloat(document.getElementById('pSalePrice').value) || null,
     stock: isNaN(stock) ? 0 : stock,
+    variantStock: getVariantStock() || null,
     sku: document.getElementById('pSku').value.trim(),
     category: document.getElementById('pCategory').value,
     subcategory: document.getElementById('pSubcategory').value,
