@@ -872,7 +872,27 @@ function applyFilters() {
     case 'price-desc': prods.sort((a,b)=>(b.salePrice||b.price)-(a.salePrice||a.price)); break;
     case 'name': prods.sort((a,b)=>a.name.localeCompare(b.name,'tr')); break;
   }
-  displayProducts = prods;
+  // Renk varyantlarını ayrı kartlara genişlet
+  const expanded = [];
+  prods.forEach(p => {
+    if (p.colors && p.colors.length > 1 && p.variantStock) {
+      p.colors.forEach(color => {
+        const colorKey = `${color}__`;
+        const colorStock = Object.entries(p.variantStock||{})
+          .filter(([k]) => k.startsWith(colorKey))
+          .reduce((s,[,v]) => s+v, 0);
+        expanded.push({
+          ...p,
+          _variantColor: color,
+          _variantStock: colorStock,
+          _cardId: `${p.id}__${color}`
+        });
+      });
+    } else {
+      expanded.push({...p, _cardId: p.id});
+    }
+  });
+  displayProducts = expanded;
   renderProducts();
 }
 
@@ -892,10 +912,14 @@ function renderProducts() {
 function productCard(p) {
   const price = p.salePrice || p.price;
   const img = p.images?.[0];
+  const stock = p._variantColor ? p._variantStock : p.stock;
+  const cardName = p._variantColor ? `${p.name} — ${p._variantColor}` : p.name;
+  const buyboxStyle = p.buybox ? 'border-color:#5C7A5C;box-shadow:0 0 0 1px #5C7A5C;' : '';
   return `
-    <div class="product-card" onclick="openProduct('${p.id}')">
+    <div class="product-card" onclick="openProduct('${p.id}','${p._variantColor||''}')" style="${buyboxStyle}">
+      ${p.buybox ? '<div style="background:#5C7A5C;color:#fff;text-align:center;padding:5px;font-size:.72rem;font-weight:600;letter-spacing:.06em">🏆 TRENDYOL BUYBOX</div>' : ''}
       <div class="product-img">
-        ${img ? `<img src="${img}" alt="${p.name}" loading="lazy">` : '<div class="product-img-placeholder">👕</div>'}
+        ${img ? `<img src="${img}" alt="${cardName}" loading="lazy">` : '<div class="product-img-placeholder">👕</div>'}
         <div class="product-badges">
           ${p.salePrice ? '<span class="p-badge p-badge-sale">İndirim</span>' : ''}
           ${p.buybox ? '<span class="p-badge p-badge-buybox">Buybox</span>' : ''}
@@ -907,6 +931,7 @@ function productCard(p) {
       <div class="product-body">
         <div class="product-cat">${getCatName(p.category)}</div>
         <div class="product-name">${p.name}</div>
+        ${p._variantColor ? `<div style="font-size:.72rem;color:var(--mid);margin-bottom:4px">🎨 ${p._variantColor}</div>` : ''}
         ${p.saleType === 'serial' ? `<div style="font-size:.72rem;color:var(--gr);font-weight:600;margin-bottom:4px">📦 ${p.serialSizes?.length||0}li Set</div>` : ''}
         <div class="product-price">
           ${currentMember
@@ -924,7 +949,7 @@ function productCard(p) {
         </div>
         ${p.sizes?.length ? `<div class="product-sizes">${p.sizes.slice(0,4).map(s=>`<span class="size-chip">${s}</span>`).join('')}</div>` : ''}
         ${currentMember
-          ? `<button class="btn-add-cart" onclick="event.stopPropagation();quickAddToCart('${p.id}')" ${!p.stock?'disabled':''}>${p.stock?'Sepete Ekle':'Stok Yok'}</button>`
+          ? `<button class="btn-add-cart" onclick="event.stopPropagation();quickAddToCart('${p.id}','${p._variantColor||''}')" ${!stock?'disabled':''}>${stock?'Sepete Ekle':'Stok Yok'}</button>`
           : `<a href="account.html" style="display:block;width:100%;padding:.7rem;background:var(--charcoal);color:#fff;border-radius:8px;text-align:center;text-decoration:none;font-size:.82rem;font-weight:500">Üye Ol, Alışveriş Yap</a>`}
       </div>
     </div>`;
@@ -935,11 +960,11 @@ function getCatName(id) {
 }
 
 // ── PRODUCT DETAIL ──
-window.openProduct = (id) => {
+window.openProduct = (id, initialColor) => {
   selectedProduct = allProducts.find(p=>p.id===id);
   if (!selectedProduct) return;
   selectedSize = selectedProduct.sizes?.[0] || '';
-  selectedColor = selectedProduct.colors?.[0] || '';
+  selectedColor = initialColor || selectedProduct.colors?.[0] || '';
   selectedQty = 1;
   selectedCustomization = null;
   renderPmodal();
@@ -1159,15 +1184,14 @@ window.addToCartFromModal = () => {
   closePmodal();
 };
 
-window.quickAddToCart = (id) => {
+window.quickAddToCart = (id, initialColor) => {
   const p = allProducts.find(p=>p.id===id);
   if (!p) return;
-  // Kişiselleştirme seçeneği varsa modalı aç
   if (p.customizations?.length) {
-    openProduct(id);
+    openProduct(id, initialColor);
     return;
   }
-  addToCart(p, p.sizes?.[0]||'', p.colors?.[0]||'', null);
+  addToCart(p, p.sizes?.[0]||'', initialColor||p.colors?.[0]||'', null);
 };
 
 // ── CART ──
