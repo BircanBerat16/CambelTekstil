@@ -1057,6 +1057,15 @@ window.buildVariantGrid = () => {
     existing[inp.dataset.key] = inp.value;
   });
 
+  // Mevcut SKU'ları da sakla
+  const existingSku = {};
+  grid.querySelectorAll('input[data-sku-key]').forEach(inp => {
+    existingSku[inp.dataset.skuKey] = inp.value;
+  });
+
+  // Base SKU
+  const baseSku = document.getElementById('pSku').value || 'CBL';
+
   // Grid oluştur
   let html = `<table style="border-collapse:collapse;width:100%;font-size:.82rem">
     <thead><tr>
@@ -1071,11 +1080,18 @@ window.buildVariantGrid = () => {
           ${sizes.map(size => {
             const key = `${color}__${size}`;
             const val = existing[key] || '';
-            return `<td style="padding:4px;border:1px solid var(--border);text-align:center">
+            const skuKey = `sku__${color}__${size}`;
+            const colorCode = color.replace(/\s/g,'').slice(0,3).toUpperCase();
+            const sizeCode = size.replace(/\s/g,'').replace('-','').slice(0,4).toUpperCase();
+            const autoSku = existingSku[skuKey] || `${baseSku}-${colorCode}-${sizeCode}`;
+            return `<td style="padding:4px;border:1px solid var(--border)">
               <input type="number" data-key="${key}" data-color="${color}" data-size="${size}"
                 value="${val}" min="0" placeholder="0"
-                style="width:60px;padding:5px;border:1px solid var(--border);border-radius:6px;text-align:center;font-family:DM Sans,sans-serif;font-size:.82rem;outline:none"
+                style="width:58px;padding:5px;border:1px solid var(--border);border-radius:6px;text-align:center;font-family:DM Sans,sans-serif;font-size:.82rem;outline:none;display:block;margin:0 auto 3px"
                 oninput="updateStockTotals()">
+              <input type="text" data-sku-key="${skuKey}" data-color="${color}" data-size="${size}"
+                value="${autoSku}" placeholder="SKU"
+                style="width:58px;padding:3px 4px;border:1px solid var(--border);border-radius:4px;font-family:DM Sans,sans-serif;font-size:.65rem;outline:none;display:block;margin:0 auto;color:var(--mid);text-align:center">
             </td>`;
           }).join('')}
           <td id="row-total-${color.replace(/\s/g,'_')}" style="padding:8px 10px;border:1px solid var(--border);text-align:center;font-weight:600;color:var(--mid)">0</td>
@@ -1125,27 +1141,39 @@ window.updateStockTotals = () => {
 // Varyasyon verilerini al
 function getVariantStock() {
   const grid = document.getElementById('variantGrid');
-  if (!grid || grid.style.display === 'none') return null;
+  if (!grid || grid.innerHTML === '') return null;
   const inputs = grid.querySelectorAll('input[data-key]');
   if (!inputs.length) return null;
   const variants = {};
-  inputs.forEach(inp => {
-    variants[inp.dataset.key] = parseInt(inp.value)||0;
-  });
+  inputs.forEach(inp => { variants[inp.dataset.key] = parseInt(inp.value)||0; });
   return variants;
 }
 
+function getVariantSkus() {
+  const grid = document.getElementById('variantGrid');
+  if (!grid || grid.innerHTML === '') return null;
+  const inputs = grid.querySelectorAll('input[data-sku-key]');
+  if (!inputs.length) return null;
+  const skus = {};
+  inputs.forEach(inp => { if (inp.value) skus[inp.dataset.skuKey] = inp.value; });
+  return skus;
+}
+
 // Varyasyon verilerini yükle
-function loadVariantStock(variants, sizes, colors) {
+function loadVariantStock(variants, skus, sizes, colors) {
   if (!variants || !sizes.length || !colors.length) return;
-  // Grid'i önce kur
   buildVariantGrid();
-  // Sonra değerleri doldur
   setTimeout(() => {
     Object.entries(variants).forEach(([key, val]) => {
       const inp = document.querySelector(`input[data-key="${key}"]`);
       if (inp) inp.value = val;
     });
+    if (skus) {
+      Object.entries(skus).forEach(([key, val]) => {
+        const inp = document.querySelector(`input[data-sku-key="${key}"]`);
+        if (inp) inp.value = val;
+      });
+    }
     updateStockTotals();
   }, 50);
 }
@@ -1237,7 +1265,7 @@ window.openEditProduct = async (id) => {
   document.getElementById('pColors').value = (p.colors||[]).join(', ');
   // Varyasyon stoğunu yükle
   if (p.variantStock && (p.sizes||[]).length && (p.colors||[]).length) {
-    loadVariantStock(p.variantStock, p.sizes||[], p.colors||[]);
+    loadVariantStock(p.variantStock, p.variantSkus||{}, p.sizes||[], p.colors||[]);
   } else {
     document.getElementById('pStock').value = p.stock||'';
     buildVariantGrid();
@@ -1318,6 +1346,7 @@ window.saveProduct = async () => {
     salePrice: parseFloat(document.getElementById('pSalePrice').value) || null,
     stock: isNaN(stock) ? 0 : stock,
     variantStock: getVariantStock() || null,
+    variantSkus: getVariantSkus() || null,
     sku: document.getElementById('pSku').value.trim(),
     category: document.getElementById('pCategory').value,
     subcategory: document.getElementById('pSubcategory').value,
