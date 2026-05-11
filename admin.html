@@ -598,16 +598,26 @@ select.filter-select{
       </div>
       <div class="form-group-m">
         <label class="form-label-m">Ürün Görselleri</label>
-        <div class="img-upload-zone" id="uploadZone" onclick="document.getElementById('imgInput').click()"
-          ondragover="event.preventDefault();this.classList.add('drag')"
-          ondragleave="this.classList.remove('drag')"
-          ondrop="handleDrop(event)">
-          <input type="file" id="imgInput" multiple accept="image/*" onchange="handleFiles(this.files)">
-          <div class="upload-icon">🖼️</div>
-          <div class="upload-text">Görselleri buraya sürükle veya <strong>tıkla</strong></div>
-          <div class="form-hint" style="margin-top:4px;">JPG, PNG · Maks 5MB · Çoklu seçim yapabilirsin</div>
+        <div id="colorImageSection">
+          <!-- Renk yoksa normal yükleme -->
+          <div id="normalImageUpload">
+            <div class="img-upload-zone" id="uploadZone" onclick="document.getElementById('imgInput').click()"
+              ondragover="event.preventDefault();this.classList.add('drag')"
+              ondragleave="this.classList.remove('drag')"
+              ondrop="handleDrop(event)">
+              <input type="file" id="imgInput" multiple accept="image/*" onchange="handleFiles(this.files)">
+              <div class="upload-icon">🖼️</div>
+              <div class="upload-text">Görselleri buraya sürükle veya <strong>tıkla</strong></div>
+              <div class="form-hint" style="margin-top:4px;">JPG, PNG · Maks 5MB · Çoklu seçim yapabilirsin</div>
+            </div>
+            <div class="img-previews" id="imgPreviews"></div>
+          </div>
+          <!-- Renk varsa her renge ayrı görsel -->
+          <div id="colorImageUpload" style="display:none">
+            <div class="form-hint" style="margin-bottom:10px">Her renk için ayrı görsel yükle. Bu görsel o rengin ürün kartında gösterilecek.</div>
+            <div id="colorImageList" style="display:flex;flex-direction:column;gap:12px"></div>
+          </div>
         </div>
-        <div class="img-previews" id="imgPreviews"></div>
       </div>
       <div class="form-row">
         <div class="form-group-m">
@@ -1105,6 +1115,8 @@ window.buildVariantGrid = () => {
   </table>`;
   grid.innerHTML = html;
   updateStockTotals();
+  // Renk görsel yükleme bölümünü güncelle
+  updateColorImageSection(colors);
 };
 
 window.updateStockTotals = () => {
@@ -1178,6 +1190,67 @@ function loadVariantStock(variants, skus, sizes, colors) {
   }, 50);
 }
 
+// ── RENK BAZLI GÖRSEL ──
+let colorImages = {}; // {renk: {file, url}}
+
+function updateColorImageSection(colors) {
+  const normalUpload = document.getElementById('normalImageUpload');
+  const colorUpload = document.getElementById('colorImageUpload');
+  const colorList = document.getElementById('colorImageList');
+  if (!colors || colors.length <= 1) {
+    normalUpload.style.display = 'block';
+    colorUpload.style.display = 'none';
+    return;
+  }
+  normalUpload.style.display = 'none';
+  colorUpload.style.display = 'block';
+  colorList.innerHTML = colors.map(color => {
+    const existing = colorImages[color];
+    return `<div style="display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+      <div style="width:52px;height:52px;border-radius:6px;overflow:hidden;background:var(--bg);flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)" id="colorThumb_${color.replace(/\s/g,'_')}">
+        ${existing ? `<img src="${existing.url}" style="width:100%;height:100%;object-fit:cover">` : '<span style="font-size:1.2rem">👕</span>'}
+      </div>
+      <div style="flex:1">
+        <div style="font-weight:500;font-size:.85rem;margin-bottom:4px">${color}</div>
+        <div style="font-size:.75rem;color:var(--mid)">${existing ? '✓ Görsel yüklendi' : 'Görsel yüklenmedi'}</div>
+      </div>
+      <label style="cursor:pointer">
+        <input type="file" accept="image/*" style="display:none" onchange="handleColorImage('${color}',this.files[0])">
+        <span class="btn btn-outline btn-sm">📷 Yükle</span>
+      </label>
+    </div>`;
+  }).join('');
+}
+
+window.handleColorImage = async (color, file) => {
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  colorImages[color] = {file, url, uploaded: false};
+  updateColorImageSection(
+    document.getElementById('pColors').value.split(',').map(s=>s.trim()).filter(Boolean)
+  );
+};
+
+async function uploadColorImages() {
+  const results = {};
+  for (const [color, data] of Object.entries(colorImages)) {
+    if (data.uploaded || !data.file) {
+      results[color] = data.url;
+      continue;
+    }
+    try {
+      const formData = new FormData();
+      formData.append('file', data.file);
+      formData.append('upload_preset', CLOUDINARY_PRESET);
+      formData.append('folder', 'cambel-products');
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {method:'POST',body:formData});
+      const d = await res.json();
+      if (d.secure_url) { results[color] = d.secure_url; colorImages[color].url = d.secure_url; colorImages[color].uploaded = true; }
+    } catch(e) { console.error('Color image upload error:', e); }
+  }
+  return results;
+}
+
 window.generateSku = () => {
   const name = document.getElementById('pName').value.trim();
   const cat = document.getElementById('pCategory').value;
@@ -1244,6 +1317,8 @@ window.openAddProduct = () => {
     const pr = document.getElementById('cust_price_'+id);
     if (pr) pr.value = '';
   });
+  colorImages = {};
+  updateColorImageSection([]);
   pendingImages = [];
   document.getElementById('imgPreviews').innerHTML = '';
   populateCategorySelects();
@@ -1292,6 +1367,12 @@ window.openEditProduct = async (id) => {
     const pr = document.getElementById('cust_price_'+id);
     if (pr) pr.value = (p.customizationPrices||{})[id] || '';
   });
+  colorImages = {};
+  if (p.colorImages) {
+    Object.entries(p.colorImages).forEach(([color, url]) => {
+      colorImages[color] = {url, uploaded: true};
+    });
+  }
   pendingImages = (p.images||[]).map(url => ({url, existing:true}));
   document.getElementById('imgPreviews').innerHTML = pendingImages.map((im,i) =>
     `<div class="img-preview-item"><img src="${im.url}"><button class="img-preview-del" onclick="removeImg(${i})">✕</button></div>`
@@ -1329,6 +1410,13 @@ window.saveProduct = async () => {
   // Upload new images to Cloudinary
   showToast('Görseller yükleniyor...','');
   const uploadedUrls = [];
+  const colors = document.getElementById('pColors').value.split(',').map(s=>s.trim()).filter(Boolean);
+  // Renk bazlı görsel yükleme
+  let colorImageUrls = {};
+  if (colors.length > 1 && Object.keys(colorImages).length > 0) {
+    colorImageUrls = await uploadColorImages();
+  }
+  // Normal görsel yükleme (renk yoksa veya renk görseli yoksa)
   for (const im of pendingImages) {
     if (im.existing) { uploadedUrls.push(im.url); continue; }
     try {
@@ -1339,6 +1427,8 @@ window.saveProduct = async () => {
       return;
     }
   }
+  // Renk görseli varsa ilk görsel olarak kullan
+  const finalImages = uploadedUrls.length ? uploadedUrls : Object.values(colorImageUrls).filter(Boolean);
 
   const data = {
     name,
@@ -1375,7 +1465,8 @@ window.saveProduct = async () => {
     }).filter(([,v]) => v !== null)),
     cambelFee: parseFloat(document.getElementById('pCambelFee').value)||null,
     cambelDays: parseInt(document.getElementById('pCambelDays').value)||null,
-    images: uploadedUrls,
+    images: finalImages,
+    colorImages: Object.keys(colorImageUrls).length ? colorImageUrls : null,
     updatedAt: serverTimestamp()
   };
 
