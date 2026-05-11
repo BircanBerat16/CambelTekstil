@@ -485,7 +485,9 @@ footer{background:var(--charcoal);color:rgba(250,248,245,.5);padding:3rem 8vw;di
         <div id="coItems"></div>
         <div class="co-totals">
           <div class="co-total-row"><span>Ara Toplam</span><span id="coSubtotal">₺0</span></div>
-          <div class="co-total-row"><span>Kargo</span><span id="coShipping">₺0</span></div>
+          <div id="coDiscountRow"></div>
+          <div class="co-total-row"><span>Kargo</span><span id="coShipping">Alıcıya Ait</span></div>
+          <div id="coFreeShippingHint" style="font-size:.75rem;padding:2px 0;display:none"></div>
           <div class="co-grand-total"><span>Toplam</span><span id="coTotal">₺0</span></div>
         </div>
       </div>
@@ -581,8 +583,8 @@ let selectedSize = '';
 let selectedColor = '';
 let selectedCustomization = null;
 let selectedQty = 1;
-let shippingFee = 0;
-let freeShippingLimit = 500;
+let shippingFee = 0; // 0 = alıcıya ait
+let freeShippingLimit = 100000;
 
 // ── INIT ──
 async function init() {
@@ -637,7 +639,7 @@ async function loadSettings() {
       if (d.id === 'general') {
         const data = d.data();
         shippingFee = data.shippingFee || 0;
-        freeShippingLimit = data.freeShippingLimit || 500;
+        freeShippingLimit = data.freeShippingLimit || 100000;
         if (data.whatsapp) {
           document.querySelectorAll('a.wa-float').forEach(a => {
             a.href = `https://wa.me/${data.whatsapp}?text=Merhaba`;
@@ -940,7 +942,8 @@ function productCard(p) {
         ${p.saleType === 'serial' ? `<div style="font-size:.72rem;color:var(--gr);font-weight:600;margin-bottom:4px">📦 ${p.serialSizes?.length||0}li Set</div>` : ''}
         <div class="product-price">
           ${currentMember
-            ? (p.saleType === 'serial'
+            ? (p.vat > 0 ? `<div style="font-size:.68rem;color:var(--mid);margin-bottom:2px">+%${p.vat} KDV dahil</div>` : '')
+            + (p.saleType === 'serial'
                 ? `<div>
                     ${p.serialSalePrice
                       ? `<span class="price-sale">₺${Number(p.serialSalePrice).toLocaleString('tr-TR')}</span><span class="price-old">₺${Number(p.serialPrice).toLocaleString('tr-TR')}</span>`
@@ -1295,7 +1298,20 @@ function renderCart() {
   }
 
   document.getElementById('cartSubtotal').textContent = `₺${originalTotal.toLocaleString('tr-TR')}`;
-  document.getElementById('cartShipping').textContent = shipping === 0 ? 'Ücretsiz' : `₺${shipping.toLocaleString('tr-TR')}`;
+  document.getElementById('cartShipping').textContent = subtotal >= freeShippingLimit ? '🎉 Ücretsiz!' : 'Alıcıya Ait';
+  // Ücretsiz kargo uyarısı
+  const hint = document.getElementById('freeShippingHint');
+  if (hint) {
+    const remaining = freeShippingLimit - subtotal;
+    if (subtotal >= freeShippingLimit) {
+      hint.textContent = '🎉 Kargo ücretsiz!';
+      hint.style.display = 'block';
+    } else {
+      hint.textContent = `₺${remaining.toLocaleString('tr-TR')} daha ekle, kargo ücretsiz olsun!`;
+      hint.style.display = 'block';
+      hint.style.color = 'var(--mid)';
+    }
+  }
 
   // İndirim satırını sepet footer'a ekle
   const discountEl = document.getElementById('cartDiscountRow');
@@ -1367,9 +1383,11 @@ function addToCart(product, size, color, customization, qty) {
   const key = `${product.id}_${size}_${color}_${custKey}`;
   const existing = cart.find(i=>i.key===key);
 
-  const basePrice = product.saleType === 'serial'
+  const rawPrice = product.saleType === 'serial'
     ? (product.serialSalePrice || product.serialPrice || product.price)
     : (product.salePrice || product.price);
+  const vatRate = product.vat || 0;
+  const basePrice = vatRate > 0 ? rawPrice * (1 + vatRate/100) : rawPrice;
 
   let cambelExtra = 0;
   if (customization === 'cambel') {
@@ -1409,23 +1427,65 @@ window.proceedToCheckout = function() {
 }
 window.closeCheckout = () => document.getElementById('checkoutOverlay').classList.remove('open');
 
+function getDiscountLabel() {
+  if (!activeCampaigns.length) return '';
+  const camp = activeCampaigns[0];
+  if (camp.type === 'percent') return `🎉 Kampanya İndirimi — %${camp.value} İndirim`;
+  if (camp.type === 'fixed_price') return `🎉 Kampanya İndirimi — Sabit Fiyat`;
+  if (camp.type === 'buy_x_pay_y') return `🎉 Kampanya İndirimi — ${camp.buyX} Al ${camp.payY} Öde`;
+  return '🎉 İndirim';
+}
+
 function renderCheckoutSummary() {
+  const originalTotal = cart.reduce((s,i)=>s+(i.price*i.qty),0);
   const subtotal = calcSubtotal(cart);
+  const saved = originalTotal - subtotal;
   const shipping = subtotal >= freeShippingLimit ? 0 : shippingFee;
   const total = subtotal + shipping;
+
   document.getElementById('coItems').innerHTML = cart.map(item => {
     const itemTotal = calcItemPrice(item) * item.qty;
+    const origTotal = item.price * item.qty;
+    const hasDiscount = Math.abs(itemTotal - origTotal) > 0.01;
     return `<div class="co-item">
       <div class="co-item-img">${item.image?`<img src="${item.image}" alt="">`:''}</div>
       <div>
         <div class="co-item-name">${item.name} ×${item.qty}</div>
         <div class="co-item-meta">${[item.size,item.color].filter(Boolean).join(' · ')}${item.cambelExtra>0?' · Cambel Uygulasın +₺'+item.cambelExtra:''}</div>
       </div>
-      <div class="co-item-price">₺${itemTotal.toLocaleString('tr-TR')}</div>
+      <div class="co-item-price" style="text-align:right">
+        ${hasDiscount ? `<div style="font-size:.72rem;text-decoration:line-through;color:var(--taupe)">₺${origTotal.toLocaleString('tr-TR')}</div>` : ''}
+        <div style="font-weight:600;color:${hasDiscount?'var(--red)':'inherit'}">₺${itemTotal.toLocaleString('tr-TR')}</div>
+      </div>
     </div>`;
   }).join('');
-  document.getElementById('coSubtotal').textContent = `₺${subtotal.toLocaleString('tr-TR')}`;
-  document.getElementById('coShipping').textContent = shipping===0?'Ücretsiz':`₺${shipping.toLocaleString('tr-TR')}`;
+
+  document.getElementById('coSubtotal').textContent = `₺${originalTotal.toLocaleString('tr-TR')}`;
+
+  // İndirim satırı
+  const discountEl = document.getElementById('coDiscountRow');
+  if (discountEl) {
+    discountEl.innerHTML = saved > 0.01 ? `
+      <div class="co-total-row" style="color:var(--green)">
+        <span style="font-size:.82rem">${getDiscountLabel()}</span>
+        <span style="font-weight:600">-₺${saved.toLocaleString('tr-TR')}</span>
+      </div>` : '';
+  }
+
+  document.getElementById('coShipping').textContent = subtotal >= freeShippingLimit ? '🎉 Ücretsiz!' : 'Alıcıya Ait';
+  const coHint = document.getElementById('coFreeShippingHint');
+  if (coHint) {
+    const remaining = freeShippingLimit - subtotal;
+    if (subtotal >= freeShippingLimit) {
+      coHint.textContent = '🎉 100.000₺ ve üzeri alışverişlerde kargo ücretsiz!';
+      coHint.style.color = 'var(--green)';
+      coHint.style.display = 'block';
+    } else {
+      coHint.textContent = `₺${remaining.toLocaleString('tr-TR')} daha ekle, kargo ücretsiz olsun!`;
+      coHint.style.color = 'var(--mid)';
+      coHint.style.display = 'block';
+    }
+  }
   document.getElementById('coTotal').textContent = `₺${total.toLocaleString('tr-TR')}`;
 }
 
