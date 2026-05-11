@@ -962,6 +962,7 @@ function renderPmodal() {
     ${p.colors?.length ? `
       <div class="pmodal-label">Renk</div>
       <div class="color-options">${p.colors.map(co=>`<div class="color-opt${co===selectedColor?' sel':''}" onclick="selectColor('${co}',this)">${co}</div>`).join('')}</div>` : ''}
+    ${p.variantStock ? `<div id="variantStockInfo" style="font-size:.78rem;margin-bottom:.5rem;font-weight:500"></div>` : ''}
     <div style="padding-top:1rem">
       ${p.buybox ? `<div style="background:#EAF5EF;border:1px solid #5C7A5C;border-radius:10px;padding:12px 14px;margin-bottom:12px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
@@ -1074,8 +1075,34 @@ window.selectCustomization = (type) => {
   });
 };
 
-window.selectSize = (s, el) => { selectedSize = s; document.querySelectorAll('.size-opt').forEach(e=>e.classList.remove('sel')); el.classList.add('sel'); };
-window.selectColor = (c, el) => { selectedColor = c; document.querySelectorAll('.color-opt').forEach(e=>e.classList.remove('sel')); el.classList.add('sel'); };
+window.selectSize = (s, el) => {
+  selectedSize = s;
+  document.querySelectorAll('.size-opt').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+  updateVariantStock();
+};
+window.selectColor = (c, el) => {
+  selectedColor = c;
+  document.querySelectorAll('.color-opt').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+  updateVariantStock();
+};
+
+function updateVariantStock() {
+  if (!selectedProduct?.variantStock) return;
+  const key = `${selectedColor}__${selectedSize}`;
+  const stock = selectedProduct.variantStock[key] ?? 0;
+  const addBtn = document.querySelector('.pmodal-info .btn-add-cart');
+  const stockEl = document.getElementById('variantStockInfo');
+  if (stockEl) {
+    stockEl.textContent = stock > 0 ? `Stok: ${stock} adet` : 'Bu varyasyon stokta yok';
+    stockEl.style.color = stock > 0 ? 'var(--gr)' : 'var(--red)';
+  }
+  if (addBtn) {
+    addBtn.disabled = stock <= 0;
+    addBtn.textContent = stock > 0 ? '🛒 Sepete Ekle' : 'Stok Yok';
+  }
+}
 window.closePmodal = () => document.getElementById('pmodalOverlay').classList.remove('open');
 window.handlePmodalClick = (e) => { if(e.target===document.getElementById('pmodalOverlay')) closePmodal(); };
 
