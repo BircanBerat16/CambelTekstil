@@ -636,6 +636,18 @@ select.filter-select{
           </select>
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group-m">
+          <label class="form-label-m">KDV Oranı</label>
+          <select class="form-input-m" id="pVat">
+            <option value="0">KDV Dahil / Yok</option>
+            <option value="1">+%1 KDV</option>
+            <option value="10">+%10 KDV</option>
+            <option value="20">+%20 KDV</option>
+          </select>
+          <div class="form-hint">Seçilen oran fiyata eklenerek müşteriye gösterilir</div>
+        </div>
+      </div>
       <div class="form-group-m">
         <label class="form-label-m">Brand Kit Uyumlu</label>
         <select class="form-input-m" id="pBrandKit">
@@ -1286,6 +1298,7 @@ window.openAddProduct = () => {
   document.getElementById('simpleStockWrap').style.display = 'block';
   document.getElementById('variantGrid').innerHTML = '';
   document.getElementById('pStatus').value = 'active';
+  document.getElementById('pVat').value = '0';
   document.getElementById('pFeatured').value = 'false';
   document.getElementById('pBrandKit').value = 'true';
   document.getElementById('pBuybox').value = 'false';
@@ -1335,6 +1348,7 @@ window.openEditProduct = async (id) => {
   document.getElementById('pDesc').value = p.description||'';
   document.getElementById('pMaterial').value = p.material||'';
   document.getElementById('pStatus').value = p.status||'active';
+  document.getElementById('pVat').value = String(p.vat||0);
   document.getElementById('pFeatured').value = p.featured?'true':'false';
   document.getElementById('pBrandKit').value = p.brandKit!==false?'true':'false';
   document.getElementById('pBuybox').value = p.buybox?'true':'false';
@@ -1431,6 +1445,7 @@ window.saveProduct = async () => {
     description: document.getElementById('pDesc').value.trim(),
     material: document.getElementById('pMaterial').value.trim(),
     status: document.getElementById('pStatus').value,
+    vat: parseInt(document.getElementById('pVat').value)||0,
     featured: document.getElementById('pFeatured').value === 'true',
     brandKit: document.getElementById('pBrandKit').value === 'true',
     buybox: document.getElementById('pBuybox').value === 'true',
