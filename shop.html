@@ -1062,7 +1062,11 @@ function renderPmodal() {
               </div>`;
             }).join('')}
             <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;display:flex;gap:12px;flex-wrap:wrap">
-              <span style="font-size:.75rem;color:var(--red);font-weight:600">Toplam: +₺${p.cambelFee}</span>
+              <span style="font-size:.75rem;color:var(--red);font-weight:600">Toplam: +₺${p.customizations.reduce((s,id) => {
+                const unitPrice = (p.customizationPrices||{})[id];
+                const qty = (p.saleType==='serial' && p.serialSizes?.length) ? p.serialSizes.length : 1;
+                return s + (Number(unitPrice)||0) * qty;
+              }, 0).toLocaleString('tr-TR')}</span>
               <span style="font-size:.75rem;color:var(--red);font-weight:600">+${p.cambelDays||7} iş günü</span>
               <span style="font-size:.75rem;color:var(--mid)">⚠️ Stok yoğunluğuna göre değişir</span>
             </div>
