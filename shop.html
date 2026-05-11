@@ -670,6 +670,21 @@ async function loadProducts() {
 
 // ── SIDEBAR ──
 
+
+// ── ORTAK FİYAT HESAPLAMA ──
+function calcItemPrice(item) {
+  // Bundle indirimini uygula (basePrice üzerinden)
+  const bundleBase = getBundlePrice(item.id, item.qty, item.basePrice || item.price);
+  // Kampanya indirimini uygula
+  const discounted = applyCampaignDiscount(bundleBase, item.id, item.qty);
+  // Cambel extra'yı ekle (indirimden etkilenmez)
+  return discounted + (item.cambelExtra || 0);
+}
+
+function calcSubtotal(cartItems) {
+  return cartItems.reduce((s, i) => s + calcItemPrice(i) * i.qty, 0);
+}
+
 // ── BUNDLES ──
 let allBundles = {};
 async function loadBundles() {
@@ -1133,18 +1148,39 @@ function addToCart(product, size, color, customization) {
   const custKey = customization || 'none';
   const key = `${product.id}_${size}_${color}_${custKey}`;
   const existing = cart.find(i=>i.key===key);
-  const cambelExtra = (customization === 'cambel' && product.cambelFee)
-    ? (product.saleType === 'serial' && product.serialSizes?.length
-        ? product.cambelFee  // zaten beden sayısı × birim fiyat olarak admin'de girilmiş
-        : product.cambelFee)
-    : 0;
-  // Seri ürünse seri fiyatını kullan
+
+  // Base fiyat
   const basePrice = product.saleType === 'serial'
     ? (product.serialSalePrice || product.serialPrice || product.price)
     : (product.salePrice || product.price);
+
+  // Cambel uygulasın: kişiselleştirme fiyatlarını topla
+  let cambelExtra = 0;
+  if (customization === 'cambel') {
+    const prices = product.customizationPrices || {};
+    const custIds = product.customizations || [];
+    const sizeQty = (product.saleType === 'serial' && product.serialSizes?.length)
+      ? product.serialSizes.length : 1;
+    cambelExtra = custIds.reduce((s, id) => s + (Number(prices[id]) || 0) * sizeQty, 0);
+    if (cambelExtra === 0 && product.cambelFee) cambelExtra = product.cambelFee;
+  }
+
   const finalPrice = basePrice + cambelExtra;
-  if (existing) { existing.qty++; }
-  else { cart.push({ key, id:product.id, name:product.name, price:finalPrice, size, color, qty:1, image:product.images?.[0]||'', customization, cambelFee: cambelExtra, cambelDays: customization==='cambel'?product.cambelDays:null, saleType:product.saleType, serialSizes:product.serialSizes }); }
+
+  if (existing) {
+    existing.qty++;
+  } else {
+    cart.push({
+      key, id: product.id, name: product.name,
+      price: finalPrice, basePrice, cambelExtra,
+      size, color, qty: 1,
+      image: product.images?.[0] || '',
+      customization,
+      cambelDays: customization === 'cambel' ? product.cambelDays : null,
+      saleType: product.saleType,
+      serialSizes: product.serialSizes
+    });
+  }
   saveCart();
   renderCart();
   showToast(`${product.name} sepete eklendi ✓`,'success');
@@ -1261,18 +1297,20 @@ function proceedToCheckout() {
 window.closeCheckout = () => document.getElementById('checkoutOverlay').classList.remove('open');
 
 function renderCheckoutSummary() {
-  const subtotal = cart.reduce((s,i)=>s+(i.price*i.qty),0);
+  const subtotal = calcSubtotal(cart);
   const shipping = subtotal >= freeShippingLimit ? 0 : shippingFee;
   const total = subtotal + shipping;
-  document.getElementById('coItems').innerHTML = cart.map(item=>`
-    <div class="co-item">
+  document.getElementById('coItems').innerHTML = cart.map(item => {
+    const itemTotal = calcItemPrice(item) * item.qty;
+    return `<div class="co-item">
       <div class="co-item-img">${item.image?`<img src="${item.image}" alt="">`:''}</div>
       <div>
         <div class="co-item-name">${item.name} ×${item.qty}</div>
-        <div class="co-item-meta">${[item.size,item.color].filter(Boolean).join(' · ')}</div>
+        <div class="co-item-meta">${[item.size,item.color].filter(Boolean).join(' · ')}${item.cambelExtra>0?' · Cambel Uygulasın +₺'+item.cambelExtra:''}</div>
       </div>
-      <div class="co-item-price">₺${(item.price*item.qty).toLocaleString('tr-TR')}</div>
-    </div>`).join('');
+      <div class="co-item-price">₺${itemTotal.toLocaleString('tr-TR')}</div>
+    </div>`;
+  }).join('');
   document.getElementById('coSubtotal').textContent = `₺${subtotal.toLocaleString('tr-TR')}`;
   document.getElementById('coShipping').textContent = shipping===0?'Ücretsiz':`₺${shipping.toLocaleString('tr-TR')}`;
   document.getElementById('coTotal').textContent = `₺${total.toLocaleString('tr-TR')}`;
@@ -1296,7 +1334,7 @@ window.processPayment = async () => {
     return;
   }
 
-  const subtotal = cart.reduce((s,i)=>s+(i.price*i.qty),0);
+  const subtotal = calcSubtotal(cart);
   const shipping = subtotal >= freeShippingLimit ? 0 : shippingFee;
   const total = subtotal + shipping;
   const orderNo = 'CBL' + Date.now().toString().slice(-8);
