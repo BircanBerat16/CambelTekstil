@@ -1043,13 +1043,7 @@ function renderPmodal() {
       </div>
     </div>
     <div style="padding-top:1rem">
-      ${p.buybox ? `<div style="background:#EAF5EF;border:1px solid #5C7A5C;border-radius:10px;padding:12px 14px;margin-bottom:12px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-          <span style="font-size:1.1rem">🏆</span>
-          <span style="font-weight:700;font-size:.85rem;color:#2D7A50">Trendyol Buybox Ürünü</span>
-        </div>
-        <div style="font-size:.78rem;color:#3d8a60;line-height:1.6">Bu ürün Trendyol'da <strong>satış geçmişine</strong> ve <strong>gerçek yorumlara</strong> sahip. Markını ekle, buybox avantajıyla satışa başla.</div>
-      </div>` : ''}
+
       ${p.brandKit ? '<div style="display:inline-flex;align-items:center;gap:.4rem;background:var(--charcoal);color:#fff;padding:.3rem .9rem;border-radius:50px;font-size:.72rem;font-weight:500;margin-bottom:.8rem;margin-left:.4rem">✏️ Brand Kit Uyumlu</div>' : ''}
       ${(() => {
         const bundle = allBundles[p.id];
@@ -1129,6 +1123,13 @@ function renderPmodal() {
       <button class="btn-add-cart" style="margin-top:.8rem;width:100%" onclick="addToCartFromModal()" ${!p.stock?'disabled':''}>
         ${p.stock ? '🛒 Sepete Ekle' : 'Stok Yok'}
       </button>
+      ${p.buybox ? `<div style="background:#EAF5EF;border:1px solid #5C7A5C;border-radius:10px;padding:12px 14px;margin-top:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-size:1.1rem">🏆</span>
+          <span style="font-weight:700;font-size:.85rem;color:#2D7A50">Trendyol Buybox Ürünü</span>
+        </div>
+        <div style="font-size:.78rem;color:#3d8a60;line-height:1.6">Bu ürün Trendyol'da <strong>satış geçmişine</strong> ve <strong>gerçek yorumlara</strong> sahip. Markını ekle, buybox avantajıyla satışa başla.</div>
+      </div>` : ''}
     </div>
     ${p.description ? `<div class="pmodal-desc" style="margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--border)">${p.description}</div>` : ''}
     ${p.material ? `<div class="pmodal-material">🧵 ${p.material}</div>` : ''}`;
@@ -1160,15 +1161,26 @@ window.selectCustomization = (type) => {
 
 window.selectSize = (s, el) => {
   selectedSize = s;
+  selectedQty = 1;
   document.querySelectorAll('.size-opt').forEach(e=>e.classList.remove('sel'));
   el.classList.add('sel');
+  const qtyEl = document.getElementById('modalQtyNum');
+  if (qtyEl) qtyEl.value = 1;
   updateVariantStock();
 };
 window.selectColor = (c, el) => {
   selectedColor = c;
+  selectedQty = 1;
   document.querySelectorAll('.color-opt').forEach(e=>e.classList.remove('sel'));
   el.classList.add('sel');
+  const qtyEl = document.getElementById('modalQtyNum');
+  if (qtyEl) qtyEl.value = 1;
   updateVariantStock();
+};
+
+window.setModalQty = (val) => {
+  const n = parseInt(val);
+  selectedQty = (!isNaN(n) && n >= 1) ? n : 1;
 };
 
 function updateVariantStock() {
@@ -1176,11 +1188,6 @@ function updateVariantStock() {
   const key = `${selectedColor}__${selectedSize}`;
   const stock = selectedProduct.variantStock[key] ?? 0;
   const addBtn = document.querySelector('.pmodal-info .btn-add-cart');
-  const stockEl = document.getElementById('variantStockInfo');
-  if (stockEl) {
-    stockEl.textContent = stock > 0 ? `Stok: ${stock} adet` : 'Bu varyasyon stokta yok';
-    stockEl.style.color = stock > 0 ? 'var(--gr)' : 'var(--red)';
-  }
   if (addBtn) {
     addBtn.disabled = stock <= 0;
     addBtn.textContent = stock > 0 ? '🛒 Sepete Ekle' : 'Stok Yok';
@@ -1192,7 +1199,7 @@ window.handlePmodalClick = (e) => { if(e.target===document.getElementById('pmoda
 window.changeModalQty = (delta) => {
   selectedQty = Math.max(1, selectedQty + delta);
   const el = document.getElementById('modalQtyNum');
-  if (el) el.textContent = selectedQty;
+  if (el) el.value = selectedQty;
 };
 
 window.addToCartFromModal = () => {
@@ -1202,7 +1209,17 @@ window.addToCartFromModal = () => {
     return;
   }
   addToCart(selectedProduct, selectedSize, selectedColor, selectedCustomization, selectedQty);
-  closePmodal();
+  // Çok varyantlı ürünlerde modal açık kalsın
+  const hasMultiVariants = (selectedProduct.colors?.length > 1) || (selectedProduct.sizes?.length > 1);
+  if (hasMultiVariants) {
+    // Sadece adet sıfırla, modal açık kalsın
+    selectedQty = 1;
+    const qtyEl = document.getElementById('modalQtyNum');
+    if (qtyEl) qtyEl.value = 1;
+    showToast(`${selectedProduct.name} sepete eklendi ✓`, 'success');
+  } else {
+    closePmodal();
+  }
 };
 
 window.quickAddToCart = (id, initialColor) => {
