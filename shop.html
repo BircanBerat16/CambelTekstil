@@ -931,7 +931,10 @@ function productCard(p) {
         </div>
       </div>
       <div class="product-body">
-        <div class="product-cat">${getCatName(p.category)}</div>
+        <div class="product-cat">
+          ${getCatName(p.category)}${getSubcatName(p.category, p.subcategory) ? ' · ' + getSubcatName(p.category, p.subcategory) : ''}
+          ${p._variantColor ? `<span style="margin-left:6px;background:var(--stone);padding:1px 7px;border-radius:20px;font-size:.68rem">${p._variantColor}</span>` : ''}
+        </div>
         <div class="product-name">${p.name}</div>
 
         ${p.saleType === 'serial' ? `<div style="font-size:.72rem;color:var(--gr);font-weight:600;margin-bottom:4px">📦 ${p.serialSizes?.length||0}li Set</div>` : ''}
@@ -959,6 +962,12 @@ function productCard(p) {
 
 function getCatName(id) {
   return allCategories.find(c=>c.id===id)?.name || id || '';
+}
+
+function getSubcatName(catId, subcatId) {
+  if (!subcatId) return '';
+  const cat = allCategories.find(c=>c.id===catId);
+  return cat?.subcategories?.find(s=>s.id===subcatId)?.name || '';
 }
 
 // ── PRODUCT DETAIL ──
