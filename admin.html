@@ -692,16 +692,10 @@ select.filter-select{
           </div>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group-m">
-          <label class="form-label-m">Cambel Uygulasın — Ek Ücret (₺)</label>
-          <input type="number" class="form-input-m" id="pCambelFee" placeholder="Örn: 150">
-          <div class="form-hint" id="cambelFeeHint">Boş = bu ürün için seçenek görünmez</div>
-        </div>
-        <div class="form-group-m">
-          <label class="form-label-m">Ek Süre (İş Günü)</label>
-          <input type="number" class="form-input-m" id="pCambelDays" placeholder="Örn: 7">
-        </div>
+      <div class="form-group-m">
+        <label class="form-label-m">Cambel Uygulasın — Ek Süre (İş Günü)</label>
+        <input type="number" class="form-input-m" id="pCambelDays" placeholder="Örn: 7">
+        <div class="form-hint">Kişiselleştirme seçilirse kaç iş günü gecikme olur</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1280,13 +1274,7 @@ window.calcUnitPrice = () => {
 window.updateCambelFeeHint = () => {
   const isSerial = document.getElementById('pSaleType').value === 'serial';
   const sizes = document.getElementById('pSerialSizes').value.split(',').filter(s=>s.trim());
-  const hint = document.getElementById('cambelFeeHint');
-  if (!hint) return;
-  if (isSerial && sizes.length > 0) {
-    hint.textContent = `Serili ürün: ${sizes.length} beden × birim fiyat = toplam. Admin birim fiyat girebilir, sistem otomatik çarpar.`;
-  } else {
-    hint.textContent = 'Boş = bu ürün için seçenek görünmez';
-  }
+
 };
 
 // ── PRODUCT MODAL ──
@@ -1309,7 +1297,6 @@ window.openAddProduct = () => {
   document.getElementById('pSerialPrice').value = '';
   document.getElementById('pSerialSalePrice').value = '';
   document.getElementById('pUnitPrice').value = '';
-  document.getElementById('pCambelFee').value = '';
   document.getElementById('pCambelDays').value = '';
   ['ense-baskisi','yikama-talimat','sallanti-kart','ambalaj','sticker','barkod'].forEach(id => {
     const el = document.getElementById('cust_'+id);
@@ -1359,7 +1346,6 @@ window.openEditProduct = async (id) => {
   document.getElementById('serialFields').style.display = p.saleType==='serial' ? 'block' : 'none';
   document.getElementById('singleFields').style.display = p.saleType==='serial' ? 'none' : 'block';
   document.getElementById('singleSizesField').style.display = p.saleType==='serial' ? 'none' : 'block';
-  document.getElementById('pCambelFee').value = p.cambelFee||'';
   document.getElementById('pCambelDays').value = p.cambelDays||'';
   ['ense-baskisi','yikama-talimat','sallanti-kart','ambalaj','sticker','barkod'].forEach(id => {
     const el = document.getElementById('cust_'+id);
@@ -1463,7 +1449,14 @@ window.saveProduct = async () => {
       const pr = document.getElementById('cust_price_'+id);
       return [id, pr && pr.value ? parseFloat(pr.value) : null];
     }).filter(([,v]) => v !== null)),
-    cambelFee: parseFloat(document.getElementById('pCambelFee').value)||null,
+    cambelFee: (() => {
+      const custIds = ['ense-baskisi','yikama-talimat','sallanti-kart','ambalaj','sticker','barkod'].filter(id => {
+        const el = document.getElementById('cust_'+id); return el && el.checked;
+      });
+      const prices = custIds.map(id => { const el = document.getElementById('cust_price_'+id); return parseFloat(el?.value)||0; });
+      const total = prices.reduce((s,v)=>s+v,0);
+      return total > 0 ? total : null;
+    })(),
     cambelDays: parseInt(document.getElementById('pCambelDays').value)||null,
     images: finalImages,
     colorImages: Object.keys(colorImageUrls).length ? colorImageUrls : null,
