@@ -1310,6 +1310,8 @@ function addToCart(product, size, color, customization, qty) {
   renderCart();
   showToast(`${product.name} sepete eklendi ✓`, 'success');
 }
+
+window.proceedToCheckout = function() {
   document.getElementById('cartOverlay').classList.remove('open');
   renderCheckoutSummary();
   document.getElementById('checkoutOverlay').classList.add('open');
