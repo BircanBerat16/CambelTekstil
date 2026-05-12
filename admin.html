@@ -1814,12 +1814,23 @@ async function renderMarketing() {
           <label class="form-label-m">Bu Haftanın Odak Noktası (opsiyonel)</label>
           <input type="text" class="form-input-m" id="mktFocus" placeholder="Örn: Anneler Günü kampanyası, Yeni müslin koleksiyonu, Bayram indirimi...">
         </div>
+        <div style="margin-bottom:16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px">
+          <label class="form-label-m">Claude API Key</label>
+          <input type="password" class="form-input-m" id="claudeApiKey" placeholder="sk-ant-..." style="margin-top:6px;font-family:monospace">
+          <div class="form-hint">Sadece tarayıcında saklanır, hiçbir yere gönderilmez</div>
+        </div>
         <button class="btn btn-green" onclick="generateCreatives()" id="generateBtn" style="min-width:200px">
           ✨ Bu Haftanın Kreatiflerini Üret
         </button>
         <div id="mktResult" style="margin-top:24px"></div>
       </div>
     </div>`;
+  // localStorage'dan key'i yükle
+  const savedKey = localStorage.getItem('claude_key');
+  if (savedKey) {
+    const keyInput = document.getElementById('claudeApiKey');
+    if (keyInput) keyInput.value = savedKey;
+  }
 }
 
 window.generateCreatives = async () => {
@@ -1874,9 +1885,18 @@ Türkçe yaz. Satış odaklı, samimi, gereksiz abartmadan.`;
   try {
     result.innerHTML = '<div style="color:var(--mid);font-size:.85rem;padding:16px">🤖 Claude kreatifler yazıyor...</div>';
 
-    const res = await fetch('/api/claude', {
+    const inputKey = document.getElementById('claudeApiKey')?.value?.trim();
+    const CLAUDE_KEY = inputKey || localStorage.getItem('claude_key');
+    if (!CLAUDE_KEY) { result.innerHTML = '<div style="color:var(--red);padding:12px">API key giriniz.</div>'; btn.disabled=false; btn.textContent='✨ Bu Haftanın Kreatiflerini Üret'; return; }
+    if (inputKey) localStorage.setItem('claude_key', inputKey);
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': CLAUDE_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
