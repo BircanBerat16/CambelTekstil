@@ -1876,7 +1876,7 @@ Türkçe yaz. Satış odaklı, samimi, gereksiz abartmadan.`;
 
     const res = await fetch('/api/claude', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
