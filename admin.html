@@ -1795,7 +1795,7 @@ window.fetchFromSupplier = async () => {
 
   try {
     // CORS proxy üzerinden sayfayı çek
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
     const res = await fetch(proxyUrl);
     const data = await res.json();
     const html = data.contents;
