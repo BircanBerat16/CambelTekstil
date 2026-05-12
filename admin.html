@@ -1859,9 +1859,24 @@ window.fetchFromSupplier = async () => {
       if (descInput) descInput.value = description;
     }
 
-    // Görselleri önizle
+    // Görselleri Cloudinary'e yükle
     if (images.length) {
-      pendingImages = images.slice(0, 5).map(url => ({url, existing: true}));
+      status.textContent = `✓ Bilgiler çekildi — görseller Cloudinary'e yükleniyor (${images.length} adet)...`;
+      const uploadedImages = [];
+      for (const imgUrl of images.slice(0, 5)) {
+        try {
+          const formData = new FormData();
+          formData.append('file', imgUrl);
+          formData.append('upload_preset', CLOUDINARY_PRESET);
+          formData.append('folder', 'cambel-products');
+          const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+            method: 'POST', body: formData
+          });
+          const uploadData = await uploadRes.json();
+          if (uploadData.secure_url) uploadedImages.push(uploadData.secure_url);
+        } catch(e) { console.log('Görsel yükleme hatası:', e); }
+      }
+      pendingImages = uploadedImages.map(url => ({url, existing: true}));
       renderImgPreviews();
     }
 
