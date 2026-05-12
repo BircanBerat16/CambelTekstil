@@ -1874,7 +1874,7 @@ Türkçe yaz. Satış odaklı, samimi, gereksiz abartmadan.`;
   try {
     result.innerHTML = '<div style="color:var(--mid);font-size:.85rem;padding:16px">🤖 Claude kreatifler yazıyor...</div>';
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/claude', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
