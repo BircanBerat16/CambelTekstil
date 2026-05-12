@@ -460,6 +460,8 @@ select.filter-select{
     <div class="nav-item" onclick="showPage('brandkit',this)"><span class="icon">✏️</span> Brand Kit</div>
     <div class="nav-section">Üyeler</div>
     <div class="nav-item" onclick="showPage('members',this)"><span class="icon">👥</span> Üyeler</div>
+    <div class="nav-section">Pazarlama</div>
+    <div class="nav-item" onclick="showPage('marketing',this)"><span class="icon">📣</span> Meta Kreatifler</div>
     <div class="nav-section">Sistem</div>
     <div class="nav-item" onclick="showPage('settings',this)"><span class="icon">⚙️</span> Ayarlar</div>
   </nav>
@@ -879,7 +881,7 @@ window.showPage = (page, el) => {
   // URL hash'i güncelle
   window.location.hash = page;
   const titles = {dashboard:'Dashboard',products:'Ürünler',categories:'Kategoriler',
-    orders:'Siparişler',members:'Üye Listesi',bundles:'Bundle Fiyatları',campaigns:'Kampanyalar',
+    orders:'Siparişler',members:'Üye Listesi',marketing:'Meta Kreatifler',bundles:'Bundle Fiyatları',campaigns:'Kampanyalar',
     brandkit:'Brand Kit Ayarları',settings:'Ayarlar'};
   document.getElementById('pageTitle').textContent = titles[page] || page;
   const c = document.getElementById('pageContent');
@@ -890,6 +892,7 @@ window.showPage = (page, el) => {
     case 'categories':renderCategories();break;
     case 'orders':    renderOrders();    break;
     case 'members':   renderMembers();   break;
+    case 'marketing': renderMarketing(); break;
     case 'bundles':   renderBundles();   break;
     case 'campaigns': renderCampaigns(); break;
     case 'brandkit':  renderBrandKit();  break;
@@ -1763,6 +1766,161 @@ window.filterOrdersByStatus = (s) => {
 };
 
 // ── BRAND KIT SETTINGS ──
+
+// ── MARKETING ──
+async function renderMarketing() {
+  const c = document.getElementById('pageContent');
+  c.innerHTML = `
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Meta Reklam Kreatifler</div>
+          <div style="font-size:.78rem;color:var(--mid);margin-top:2px">Mevcut ürünlerinize göre her hafta yeni kreatif üretin</div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <!-- Kitle Seçimi -->
+        <div style="margin-bottom:20px">
+          <label class="form-label-m">Hedef Kitle</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);border-radius:50px;cursor:pointer;font-size:.82rem;transition:all .2s">
+              <input type="checkbox" id="kitle-butik" checked> Instagram Butik Sahipleri
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);border-radius:50px;cursor:pointer;font-size:.82rem;transition:all .2s">
+              <input type="checkbox" id="kitle-trendyol" checked> Trendyol Satıcıları
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);border-radius:50px;cursor:pointer;font-size:.82rem;transition:all .2s">
+              <input type="checkbox" id="kitle-girisimci" checked> Marka Kurmak İsteyenler
+            </label>
+          </div>
+        </div>
+        <!-- Format Seçimi -->
+        <div style="margin-bottom:20px">
+          <label class="form-label-m">Format</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);border-radius:50px;cursor:pointer;font-size:.82rem">
+              <input type="checkbox" id="fmt-feed" checked> Instagram Feed (1:1)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);border-radius:50px;cursor:pointer;font-size:.82rem">
+              <input type="checkbox" id="fmt-story" checked> Story/Reels (9:16)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);border-radius:50px;cursor:pointer;font-size:.82rem">
+              <input type="checkbox" id="fmt-facebook"> Facebook Feed
+            </label>
+          </div>
+        </div>
+        <!-- Özel Not -->
+        <div style="margin-bottom:20px">
+          <label class="form-label-m">Bu Haftanın Odak Noktası (opsiyonel)</label>
+          <input type="text" class="form-input-m" id="mktFocus" placeholder="Örn: Anneler Günü kampanyası, Yeni müslin koleksiyonu, Bayram indirimi...">
+        </div>
+        <button class="btn btn-green" onclick="generateCreatives()" id="generateBtn" style="min-width:200px">
+          ✨ Bu Haftanın Kreatiflerini Üret
+        </button>
+        <div id="mktResult" style="margin-top:24px"></div>
+      </div>
+    </div>`;
+}
+
+window.generateCreatives = async () => {
+  const btn = document.getElementById('generateBtn');
+  const result = document.getElementById('mktResult');
+  btn.disabled = true;
+  btn.textContent = '⏳ Kreatifler üretiliyor...';
+
+  // Mevcut ürünleri çek
+  const snap = await getDocs(collection(db, 'products'));
+  const products = snap.docs.map(d=>({...d.data()}))
+    .filter(p => p.status === 'active')
+    .slice(0, 10)
+    .map(p => `- ${p.name}: ₺${p.salePrice||p.price} ${p.buybox?'(Trendyol Buybox)':''} ${p.saleType==='serial'?`(${(p.serialSizes||[]).length}'li Set)`:''}`)
+    .join('\n');
+
+  const kitles = [];
+  if (document.getElementById('kitle-butik')?.checked) kitles.push('Instagram butik sahipleri');
+  if (document.getElementById('kitle-trendyol')?.checked) kitles.push('Trendyol satıcıları');
+  if (document.getElementById('kitle-girisimci')?.checked) kitles.push('kendi markasını kurmak isteyen girişimciler');
+
+  const formats = [];
+  if (document.getElementById('fmt-feed')?.checked) formats.push('Instagram Feed (kare 1:1)');
+  if (document.getElementById('fmt-story')?.checked) formats.push('Instagram Story/Reels (9:16)');
+  if (document.getElementById('fmt-facebook')?.checked) formats.push('Facebook Feed (yatay)');
+
+  const focus = document.getElementById('mktFocus')?.value?.trim();
+  const week = new Date().toLocaleDateString('tr-TR', {day:'numeric',month:'long',year:'numeric'});
+
+  const prompt = `Sen Cambel Tekstil için dijital pazarlama uzmanısın. ${week} haftası için Meta reklamları üreteceksin.
+
+Cambel Tekstil: Bursa merkezli toptan bebek kıyafeti toptancısı. White label ürünler, minimum sipariş yok, Brand Kit (ense baskısı, yıkama etiketi, sallantı kart), Trendyol Buybox ürünleri mevcut.
+
+Bu haftanın aktif ürünleri:
+${products}
+
+${focus ? `Bu haftanın odak noktası: ${focus}` : ''}
+
+Hedef kitleler: ${kitles.join(', ')}
+Formatlar: ${formats.join(', ')}
+
+Her hedef kitle + format kombinasyonu için şunları üret:
+
+1. **Başlık** (5-8 kelime, dikkat çekici)
+2. **Ana Mesaj** (1-2 cümle, güçlü hook)
+3. **Caption** (Instagram/Facebook için, emoji kullan, hashtag ekle)
+4. **CTA** (Call-to-action butonu metni)
+5. **Kreatif Konsept** (Görsel tasarımcıya brief — renkler, kompozisyon, ne gösterilmeli)
+
+Türkçe yaz. Satış odaklı, samimi, gereksiz abartmadan.`;
+
+  try {
+    result.innerHTML = '<div style="color:var(--mid);font-size:.85rem;padding:16px">🤖 Claude kreatifler yazıyor...</div>';
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        messages: [{role:'user', content: prompt}]
+      })
+    });
+
+    const data = await res.json();
+    const text = data.content?.[0]?.text || 'Üretim başarısız.';
+
+    // Markdown'ı HTML'e çevir
+    const html = text
+      .replace(/^### (.+)$/gm, '<h3 style="font-family:\'Cormorant Garamond\',serif;font-size:1.1rem;font-weight:400;color:var(--accent);margin:20px 0 8px;padding-top:16px;border-top:1px solid var(--border)">$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2 style="font-size:1rem;font-weight:600;color:var(--text);margin:24px 0 10px">$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1 style="font-family:\'Cormorant Garamond\',serif;font-size:1.4rem;font-weight:300;color:var(--text);margin:28px 0 12px">$1</h1>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--text);font-weight:600">$1</strong>')
+      .replace(/^- (.+)$/gm, '<li style="font-size:.83rem;color:var(--mid);margin:4px 0;padding-left:8px">$1</li>')
+      .replace(/\n\n/g, '<br><br>')
+      .replace(/\n/g, '<br>');
+
+    const date = new Date().toLocaleDateString('tr-TR');
+    result.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mid)">${date} — ${kitles.length} kitle · ${formats.length} format</div>
+        <button class="btn btn-outline btn-sm" onclick="copyCreatives()">📋 Tümünü Kopyala</button>
+      </div>
+      <div id="creativesContent" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px;font-size:.84rem;line-height:1.8;color:var(--mid)">${html}</div>
+    `;
+    window._lastCreatives = text;
+
+  } catch(e) {
+    result.innerHTML = `<div style="color:var(--red);font-size:.84rem">Hata: ${e.message}</div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = '✨ Bu Haftanın Kreatiflerini Üret';
+};
+
+window.copyCreatives = () => {
+  if (!window._lastCreatives) return;
+  navigator.clipboard.writeText(window._lastCreatives).then(() => {
+    showToast('Kreatifler kopyalandı ✓', 'success');
+  });
+};
 
 // ── MEMBERS ──
 async function renderMembers() {
