@@ -499,6 +499,19 @@ select.filter-select{
     </div>
     <div class="modal-body">
       <input type="hidden" id="editProductId">
+      <!-- TEDARİKÇİDEN ÜRÜN ÇEK -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px">
+        <label class="form-label-m" style="margin-bottom:8px;display:block">🔗 Tedarikçiden Ürün Çek</label>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <select class="form-input-m" id="supplierSelect" style="width:160px;flex-shrink:0">
+            <option value="eslenza">Eslenza</option>
+            <option value="other">Diğer</option>
+          </select>
+          <input type="text" class="form-input-m" id="supplierUrl" placeholder="Ürün URL'ini yapıştır..." style="flex:1">
+          <button class="btn btn-outline btn-sm" onclick="fetchFromSupplier()" id="fetchBtn" style="flex-shrink:0;white-space:nowrap">⬇️ Çek</button>
+        </div>
+        <div id="fetchStatus" style="font-size:.78rem;color:var(--mid);display:none"></div>
+      </div>
       <div class="form-group-m">
         <label class="form-label-m">Satış Tipi *</label>
         <select class="form-input-m" id="pSaleType" onchange="toggleSerialFields()">
@@ -1767,6 +1780,103 @@ window.filterOrdersByStatus = (s) => {
 
 // ── BRAND KIT SETTINGS ──
 
+// ── TEDARİKÇİDEN ÜRÜN ÇEK ──
+window.fetchFromSupplier = async () => {
+  const url = document.getElementById('supplierUrl').value.trim();
+  const supplier = document.getElementById('supplierSelect').value;
+  const status = document.getElementById('fetchStatus');
+  const btn = document.getElementById('fetchBtn');
+  if (!url) { alert('URL girin'); return; }
+
+  btn.disabled = true;
+  btn.textContent = '⏳';
+  status.style.display = 'block';
+  status.textContent = 'Ürün bilgileri çekiliyor...';
+
+  try {
+    // CORS proxy üzerinden sayfayı çek
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxyUrl);
+    const data = await res.json();
+    const html = data.contents;
+
+    if (!html) throw new Error('Sayfa yüklenemedi');
+
+    // HTML parse et
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    let name = '', sizes = [], images = [], sku = '', description = '';
+
+    if (supplier === 'eslenza') {
+      // Ürün adı
+      const h2 = doc.querySelector('h2');
+      if (h2) name = h2.textContent.trim();
+
+      // SKU
+      const skuEl = [...doc.querySelectorAll('*')].find(el => el.textContent.includes('Stock Code:'));
+      if (skuEl) {
+        const skuMatch = skuEl.textContent.match(/Stock Code:\s*([^\n]+)/);
+        if (skuMatch) sku = skuMatch[1].trim();
+      }
+
+      // Bedenler
+      const sizeEls = doc.querySelectorAll('.size, .variant, [class*="size"], [class*="beden"]');
+      sizeEls.forEach(el => {
+        const t = el.textContent.trim();
+        if (t.match(/^\d+M$|^\d+-\d+|^[0-9]+[Mm]/)) sizes.push(t);
+      });
+      // Fallback: sayfada ay bazlı beden ara
+      if (!sizes.length) {
+        const bodyText = doc.body.innerText || doc.body.textContent;
+        const sizeMatches = bodyText.match(/\b\d{1,2}M\b|\b\d{1,2}-\d{1,2}\b/g);
+        if (sizeMatches) sizes = [...new Set(sizeMatches)];
+      }
+
+      // Görseller
+      doc.querySelectorAll('img').forEach(img => {
+        const src = img.src || img.getAttribute('src') || '';
+        if (src.includes('/uploads/') && !src.includes('lazy')) {
+          const fullSrc = src.startsWith('http') ? src : `https://www.eslenza.com${src}`;
+          if (!images.includes(fullSrc)) images.push(fullSrc);
+        }
+      });
+
+      // Açıklama
+      const descEl = doc.querySelector('[id*="description"], [class*="description"]');
+      if (descEl) description = descEl.textContent.trim().substring(0, 300);
+    }
+
+    // Formu doldur
+    if (name) document.getElementById('pName').value = name;
+    if (sku) document.getElementById('pSku').value = sku.split(' ')[0];
+    if (sizes.length) {
+      document.getElementById('pSizes').value = sizes.join(', ');
+      buildVariantGrid();
+    }
+    if (description) {
+      const descInput = document.getElementById('pDesc');
+      if (descInput) descInput.value = description;
+    }
+
+    // Görselleri önizle
+    if (images.length) {
+      pendingImages = images.slice(0, 5).map(url => ({url, existing: true}));
+      renderImgPreviews();
+    }
+
+    status.style.color = 'var(--green)';
+    status.textContent = `✓ ${name || 'Ürün'} çekildi — ${images.length} görsel, ${sizes.length} beden. Fiyat ve kategori bilgilerini doldurun.`;
+
+  } catch(e) {
+    status.style.color = 'var(--red)';
+    status.textContent = `Hata: ${e.message}`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = '⬇️ Çek';
+};
+
 // ── MARKETING ──
 async function renderMarketing() {
   const c = document.getElementById('pageContent');
@@ -1814,10 +1924,11 @@ async function renderMarketing() {
           <label class="form-label-m">Bu Haftanın Odak Noktası (opsiyonel)</label>
           <input type="text" class="form-input-m" id="mktFocus" placeholder="Örn: Anneler Günü kampanyası, Yeni müslin koleksiyonu, Bayram indirimi...">
         </div>
+
         <div style="margin-bottom:16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px">
           <label class="form-label-m">Claude API Key</label>
           <input type="password" class="form-input-m" id="claudeApiKey" placeholder="sk-ant-..." style="margin-top:6px;font-family:monospace">
-          <div class="form-hint">Sadece tarayıcında saklanır, hiçbir yere gönderilmez</div>
+          <div class="form-hint">Tarayıcında saklanır · <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">Buradan al →</a></div>
         </div>
         <button class="btn btn-green" onclick="generateCreatives()" id="generateBtn" style="min-width:200px">
           ✨ Bu Haftanın Kreatiflerini Üret
@@ -1885,27 +1996,33 @@ Türkçe yaz. Satış odaklı, samimi, gereksiz abartmadan.`;
   try {
     result.innerHTML = '<div style="color:var(--mid);font-size:.85rem;padding:16px">🤖 Claude kreatifler yazıyor...</div>';
 
-    const inputKey = document.getElementById('claudeApiKey')?.value?.trim();
-    const CLAUDE_KEY = inputKey || localStorage.getItem('claude_key');
-    if (!CLAUDE_KEY) { result.innerHTML = '<div style="color:var(--red);padding:12px">API key giriniz.</div>'; btn.disabled=false; btn.textContent='✨ Bu Haftanın Kreatiflerini Üret'; return; }
-    if (inputKey) localStorage.setItem('claude_key', inputKey);
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': CLAUDE_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4000,
-        messages: [{role:'user', content: prompt}]
-      })
-    });
 
-    const data = await res.json();
-    const text = data.content?.[0]?.text || 'Üretim başarısız.';
+    // Anthropic API - fetch with no-cors workaround
+    let text = '';
+    try {
+      const res = await fetch('/.netlify/functions/claude', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': CLAUDE_KEY,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 4000,
+          messages: [{role:'user', content: prompt}]
+        })
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`HTTP ${res.status}: ${err}`);
+      }
+      const data = await res.json();
+      text = data.content?.[0]?.text || 'Üretim başarısız.';
+    } catch(fetchErr) {
+      throw fetchErr;
+    }
 
     // Markdown'ı HTML'e çevir
     const html = text
