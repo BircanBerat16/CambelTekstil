@@ -501,16 +501,21 @@ select.filter-select{
       <input type="hidden" id="editProductId">
       <!-- TEDARİKÇİDEN ÜRÜN ÇEK -->
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px">
-        <label class="form-label-m" style="margin-bottom:8px;display:block">🔗 Tedarikçiden Ürün Çek</label>
-        <div style="display:flex;gap:8px;margin-bottom:8px">
-          <select class="form-input-m" id="supplierSelect" style="width:160px;flex-shrink:0">
+        <label class="form-label-m" style="margin-bottom:8px;display:block">🔗 Tedarikçiden Hızlı Doldur</label>
+        <div style="font-size:.76rem;color:var(--mid);margin-bottom:8px">
+          Eslenza'da ürün sayfasını aç → F12 → Console → şunu yaz:<br>
+          <code style="background:#111;color:#aaa;padding:2px 6px;border-radius:4px;font-size:.72rem">copy(document.body.innerText + '\n\n' + [...document.images].map(i=>i.src).join('\n'))</code><br>
+          → Enter → ardından aşağıya <strong>Ctrl+V</strong> yapıştır
+        </div>
+        <textarea id="supplierPaste" class="form-input-m" rows="4" placeholder="Ürün sayfasındaki metni buraya yapıştır..." style="resize:vertical;font-size:.8rem"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <select class="form-input-m" id="supplierSelect" style="width:140px;flex-shrink:0">
             <option value="eslenza">Eslenza</option>
             <option value="other">Diğer</option>
           </select>
-          <input type="text" class="form-input-m" id="supplierUrl" placeholder="Ürün URL'ini yapıştır..." style="flex:1">
-          <button class="btn btn-outline btn-sm" onclick="fetchFromSupplier()" id="fetchBtn" style="flex-shrink:0;white-space:nowrap">⬇️ Çek</button>
+          <button class="btn btn-outline btn-sm" onclick="fetchFromSupplier()" style="flex-shrink:0">⚡ Doldur</button>
         </div>
-        <div id="fetchStatus" style="font-size:.78rem;color:var(--mid);display:none"></div>
+        <div id="fetchStatus" style="font-size:.78rem;margin-top:6px;display:none"></div>
       </div>
       <div class="form-group-m">
         <label class="form-label-m">Satış Tipi *</label>
@@ -1782,115 +1787,70 @@ window.filterOrdersByStatus = (s) => {
 
 // ── TEDARİKÇİDEN ÜRÜN ÇEK ──
 window.fetchFromSupplier = async () => {
-  const url = document.getElementById('supplierUrl').value.trim();
-  const supplier = document.getElementById('supplierSelect').value;
+  const text = document.getElementById('supplierPaste').value.trim();
   const status = document.getElementById('fetchStatus');
-  const btn = document.getElementById('fetchBtn');
-  if (!url) { alert('URL girin'); return; }
+  if (!text) { alert('Lütfen ürün sayfasındaki metni yapıştırın'); return; }
 
-  btn.disabled = true;
-  btn.textContent = '⏳';
   status.style.display = 'block';
-  status.textContent = 'Ürün bilgileri çekiliyor...';
+  status.style.color = 'var(--mid)';
+  status.textContent = 'İşleniyor...';
 
-  try {
-    // CORS proxy üzerinden sayfayı çek
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-    const res = await fetch(proxyUrl);
-    const data = await res.json();
-    const html = data.contents;
+  let name = '', sizes = [], sku = '', description = '';
+  const textLines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
-    if (!html) throw new Error('Sayfa yüklenemedi');
-
-    // HTML parse et
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-
-    let name = '', sizes = [], images = [], sku = '', description = '';
-
-    if (supplier === 'eslenza') {
-      // Ürün adı
-      const h2 = doc.querySelector('h2');
-      if (h2) name = h2.textContent.trim();
-
-      // SKU
-      const skuEl = [...doc.querySelectorAll('*')].find(el => el.textContent.includes('Stock Code:'));
-      if (skuEl) {
-        const skuMatch = skuEl.textContent.match(/Stock Code:\s*([^\n]+)/);
-        if (skuMatch) sku = skuMatch[1].trim();
-      }
-
-      // Bedenler
-      const sizeEls = doc.querySelectorAll('.size, .variant, [class*="size"], [class*="beden"]');
-      sizeEls.forEach(el => {
-        const t = el.textContent.trim();
-        if (t.match(/^\d+M$|^\d+-\d+|^[0-9]+[Mm]/)) sizes.push(t);
-      });
-      // Fallback: sayfada ay bazlı beden ara
-      if (!sizes.length) {
-        const bodyText = doc.body.innerText || doc.body.textContent;
-        const sizeMatches = bodyText.match(/\b\d{1,2}M\b|\b\d{1,2}-\d{1,2}\b/g);
-        if (sizeMatches) sizes = [...new Set(sizeMatches)];
-      }
-
-      // Görseller
-      doc.querySelectorAll('img').forEach(img => {
-        const src = img.src || img.getAttribute('src') || '';
-        if (src.includes('/uploads/') && !src.includes('lazy')) {
-          const fullSrc = src.startsWith('http') ? src : `https://www.eslenza.com${src}`;
-          if (!images.includes(fullSrc)) images.push(fullSrc);
-        }
-      });
-
-      // Açıklama
-      const descEl = doc.querySelector('[id*="description"], [class*="description"]');
-      if (descEl) description = descEl.textContent.trim().substring(0, 300);
+  // Ürün adı
+  for (const line of textLines) {
+    if (line.length > 6 && line.length < 120 && !line.includes('http') && !line.match(/^[\d,₺$€]+$/)) {
+      name = line; break;
     }
-
-    // Formu doldur
-    if (name) document.getElementById('pName').value = name;
-    if (sku) document.getElementById('pSku').value = sku.split(' ')[0];
-    if (sizes.length) {
-      document.getElementById('pSizes').value = sizes.join(', ');
-      buildVariantGrid();
-    }
-    if (description) {
-      const descInput = document.getElementById('pDesc');
-      if (descInput) descInput.value = description;
-    }
-
-    // Görselleri Cloudinary'e yükle
-    if (images.length) {
-      status.textContent = `✓ Bilgiler çekildi — görseller Cloudinary'e yükleniyor (${images.length} adet)...`;
-      const uploadedImages = [];
-      for (const imgUrl of images.slice(0, 5)) {
-        try {
-          const formData = new FormData();
-          formData.append('file', imgUrl);
-          formData.append('upload_preset', CLOUDINARY_PRESET);
-          formData.append('folder', 'cambel-products');
-          const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-            method: 'POST', body: formData
-          });
-          const uploadData = await uploadRes.json();
-          if (uploadData.secure_url) uploadedImages.push(uploadData.secure_url);
-        } catch(e) { console.log('Görsel yükleme hatası:', e); }
-      }
-      pendingImages = uploadedImages.map(url => ({url, existing: true}));
-      renderImgPreviews();
-    }
-
-    status.style.color = 'var(--green)';
-    status.textContent = `✓ ${name || 'Ürün'} çekildi — ${images.length} görsel, ${sizes.length} beden. Fiyat ve kategori bilgilerini doldurun.`;
-
-  } catch(e) {
-    status.style.color = 'var(--red)';
-    status.textContent = `Hata: ${e.message}`;
   }
 
-  btn.disabled = false;
-  btn.textContent = '⬇️ Çek';
+  // SKU
+  const skuMatch = text.match(/(?:Stok Kodu|Stock Code|SKU|Ürün Kodu|Kod)[:\s]+([A-Za-z0-9\-\_]+)/i);
+  if (skuMatch) sku = skuMatch[1];
+
+  // Bedenler
+  const sizeMatches = text.match(/\b(\d{1,2}[\-\/]\d{1,2}\s*(?:Ay|ay)?|\d{1,2}\s*Ay|\d{1,2}M|XS|S\/M|M\/L|XXL?)\b/g);
+  if (sizeMatches) sizes = [...new Set(sizeMatches.map(s => s.trim()))];
+
+  // Açıklama
+  const descMatch = text.match(/(%\d+[^\n]{0,150}|Kumaş[^\n]{0,150}|Materyal[^\n]{0,150}|İçerik[^\n]{0,150})/i);
+  if (descMatch) description = descMatch[0].trim();
+
+  // Görseller — metindeki http URL'lerini bul
+  const imgUrls = [...new Set(text.match(/https?:\/\/[^\s"'<>]+\.(?:jpg|jpeg|png|webp)[^\s"'<>]*/gi)||[])];
+
+  // Formu doldur
+  if (name) document.getElementById('pName').value = name;
+  if (sku) document.getElementById('pSku').value = sku;
+  if (sizes.length) { document.getElementById('pSizes').value = sizes.join(', '); buildVariantGrid(); }
+  const descInput = document.getElementById('pDesc');
+  if (descInput && description) descInput.value = description;
+
+  // Görselleri Cloudinary'e yükle
+  if (imgUrls.length) {
+    status.textContent = `Bilgiler dolduruldu — ${imgUrls.length} görsel Cloudinary'e yükleniyor...`;
+    pendingImages = [];
+    for (const imgUrl of imgUrls.slice(0, 6)) {
+      try {
+        const fd = new FormData();
+        fd.append('file', imgUrl);
+        fd.append('upload_preset', CLOUDINARY_PRESET);
+        fd.append('folder', 'cambel-products');
+        const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {method:'POST',body:fd});
+        const d = await r.json();
+        if (d.secure_url) pendingImages.push({url: d.secure_url, existing: true});
+      } catch(e) {}
+    }
+    renderImgPreviews();
+    // Görsel yükleme alanını göster
+    document.getElementById('normalImageUpload').style.display = 'block';
+  }
+
+  status.style.color = '#2D7A50';
+  status.textContent = `✓ "${name}" · ${sizes.length} beden · ${pendingImages.length} görsel yüklendi. Fiyat ve kategori girin.`;
 };
+
 
 // ── MARKETING ──
 async function renderMarketing() {
