@@ -499,24 +499,6 @@ select.filter-select{
     </div>
     <div class="modal-body">
       <input type="hidden" id="editProductId">
-      <!-- TEDARİKÇİDEN ÜRÜN ÇEK -->
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px">
-        <label class="form-label-m" style="margin-bottom:8px;display:block">🔗 Tedarikçiden Hızlı Doldur</label>
-        <div style="font-size:.76rem;color:var(--mid);margin-bottom:8px">
-          Eslenza'da ürün sayfasını aç → F12 → Console → şunu yaz:<br>
-          <code style="background:#111;color:#aaa;padding:2px 6px;border-radius:4px;font-size:.72rem">copy(document.body.innerText + '\n\n' + [...document.images].map(i=>i.src).join('\n'))</code><br>
-          → Enter → ardından aşağıya <strong>Ctrl+V</strong> yapıştır
-        </div>
-        <textarea id="supplierPaste" class="form-input-m" rows="4" placeholder="Ürün sayfasındaki metni buraya yapıştır..." style="resize:vertical;font-size:.8rem"></textarea>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <select class="form-input-m" id="supplierSelect" style="width:140px;flex-shrink:0">
-            <option value="eslenza">Eslenza</option>
-            <option value="other">Diğer</option>
-          </select>
-          <button class="btn btn-outline btn-sm" onclick="fetchFromSupplier()" style="flex-shrink:0">⚡ Doldur</button>
-        </div>
-        <div id="fetchStatus" style="font-size:.78rem;margin-top:6px;display:none"></div>
-      </div>
       <div class="form-group-m">
         <label class="form-label-m">Satış Tipi *</label>
         <select class="form-input-m" id="pSaleType" onchange="toggleSerialFields()">
@@ -836,21 +818,47 @@ window.addEventListener('load', () => {
 });
 
 function fillFromImport(p) {
+  // Satış tipi — Eslenza'dan gelenler serili
+  if (p.saleType === 'serial') {
+    document.getElementById('pSaleType').value = 'serial';
+    toggleSerialFields();
+  }
+
   if (p.name) document.getElementById('pName').value = p.name;
   if (p.sku) document.getElementById('pSku').value = p.sku;
-  if (p.price) document.getElementById('pPrice').value = p.price;
+
+  // Fiyatlar
+  if (p.saleType === 'serial') {
+    if (p.serialPrice) document.getElementById('pSerialPrice').value = p.serialPrice;
+    if (p.unitPrice) document.getElementById('pUnitPrice').value = p.unitPrice;
+    if (p.serialSizes?.length) {
+      document.getElementById('pSerialSizes').value = p.serialSizes.join(', ');
+    }
+  } else {
+    if (p.salePrice) document.getElementById('pPrice').value = p.salePrice;
+  }
+
   if (p.description) { const d = document.getElementById('pDesc'); if(d) d.value = p.description; }
-  if (p.sizes?.length) { document.getElementById('pSizes').value = p.sizes.join(', '); buildVariantGrid(); }
+
+  // Bedenler (tekli için)
+  if (p.sizes?.length && p.saleType !== 'serial') {
+    document.getElementById('pSizes').value = p.sizes.join(', ');
+    buildVariantGrid();
+  }
+
+  // Görseller
   if (p.uploadedImages?.length) {
     pendingImages = p.uploadedImages.map(url => ({url, existing:true}));
     renderImgPreviews();
     document.getElementById('normalImageUpload').style.display = 'block';
   }
+
   const status = document.getElementById('fetchStatus');
   if (status) {
     status.style.display = 'block';
     status.style.color = '#2D7A50';
-    status.textContent = `✓ "${p.name}" eklentiden aktarıldı — ${p.uploadedImages?.length||0} görsel, ${p.sizes?.length||0} beden. Fiyat ve kategori girin.`;
+    const priceInfo = p.purchasePrice ? ` · Alış: ₺${p.purchasePrice} → Satış: ₺${p.salePrice}` : '';
+    status.textContent = `✓ "${p.name}" eklentiden aktarıldı — ${p.uploadedImages?.length||0} görsel, ${p.serialSizes?.length||p.sizes?.length||0} beden${priceInfo}. Kategori girin → Kaydet.`;
   }
 }
 
