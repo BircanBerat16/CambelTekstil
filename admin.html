@@ -810,7 +810,7 @@ window.addEventListener('load', () => {
       const product = JSON.parse(decodeURIComponent(importData));
       setTimeout(() => {
         openAddProduct();
-        setTimeout(() => fillFromImport(product), 600);
+        setTimeout(() => fillFromImport(product), 1000);
       }, 2000);
     } catch(e) { console.log('Import parse error:', e); }
   }
@@ -818,71 +818,68 @@ window.addEventListener('load', () => {
 
 function fillFromImport(p) {
   // Satış tipi — Eslenza'dan gelenler serili
-  if (p.saleType === 'serial') {
-    document.getElementById('pSaleType').value = 'serial';
-    toggleSerialFields();
-  }
+  document.getElementById('pSaleType').value = 'serial';
+  toggleSerialFields();
 
-  if (p.name) document.getElementById('pName').value = p.name;
-  if (p.sku) document.getElementById('pSku').value = p.sku;
+  // Kısa bekle — serialFields DOM'a render olsun
+  setTimeout(() => {
+    if (p.name) document.getElementById('pName').value = p.name;
+    if (p.sku) document.getElementById('pSku').value = p.sku;
 
-  // Materyal
-  const matEl = document.getElementById('pMaterial');
-  if (matEl) matEl.value = '%100 Organik Pamuk';
+    // Materyal
+    const matEl = document.getElementById('pMaterial');
+    if (matEl) matEl.value = '%100 Organik Pamuk';
 
-  // KDV
-  document.getElementById('pVat').value = '10';
+    // KDV
+    const vatEl = document.getElementById('pVat');
+    if (vatEl) vatEl.value = '10';
 
-  // Cambel ek süre
-  document.getElementById('pCambelDays').value = '25';
+    // Cambel ek süre
+    const daysEl = document.getElementById('pCambelDays');
+    if (daysEl) daysEl.value = '25';
 
-  // Kişiselleştirme — ense baskısı ve yıkama talimatı seçili + fiyatları
-  const custConfig = {
-    'ense-baskisi': { checked: true, price: 5 },
-    'yikama-talimat': { checked: true, price: 3 },
-    'sallanti-kart': { checked: false, price: '' },
-    'ambalaj': { checked: false, price: '' },
-    'sticker': { checked: false, price: '' },
-    'barkod': { checked: false, price: '' }
-  };
-  Object.entries(custConfig).forEach(([id, cfg]) => {
-    const chk = document.getElementById('cust_' + id);
-    const price = document.getElementById('cust_price_' + id);
-    if (chk) chk.checked = cfg.checked;
-    if (price) price.value = cfg.price;
-  });
+    // Kişiselleştirme
+    const custConfig = {
+      'ense-baskisi': { checked: true, price: 5 },
+      'yikama-talimat': { checked: true, price: 3 },
+      'sallanti-kart': { checked: false, price: '' },
+      'ambalaj': { checked: false, price: '' },
+      'sticker': { checked: false, price: '' },
+      'barkod': { checked: false, price: '' }
+    };
+    Object.entries(custConfig).forEach(([id, cfg]) => {
+      const chk = document.getElementById('cust_' + id);
+      const price = document.getElementById('cust_price_' + id);
+      if (chk) chk.checked = cfg.checked;
+      if (price) price.value = cfg.price;
+    });
 
-  // Fiyatlar
-  if (p.saleType === 'serial') {
+    // Paket bedenleri ve fiyatlar
+    if (p.serialSizes?.length) {
+      document.getElementById('pSerialSizes').value = p.serialSizes.join(', ');
+    }
     if (p.serialPrice) document.getElementById('pSerialPrice').value = p.serialPrice;
     if (p.unitPrice) document.getElementById('pUnitPrice').value = p.unitPrice;
-    if (p.serialSizes?.length) document.getElementById('pSerialSizes').value = p.serialSizes.join(', ');
-  } else {
-    if (p.salePrice) document.getElementById('pPrice').value = p.salePrice;
-  }
 
-  if (p.description) { const d = document.getElementById('pDesc'); if(d) d.value = p.description; }
+    // Açıklama
+    if (p.description) { const d = document.getElementById('pDesc'); if(d) d.value = p.description; }
 
-  // Bedenler (tekli için)
-  if (p.sizes?.length && p.saleType !== 'serial') {
-    document.getElementById('pSizes').value = p.sizes.join(', ');
-    buildVariantGrid();
-  }
+    // Görseller
+    if (p.uploadedImages?.length) {
+      pendingImages = p.uploadedImages.map(url => ({url, existing:true}));
+      renderImgPreviews();
+      document.getElementById('normalImageUpload').style.display = 'block';
+    }
 
-  // Görseller
-  if (p.uploadedImages?.length) {
-    pendingImages = p.uploadedImages.map(url => ({url, existing:true}));
-    renderImgPreviews();
-    document.getElementById('normalImageUpload').style.display = 'block';
-  }
-
-  const status = document.getElementById('fetchStatus');
-  if (status) {
-    status.style.display = 'block';
-    status.style.color = '#2D7A50';
-    const priceInfo = p.purchasePrice ? ` · Alış: ₺${p.purchasePrice} → Paket: ₺${p.serialPrice}` : '';
-    status.textContent = `✓ "${p.name}" aktarıldı — ${p.uploadedImages?.length||0} görsel · ${p.serialSizes?.length||p.sizes?.length||0} beden${priceInfo}. Kategori seçin → Kaydet.`;
-  }
+    // Durum mesajı
+    const status = document.getElementById('fetchStatus');
+    if (status) {
+      status.style.display = 'block';
+      status.style.color = '#2D7A50';
+      const priceInfo = p.purchasePrice ? ` · Alış: ₺${p.purchasePrice} → Paket: ₺${p.serialPrice}` : '';
+      status.textContent = `✓ "${p.name}" aktarıldı — ${p.uploadedImages?.length||0} görsel · ${p.serialSizes?.length||0} beden${priceInfo}. Kategori seçin → Kaydet.`;
+    }
+  }, 200);
 }
 
 async function initApp() {
