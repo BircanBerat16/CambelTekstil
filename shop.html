@@ -875,6 +875,7 @@ function applyFilters() {
     case 'price-asc': prods.sort((a,b)=>(a.salePrice||a.price)-(b.salePrice||b.price)); break;
     case 'price-desc': prods.sort((a,b)=>(b.salePrice||b.price)-(a.salePrice||a.price)); break;
     case 'name': prods.sort((a,b)=>a.name.localeCompare(b.name,'tr')); break;
+    default: prods.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)); break;
   }
   // Renk varyantlarını ayrı kartlara genişlet
   const expanded = [];
@@ -1263,7 +1264,7 @@ function renderCart() {
     <div class="cart-item">
       <div class="cart-item-img">${item.image ? `<img src="${item.image}" alt="${item.name}">` : ''}</div>
       <div class="cart-item-info">
-        <div class="cart-item-name">${item.name}${item.saleType==='serial' ? ' <span style="background:#EAF5EF;color:#2D7A50;font-size:.65rem;font-weight:600;padding:1px 6px;border-radius:10px">'+(item.serialSizes?.length||0)+'li Set</span>' : ''}</div>
+        <div class="cart-item-name">${item.name}${item.saleType==='serial' ? ' <span style="background:#EAF5EF;color:#2D7A50;font-size:.65rem;font-weight:600;padding:1px 6px;border-radius:10px">'+(item.serialSizes?.length||0)+'\u2019lü Set</span>' : ''}</div>
         <div class="cart-item-meta">${[item.size,item.color].filter(Boolean).join(' · ')}${item.customization==='self'?' · <span style="color:#5C7A5C;font-weight:600">Kendin Uygula</span>':item.customization==='cambel'?` · <span style="color:#C0392B;font-weight:600">Cambel Uygulasın (+${item.cambelDays||7} gün)</span>`:''}
         </div>
         <div class="cart-item-controls">
