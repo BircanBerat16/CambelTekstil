@@ -942,7 +942,7 @@ function productCard(p) {
         </div>
         <div class="product-name">${p.name}</div>
 
-        ${p.saleType === 'serial' ? `<div style="font-size:.72rem;color:var(--gr);font-weight:600;margin-bottom:4px">📦 ${p.serialSizes?.length||0}li Set</div>` : ''}
+        ${p.saleType === 'serial' ? `<div style="font-size:.72rem;color:var(--gr);font-weight:600;margin-bottom:4px">📦 ${p.serialSizes?.length||0}'lü Set</div>` : ''}
         <div class="product-price">
           ${currentMember
             ? (p.saleType === 'serial'
@@ -1014,7 +1014,7 @@ function renderPmodal() {
     <div class="pmodal-name">${p.name}</div>
     ${p.saleType === 'serial' && p.serialSizes?.length ? `
       <div style="background:#EAF5EF;border-radius:8px;padding:10px 14px;margin-bottom:10px">
-        <div style="font-size:.75rem;font-weight:600;color:#2D7A50;margin-bottom:6px">📦 ${p.serialSizes.length}li Set — Paket İçeriği</div>
+        <div style="font-size:.75rem;font-weight:600;color:#2D7A50;margin-bottom:6px">📦 ${p.serialSizes.length}'lü Set — Paket İçeriği</div>
         <div style="display:flex;flex-wrap:wrap;gap:5px">
           ${p.serialSizes.map(s=>`<span style="background:#fff;border:1px solid #5C7A5C;border-radius:4px;padding:2px 8px;font-size:.75rem;color:#2D7A50">${s}</span>`).join('')}
         </div>
