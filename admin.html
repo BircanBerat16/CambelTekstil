@@ -868,9 +868,9 @@ function fillFromImport(p) {
       if (upEl) { upEl.removeAttribute('readonly'); upEl.value = p.unitPrice; upEl.setAttribute('readonly',''); }
     }
 
-    // Açıklama
+    // Açıklama — sabit metin (eklentiden gelen yerine)
     const descEl = document.getElementById('pDesc');
-    if (descEl && p.description) descEl.value = p.description;
+    if (descEl) descEl.value = `Organik pamuktan üretilen bu white label ürün, kendi bebek giyim markanı kurmak isteyen girişimciler ve butik sahipleri için tasarlanmıştır. %100 organik pamuk dokusu, sertifikalı üretim ile desteklenen kalitesiyle güvenle markanın altında satabilirsin.\n\nBrand Kit ile tam anlamıyla senin ürününe dönüştür: ense baskısı ile marka adını ve logonu ekle, yıkama talimatı etiketiyle profesyonel görünüm kazan, sallantı kart ile ürün hikayeni anlat, baskılı ambalajla unboxing deneyimi yarat.\n\nMinimum sipariş adedi yok — 1 adetten başlayabilirsin. Trendyol, Instagram, kendi e-ticaret siten veya fiziksel mağazan için ideal.`;
 
     // Görseller
     if (p.uploadedImages?.length) {
