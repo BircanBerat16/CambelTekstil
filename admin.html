@@ -821,14 +821,17 @@ onAuthStateChanged(auth, user => {
 // ── INIT ──
 // Eklentiden import kontrolü
 window.addEventListener('load', () => {
-  if (window.location.hash === '#import') {
-    openAddProduct(true);
-    // chrome.storage varsa oku
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      chrome.storage.local.get('cambel_import', (data) => {
-        if (data.cambel_import) fillFromImport(data.cambel_import);
-      });
-    }
+  const params = new URLSearchParams(window.location.search);
+  const importData = params.get('import');
+  if (importData) {
+    try {
+      const product = JSON.parse(decodeURIComponent(importData));
+      // Admin paneli yüklenince ürün formunu aç ve doldur
+      setTimeout(() => {
+        openAddProduct();
+        setTimeout(() => fillFromImport(product), 300);
+      }, 1500);
+    } catch(e) { console.log('Import parse error:', e); }
   }
 });
 
