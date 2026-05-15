@@ -808,13 +808,12 @@ window.addEventListener('load', () => {
   if (importData) {
     try {
       const product = JSON.parse(decodeURIComponent(importData));
-      // initApp tamamlanana kadar bekle
+      // initApp ve kategoriler yüklenene kadar bekle
       const waitForInit = setInterval(() => {
-        const addBtn = document.querySelector('.btn.btn-dark');
-        if (addBtn) {
+        if (typeof allCategories !== 'undefined' && allCategories.length > 0 && document.getElementById('pName')) {
           clearInterval(waitForInit);
           openAddProduct();
-          setTimeout(() => fillFromImport(product), 800);
+          setTimeout(() => fillFromImport(product), 500);
         }
       }, 300);
     } catch(e) { console.log('Import parse error:', e); }
