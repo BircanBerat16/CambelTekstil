@@ -826,13 +826,37 @@ function fillFromImport(p) {
   if (p.name) document.getElementById('pName').value = p.name;
   if (p.sku) document.getElementById('pSku').value = p.sku;
 
+  // Materyal
+  const matEl = document.getElementById('pMaterial');
+  if (matEl) matEl.value = '%100 Organik Pamuk';
+
+  // KDV
+  document.getElementById('pVat').value = '10';
+
+  // Cambel ek süre
+  document.getElementById('pCambelDays').value = '25';
+
+  // Kişiselleştirme — ense baskısı ve yıkama talimatı seçili + fiyatları
+  const custConfig = {
+    'ense-baskisi': { checked: true, price: 5 },
+    'yikama-talimat': { checked: true, price: 3 },
+    'sallanti-kart': { checked: false, price: '' },
+    'ambalaj': { checked: false, price: '' },
+    'sticker': { checked: false, price: '' },
+    'barkod': { checked: false, price: '' }
+  };
+  Object.entries(custConfig).forEach(([id, cfg]) => {
+    const chk = document.getElementById('cust_' + id);
+    const price = document.getElementById('cust_price_' + id);
+    if (chk) chk.checked = cfg.checked;
+    if (price) price.value = cfg.price;
+  });
+
   // Fiyatlar
   if (p.saleType === 'serial') {
     if (p.serialPrice) document.getElementById('pSerialPrice').value = p.serialPrice;
     if (p.unitPrice) document.getElementById('pUnitPrice').value = p.unitPrice;
-    if (p.serialSizes?.length) {
-      document.getElementById('pSerialSizes').value = p.serialSizes.join(', ');
-    }
+    if (p.serialSizes?.length) document.getElementById('pSerialSizes').value = p.serialSizes.join(', ');
   } else {
     if (p.salePrice) document.getElementById('pPrice').value = p.salePrice;
   }
@@ -856,8 +880,8 @@ function fillFromImport(p) {
   if (status) {
     status.style.display = 'block';
     status.style.color = '#2D7A50';
-    const priceInfo = p.purchasePrice ? ` · Alış: ₺${p.purchasePrice} → Satış: ₺${p.salePrice}` : '';
-    status.textContent = `✓ "${p.name}" eklentiden aktarıldı — ${p.uploadedImages?.length||0} görsel, ${p.serialSizes?.length||p.sizes?.length||0} beden${priceInfo}. Kategori girin → Kaydet.`;
+    const priceInfo = p.purchasePrice ? ` · Alış: ₺${p.purchasePrice} → Paket: ₺${p.serialPrice}` : '';
+    status.textContent = `✓ "${p.name}" aktarıldı — ${p.uploadedImages?.length||0} görsel · ${p.serialSizes?.length||p.sizes?.length||0} beden${priceInfo}. Kategori seçin → Kaydet.`;
   }
 }
 
