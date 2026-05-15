@@ -808,10 +808,15 @@ window.addEventListener('load', () => {
   if (importData) {
     try {
       const product = JSON.parse(decodeURIComponent(importData));
-      setTimeout(() => {
-        openAddProduct();
-        setTimeout(() => fillFromImport(product), 1000);
-      }, 2000);
+      // initApp tamamlanana kadar bekle
+      const waitForInit = setInterval(() => {
+        const addBtn = document.querySelector('.btn.btn-dark');
+        if (addBtn) {
+          clearInterval(waitForInit);
+          openAddProduct();
+          setTimeout(() => fillFromImport(product), 800);
+        }
+      }, 300);
     } catch(e) { console.log('Import parse error:', e); }
   }
 });
