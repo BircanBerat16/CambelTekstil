@@ -858,11 +858,19 @@ function fillFromImport(p) {
     if (p.serialSizes?.length) {
       document.getElementById('pSerialSizes').value = p.serialSizes.join(', ');
     }
-    if (p.serialPrice) document.getElementById('pSerialPrice').value = p.serialPrice;
-    if (p.unitPrice) document.getElementById('pUnitPrice').value = p.unitPrice;
+    // serialPrice = paket fiyatı, unitPrice = birim fiyat (readonly kaldır geçici)
+    if (p.serialPrice) {
+      const spEl = document.getElementById('pSerialPrice');
+      if (spEl) spEl.value = p.serialPrice;
+    }
+    if (p.unitPrice) {
+      const upEl = document.getElementById('pUnitPrice');
+      if (upEl) { upEl.removeAttribute('readonly'); upEl.value = p.unitPrice; upEl.setAttribute('readonly',''); }
+    }
 
     // Açıklama
-    if (p.description) { const d = document.getElementById('pDesc'); if(d) d.value = p.description; }
+    const descEl = document.getElementById('pDesc');
+    if (descEl && p.description) descEl.value = p.description;
 
     // Görseller
     if (p.uploadedImages?.length) {
