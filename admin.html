@@ -819,6 +819,38 @@ onAuthStateChanged(auth, user => {
 });
 
 // ── INIT ──
+// Eklentiden import kontrolü
+window.addEventListener('load', () => {
+  if (window.location.hash === '#import') {
+    openAddProduct(true);
+    // chrome.storage varsa oku
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.get('cambel_import', (data) => {
+        if (data.cambel_import) fillFromImport(data.cambel_import);
+      });
+    }
+  }
+});
+
+function fillFromImport(p) {
+  if (p.name) document.getElementById('pName').value = p.name;
+  if (p.sku) document.getElementById('pSku').value = p.sku;
+  if (p.price) document.getElementById('pPrice').value = p.price;
+  if (p.description) { const d = document.getElementById('pDesc'); if(d) d.value = p.description; }
+  if (p.sizes?.length) { document.getElementById('pSizes').value = p.sizes.join(', '); buildVariantGrid(); }
+  if (p.uploadedImages?.length) {
+    pendingImages = p.uploadedImages.map(url => ({url, existing:true}));
+    renderImgPreviews();
+    document.getElementById('normalImageUpload').style.display = 'block';
+  }
+  const status = document.getElementById('fetchStatus');
+  if (status) {
+    status.style.display = 'block';
+    status.style.color = '#2D7A50';
+    status.textContent = `✓ "${p.name}" eklentiden aktarıldı — ${p.uploadedImages?.length||0} görsel, ${p.sizes?.length||0} beden. Fiyat ve kategori girin.`;
+  }
+}
+
 async function initApp() {
   await loadCategories();
   startOrdersListener();
@@ -1311,7 +1343,7 @@ window.updateCambelFeeHint = () => {
 };
 
 // ── PRODUCT MODAL ──
-window.openAddProduct = () => {
+window.openAddProduct = (fromImport) => {
   document.getElementById('productModalTitle').textContent = 'Yeni Ürün Ekle';
   document.getElementById('editProductId').value = '';
   ['pName','pPrice','pSalePrice','pStock','pSku','pSizes','pColors','pDesc','pMaterial'].forEach(id => document.getElementById(id).value = '');
