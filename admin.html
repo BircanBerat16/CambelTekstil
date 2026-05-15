@@ -825,6 +825,8 @@ function fillFromImport(p) {
   // Satış tipi — Eslenza'dan gelenler serili
   document.getElementById('pSaleType').value = 'serial';
   toggleSerialFields();
+  // Kategori listesini doldur
+  populateCategorySelects();
 
   // Kısa bekle — serialFields DOM'a render olsun
   setTimeout(() => {
