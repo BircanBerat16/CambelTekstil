@@ -808,11 +808,10 @@ window.addEventListener('load', () => {
   if (importData) {
     try {
       const product = JSON.parse(decodeURIComponent(importData));
-      // Admin paneli yüklenince ürün formunu aç ve doldur
       setTimeout(() => {
         openAddProduct();
-        setTimeout(() => fillFromImport(product), 300);
-      }, 1500);
+        setTimeout(() => fillFromImport(product), 600);
+      }, 2000);
     } catch(e) { console.log('Import parse error:', e); }
   }
 });
@@ -1463,12 +1462,16 @@ window.loadSubcats = (selectedSub) => {
 window.saveProduct = async () => {
   const id = document.getElementById('editProductId').value;
   const name = document.getElementById('pName').value.trim();
-  const price = parseFloat(document.getElementById('pPrice').value);
+  const isSerial = document.getElementById('pSaleType').value === 'serial';
+  const price = isSerial
+    ? parseFloat(document.getElementById('pSerialPrice').value)
+    : parseFloat(document.getElementById('pPrice').value);
   const variantStock = getVariantStock();
   const stock = variantStock
     ? Object.values(variantStock).reduce((s,v)=>s+v,0)
     : parseInt(document.getElementById('pStock').value)||0;
-  if (!name || isNaN(price)) { showToast('Ürün adı ve fiyat zorunludur','error'); return; }
+  if (!name) { showToast('Ürün adı zorunludur','error'); return; }
+  if (isNaN(price) || price <= 0) { showToast(isSerial ? 'Paket fiyatı zorunludur' : 'Fiyat zorunludur','error'); return; }
   showToast('Kaydediliyor...','');
 
   // Upload new images to Cloudinary
