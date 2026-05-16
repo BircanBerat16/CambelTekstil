@@ -344,6 +344,15 @@
     font-weight: 400;
     margin-bottom: 2px;
   }
+  #featuredGrid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 20px !important;
+    width: 100% !important;
+  }
+  @media (max-width: 900px) {
+    #featuredGrid { grid-template-columns: repeat(2, 1fr) !important; }
+  }
   @keyframes floatY {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-8px); }
@@ -1739,7 +1748,6 @@ function toggleMobileNav() {
       // Featured grid
       const grid = document.getElementById('featuredGrid');
       if (!grid || !products.length) { if(grid) grid.innerHTML = ''; return; }
-      grid.style.gridTemplateColumns = 'repeat(4, minmax(0, 1fr))';
       grid.innerHTML = products.map(p => {
         const img = p.images?.[0] || '';
         const price = p.saleType === 'serial' ? (p.unitPrice || p.serialPrice || p.price) : (p.salePrice || p.price);
