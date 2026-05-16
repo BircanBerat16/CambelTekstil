@@ -143,6 +143,13 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 </head>
 <body>
 
+<div id="loadingScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--warm)">
+  <div style="text-align:center">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:300;color:var(--ch);margin-bottom:8px">Cambel<span style="color:var(--acc)">.</span></div>
+    <div style="width:32px;height:2px;background:var(--acc);margin:0 auto;animation:loadBar 1s infinite alternate"></div>
+  </div>
+</div>
+<style>@keyframes loadBar{from{width:20px}to{width:60px}}</style>
 <nav>
   <a href="index.html" class="logo">Cambel<span>.</span></a>
   <div class="nav-right">
@@ -152,7 +159,7 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 </nav>
 
 <!-- AUTH SCREEN -->
-<div id="authScreen" class="auth-screen">
+<div id="authScreen" class="auth-screen" style="display:none">
   <div class="auth-card">
     <div class="auth-logo">Cambel<span>.</span></div>
     <div class="auth-sub">Marka Hesabı</div>
@@ -338,6 +345,7 @@ async function loadUserProfile(user) {
 }
 
 function showScreen(screen) {
+  document.getElementById('loadingScreen').style.display = 'none';
   document.getElementById('authScreen').style.display = screen==='auth' ? 'flex' : 'none';
   document.getElementById('verifyScreen').style.display = screen==='verify' ? 'flex' : 'none';
   document.getElementById('accountPanel').style.display = screen==='account' ? 'block' : 'none';
@@ -434,6 +442,11 @@ async function renderOrders() {
       o.userId === currentUser.uid || 
       o.customerEmail?.toLowerCase() === currentUser.email?.toLowerCase()
     );
+
+    // Ürün görsellerini çek
+    const prodSnap = await getDocs(collection(db,'products'));
+    const products = Object.fromEntries(prodSnap.docs.map(d => [d.data().name, d.data()]));
+
     if (!orders.length) {
       main.innerHTML = `
         <div class="acc-section-title">Siparişlerim</div>
@@ -445,13 +458,13 @@ async function renderOrders() {
       return;
     }
     main.innerHTML = `<div class="acc-section-title">Siparişlerim <span style="font-size:1rem;color:var(--mid)">(${orders.length})</span></div>
-      ${orders.map(o => orderCard(o)).join('')}`;
+      ${orders.map(o => orderCard(o, products)).join('')}`;
   } catch(e) {
     main.innerHTML = '<div style="color:var(--red);padding:20px">Siparişler yüklenemedi.</div>';
   }
 }
 
-function orderCard(o) {
+function orderCard(o, products={}) {
   const statusMap = {
     pending:   {label:'⏳ Bekliyor',    cls:'badge-pending',   step:0},
     confirmed: {label:'✓ Onaylandı',    cls:'badge-confirmed', step:1},
@@ -488,7 +501,7 @@ function orderCard(o) {
         <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);margin-bottom:10px">Sipariş İçeriği</div>
         ${(o.items||[]).map(item => `
           <div class="order-item">
-            <div class="order-item-img">${item.image ? `<img src="${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.4rem">👕</div>'}</div>
+            <div class="order-item-img">${(item.image || products[item.name]?.images?.[0]) ? `<img src="${item.image || products[item.name]?.images?.[0]}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.4rem">👕</div>'}</div>
             <div>
               <div class="order-item-name">${item.name}</div>
               <div class="order-item-meta">${[item.size,item.color].filter(Boolean).join(' · ')} · ${item.qty} adet
