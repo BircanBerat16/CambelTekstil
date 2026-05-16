@@ -2466,6 +2466,20 @@ window.showPage = (page, el) => {
 // ── HELPERS ──
 window.openModal = (id) => document.getElementById(id).classList.add('open');
 window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+
+// Modal dışına tıklayınca kapat ama metin seçerken kapanmasın
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  let mouseDownInside = false;
+  overlay.addEventListener('mousedown', (e) => {
+    mouseDownInside = e.target !== overlay;
+  });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay && !mouseDownInside) {
+      overlay.classList.remove('open');
+    }
+    mouseDownInside = false;
+  });
+});
 window.showToast = (msg, type='') => {
   const t = document.getElementById('toast');
   t.textContent = msg;
