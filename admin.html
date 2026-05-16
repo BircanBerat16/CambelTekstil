@@ -1006,7 +1006,7 @@ async function renderDashboard() {
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-card-label">Toplam Gelir</div>
-        <div class="stat-card-num">₺${totalRevenue.toLocaleString('tr-TR')}</div>
+        <div class="stat-card-num">₺${totalRevenue.toLocaleString('tr-TR', {maximumFractionDigits:0})}</div>
         <div class="stat-card-sub">${ords.length} sipariş</div>
         <div class="stat-card-icon">💰</div>
       </div>
@@ -1043,7 +1043,7 @@ async function renderDashboard() {
                 <tr onclick="openOrder('${o.id}')" style="cursor:pointer">
                   <td><strong>#${(o.orderNo||o.id.slice(-6)).toUpperCase()}</strong></td>
                   <td>${o.customerName||'-'}</td>
-                  <td>₺${(o.total||0).toLocaleString('tr-TR')}</td>
+                  <td>₺${(o.total||0).toLocaleString('tr-TR', {maximumFractionDigits:0})}</td>
                   <td>${statusBadge(o.status)}</td>
                 </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--mid);padding:20px">Henüz sipariş yok</td></tr>'}
             </tbody>
@@ -1113,10 +1113,10 @@ function renderProductRows(prods) {
     const img = p.images && p.images[0];
     const isSerial = p.saleType === 'serial';
     const priceHtml = isSerial
-      ? `<span style="font-weight:600">₺${Number(p.serialSalePrice||p.serialPrice||0).toLocaleString('tr-TR')}</span><div style="font-size:.72rem;color:var(--mid)">Birim: ₺${Number(p.unitPrice||0).toLocaleString('tr-TR')}</div>`
+      ? `<span style="font-weight:600">₺${Number(p.serialSalePrice||p.serialPrice||0).toLocaleString('tr-TR', {maximumFractionDigits:0})}</span><div style="font-size:.72rem;color:var(--mid)">Birim: ₺${Number(p.unitPrice||0).toLocaleString('tr-TR', {maximumFractionDigits:0})}</div>`
       : (p.salePrice
-          ? `<span style="color:var(--red);font-weight:600">₺${Number(p.salePrice).toLocaleString('tr-TR')}</span>`
-          : `<span style="font-weight:500">₺${Number(p.price||0).toLocaleString('tr-TR')}</span>`);
+          ? `<span style="color:var(--red);font-weight:600">₺${Number(p.salePrice).toLocaleString('tr-TR', {maximumFractionDigits:0})}</span>`
+          : `<span style="font-weight:500">₺${Number(p.price||0).toLocaleString('tr-TR', {maximumFractionDigits:0})}</span>`);
     return `<tr>
       <td>
         <div style="display:flex;align-items:center;gap:10px">
@@ -1770,7 +1770,7 @@ function renderOrderRows(ords) {
           <div style="font-size:.73rem;color:var(--mid)">${o.customerEmail||''}</div>
         </div>
       </td>
-      <td data-label="Tutar"><strong>₺${(o.total||0).toLocaleString('tr-TR')}</strong></td>
+      <td data-label="Tutar"><strong>₺${(o.total||0).toLocaleString('tr-TR', {maximumFractionDigits:0})}</strong></td>
       <td data-label="Ödeme">${o.paymentStatus==='paid'?'<span class="badge badge-green">Ödendi</span>':'<span class="badge badge-warn">Bekliyor</span>'}</td>
       <td data-label="Durum">${statusBadge(o.status)}</td>
       <td><button class="btn btn-outline btn-sm" style="width:100%" onclick="openOrder('${o.id}')">Detayı Gör</button></td>
@@ -1800,10 +1800,10 @@ window.openOrder = async (id) => {
       </div>
       <div>
         <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--light);margin-bottom:8px">Sipariş Özeti</div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mid)">Ara Toplam</span><span>₺${(o.subtotal||0).toLocaleString('tr-TR')}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mid)">Ara Toplam</span><span>₺${(o.subtotal||0).toLocaleString('tr-TR', {maximumFractionDigits:0})}</span></div>
         <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mid)">Kargo</span><span style="color:var(--mid);font-style:italic">Alıcıya Ait</span></div>
-        ${o.vatTotal ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mid)">KDV</span><span>+₺${Math.round(o.vatTotal).toLocaleString('tr-TR')}</span></div>` : ''}
-        <div style="display:flex;justify-content:space-between;font-weight:600;font-size:1rem;border-top:1px solid var(--border);padding-top:8px;margin-top:8px"><span>Toplam</span><span>₺${(o.total||0).toLocaleString('tr-TR')}</span></div>
+        ${o.vatTotal ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mid)">KDV</span><span>+₺${Math.round(o.vatTotal).toLocaleString('tr-TR', {maximumFractionDigits:0})}</span></div>` : ''}
+        <div style="display:flex;justify-content:space-between;font-weight:600;font-size:1rem;border-top:1px solid var(--border);padding-top:8px;margin-top:8px"><span>Toplam</span><span>₺${(o.total||0).toLocaleString('tr-TR', {maximumFractionDigits:0})}</span></div>
         <div style="margin-top:8px">${statusBadge(o.status)} ${o.paymentStatus==='paid'?'<span class="badge badge-green">Ödeme Alındı</span>':'<span class="badge badge-warn">Ödeme Bekleniyor</span>'}</div>
       </div>
     </div>
@@ -1814,7 +1814,7 @@ window.openOrder = async (id) => {
           <div style="font-weight:500">${item.name}</div>
           <div style="font-size:.78rem;color:var(--mid)">${item.size||''} ${item.color?'· '+item.color:''} · ${item.qty} adet</div>
         </div>
-        <div style="font-weight:500">₺${((item.price||0)*(item.qty||1)).toLocaleString('tr-TR')}</div>
+        <div style="font-weight:500">₺${((item.price||0)*(item.qty||1)).toLocaleString('tr-TR', {maximumFractionDigits:0})}</div>
       </div>`).join('')}
     ${o.trackingNo ? `<div style="margin-top:16px;padding:12px;background:var(--green-bg);border-radius:8px;font-size:.85rem"><strong>Kargo No:</strong> ${o.trackingNo}</div>` : ''}`;
   openModal('orderModal');
