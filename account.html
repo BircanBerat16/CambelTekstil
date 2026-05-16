@@ -457,6 +457,7 @@ async function renderOrders() {
         </div>`;
       return;
     }
+    orders.sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
     main.innerHTML = `<div class="acc-section-title">Siparişlerim <span style="font-size:1rem;color:var(--mid)">(${orders.length})</span></div>
       ${orders.map(o => orderCard(o, products)).join('')}`;
   } catch(e) {
@@ -484,7 +485,7 @@ function orderCard(o, products={}) {
         </div>
         <div style="display:flex;align-items:center;gap:12px">
           <span class="order-badge ${st.cls}">${st.label}</span>
-          <span style="font-weight:600">₺${(o.total||0).toLocaleString('tr-TR', {maximumFractionDigits:0})}</span>
+          <span style="font-weight:600">₺${(o.total||0).toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:2})}</span>
           <span style="color:var(--mid);font-size:.8rem">▼</span>
         </div>
       </div>
@@ -508,16 +509,16 @@ function orderCard(o, products={}) {
                 ${item.customization==='self'?' · <span style="color:#5C7A5C;font-weight:600">Kendin Uygula</span>':item.customization==='cambel'?' · <span style="color:#C0392B;font-weight:600">Cambel Uygulasın</span>':''}
               </div>
             </div>
-            <div class="order-item-price">₺${((item.price||0)*(item.qty||1)).toLocaleString('tr-TR', {maximumFractionDigits:0})}</div>
+            <div class="order-item-price">₺${((item.price||0)*(item.qty||1)).toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:2})}</div>
           </div>`).join('')}
         <div style="border-top:1px solid var(--brd);margin-top:12px;padding-top:12px">
-          <div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--mid);margin-bottom:4px"><span>Ara Toplam</span><span>₺${(o.subtotal||o.total||0).toLocaleString('tr-TR', {maximumFractionDigits:0})}</span></div>
-          ${o.vatTotal ? `<div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--mid);margin-bottom:4px"><span>KDV</span><span>+₺${Math.round(o.vatTotal).toLocaleString('tr-TR', {maximumFractionDigits:0})}</span></div>` : ''}
+          <div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--mid);margin-bottom:4px"><span>Ara Toplam</span><span>₺${(o.subtotal||o.total||0).toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:2})}</span></div>
+          ${o.vatTotal ? `<div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--mid);margin-bottom:4px"><span>KDV</span><span>+₺${Math.round(o.vatTotal).toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:2})}</span></div>` : ''}
           <div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--mid);margin-bottom:8px"><span>Kargo</span><span style="font-style:italic">Alıcıya Ait</span></div>
           <div style="display:flex;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--brd)">
             <div style="text-align:right">
               <div style="font-size:.8rem;color:var(--mid)">Toplam</div>
-              <div style="font-weight:600;font-size:1rem">₺${(o.total||0).toLocaleString('tr-TR', {maximumFractionDigits:0})}</div>
+              <div style="font-weight:600;font-size:1rem">₺${(o.total||0).toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:2})}</div>
             </div>
           </div>
         </div>
@@ -546,7 +547,7 @@ async function renderFavorites() {
       <div class="fav-img">${p.images?.[0]?`<img src="${p.images[0]}" alt="${p.name}">`:'<div class="fav-img-ph">👕</div>'}</div>
       <div class="fav-body">
         <div class="fav-name">${p.name}</div>
-        <div class="fav-price">₺${Number(p.salePrice||p.price).toLocaleString('tr-TR', {maximumFractionDigits:0})}</div>
+        <div class="fav-price">₺${Number(p.salePrice||p.price).toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:2})}</div>
       </div>
       <button class="fav-del" onclick="event.stopPropagation();removeFavorite('${p.id}')">✕</button>
     </div>`).join('')}</div>`;
