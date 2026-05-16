@@ -653,7 +653,7 @@ async function loadSettings() {
       if (d.id === 'general') {
         const data = d.data();
         shippingFee = 0; // Kargo alıcıya ait — sabit 0
-        freeShippingLimit = data.freeShippingLimit || 100000;
+        // freeShippingLimit sabit 100000 — Firebase'den alınmaz
         if (data.whatsapp) {
           document.querySelectorAll('a.wa-float').forEach(a => {
             a.href = `https://wa.me/${data.whatsapp}?text=Merhaba`;
@@ -1355,17 +1355,7 @@ function renderCart() {
   document.getElementById('cartShipping').textContent = subtotal >= freeShippingLimit ? '🎉 Ücretsiz!' : 'Alıcıya Ait';
   // Ücretsiz kargo uyarısı
   const hint = document.getElementById('freeShippingHint');
-  if (hint) {
-    const remaining = freeShippingLimit - subtotal;
-    if (subtotal >= freeShippingLimit) {
-      hint.textContent = '🎉 Kargo ücretsiz!';
-      hint.style.display = 'block';
-    } else {
-      hint.textContent = `₺${remaining.toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:2})} daha ekle, kargo ücretsiz olsun!`;
-      hint.style.display = 'block';
-      hint.style.color = 'var(--mid)';
-    }
-  }
+  if (hint) hint.style.display = 'none';
 
   // İndirim satırını sepet footer'a ekle
   const discountEl = document.getElementById('cartDiscountRow');
@@ -1543,18 +1533,7 @@ function renderCheckoutSummary() {
   }
   document.getElementById('coShipping').textContent = subtotal >= freeShippingLimit ? '🎉 Ücretsiz!' : 'Alıcıya Ait';
   const coHint = document.getElementById('coFreeShippingHint');
-  if (coHint) {
-    const remaining = freeShippingLimit - subtotal;
-    if (subtotal >= freeShippingLimit) {
-      coHint.textContent = '🎉 100.000₺ ve üzeri alışverişlerde kargo ücretsiz!';
-      coHint.style.color = 'var(--green)';
-      coHint.style.display = 'block';
-    } else {
-      coHint.textContent = `₺${remaining.toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:2})} daha ekle, kargo ücretsiz olsun!`;
-      coHint.style.color = 'var(--mid)';
-      coHint.style.display = 'block';
-    }
-  }
+  if (coHint) coHint.style.display = 'none';
   const grandTotal2 = subtotal + vatTotal2 + shipping;
   document.getElementById('coTotal').textContent = `₺${grandTotal2.toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:2})}`;
 }
