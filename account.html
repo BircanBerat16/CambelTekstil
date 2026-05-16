@@ -302,7 +302,14 @@ onAuthStateChanged(auth, async user => {
   // Load user profile from Firestore
   await loadUserProfile(user);
   showScreen('account');
-  showAccPage('orders', document.querySelector('.acc-nav-item'));
+  // Hash'ten sayfa yükle — shop'tan yönlendirme
+  const hash = window.location.hash.replace('#','');
+  if (['orders','favorites','brandkit','profile'].includes(hash)) {
+    const el = [...document.querySelectorAll('.acc-nav-item')].find(n => n.getAttribute('onclick')?.includes(`'${hash}'`));
+    showAccPage(hash, el);
+  } else {
+    showAccPage('orders', document.querySelector('.acc-nav-item'));
+  }
 });
 
 async function loadUserProfile(user) {
