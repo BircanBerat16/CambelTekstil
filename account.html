@@ -512,7 +512,7 @@ function orderCard(o, products={}) {
           </div>`).join('')}
         <div style="border-top:1px solid var(--brd);margin-top:12px;padding-top:12px">
           <div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--mid);margin-bottom:4px"><span>Ara Toplam</span><span>₺${(o.subtotal||o.total||0).toLocaleString('tr-TR')}</span></div>
-          ${o.vat ? `<div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--mid);margin-bottom:4px"><span>KDV</span><span>₺${o.vat.toLocaleString('tr-TR')}</span></div>` : ''}
+          ${o.vatTotal ? `<div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--mid);margin-bottom:4px"><span>KDV</span><span>+₺${Math.round(o.vatTotal).toLocaleString('tr-TR')}</span></div>` : ''}
           <div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--mid);margin-bottom:8px"><span>Kargo</span><span style="font-style:italic">Alıcıya Ait</span></div>
           <div style="display:flex;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--brd)">
             <div style="text-align:right">
