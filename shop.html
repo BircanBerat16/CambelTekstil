@@ -434,7 +434,7 @@ footer{background:var(--charcoal);color:rgba(250,248,245,.5);padding:3rem 8vw;di
 <div class="pmodal-overlay" id="pmodalOverlay" onclick="handlePmodalClick(event)">
   <div class="pmodal" id="pmodal">
     <div class="pmodal-inner">
-      <div class="pmodal-imgs" id="pmodalImgs">
+      <div class="pmodal-imgs" id="pmodalImgs" style="cursor:zoom-in" onclick="openLightbox(this.querySelector('img')?.src)">
         <button class="pmodal-close" onclick="closePmodal()">✕</button>
         <div class="pmodal-main-img" id="pmodalMainImg"></div>
         <div class="pmodal-thumbs" id="pmodalThumbs"></div>
@@ -580,6 +580,18 @@ let cart = JSON.parse(localStorage.getItem('cambel_cart') || '[]');
 let currentFilter = {category:'', subcategory:''};
 let currentSort = 'default';
 let searchQuery = '';
+function setliSuffix(n) {
+  if (n === 3) return "3'lü";
+  if (n === 4) return "4'lü";
+  if (n === 5) return "5'li";
+  if (n === 6) return "6'lı";
+  if (n === 7) return "7'li";
+  if (n === 8) return "8'li";
+  if (n === 9) return "9'lu";
+  if (n === 10) return "10'lu";
+  return n + "'li";
+}
+
 let selectedProduct = null;
 let selectedSize = '';
 let selectedColor = '';
@@ -752,6 +764,17 @@ function renderCampaignBanner() {
   banner.style.cssText = 'position:fixed;top:68px;left:0;right:0;z-index:99;background:#2A2825;color:#fff;text-align:center;padding:10px 16px;font-size:.82rem;font-weight:500;display:flex;align-items:center;justify-content:center;gap:16px';
   banner.innerHTML = '<span>'+camp.banner+'</span><span id="campCountdown" style="background:rgba(255,255,255,.15);padding:3px 10px;border-radius:20px;font-size:.75rem;font-family:monospace"></span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:1rem;margin-left:4px">✕</button>';
   document.body.prepend(banner);
+  // Sidebar ve layout'u banner yüksekliğine göre ayarla
+  const BANNER_H = 40;
+  document.querySelector('.shop-layout').style.paddingTop = (68 + BANNER_H) + 'px';
+  document.querySelector('.shop-sidebar').style.top = (68 + BANNER_H) + 'px';
+  document.querySelector('.shop-sidebar').style.height = 'calc(100vh - ' + (68 + BANNER_H) + 'px)';
+  // Banner kapatılınca geri al
+  banner.querySelector('button').addEventListener('click', () => {
+    document.querySelector('.shop-layout').style.paddingTop = '68px';
+    document.querySelector('.shop-sidebar').style.top = '68px';
+    document.querySelector('.shop-sidebar').style.height = 'calc(100vh - 68px)';
+  });
   function tick() {
     const diff = end - new Date();
     if (diff <= 0) { banner.remove(); return; }
@@ -942,7 +965,7 @@ function productCard(p) {
         </div>
         <div class="product-name">${p.name}</div>
 
-        ${p.saleType === 'serial' ? `<div style="font-size:.72rem;color:var(--gr);font-weight:600;margin-bottom:4px">📦 ${p.serialSizes?.length||0}'lü Set</div>` : ''}
+        ${p.saleType === 'serial' ? `<div style="font-size:.72rem;color:var(--gr);font-weight:600;margin-bottom:4px">📦 ${setliSuffix(p.serialSizes?.length||0)} Set</div>` : ''}
         <div class="product-price">
           ${currentMember
             ? (p.saleType === 'serial'
@@ -1014,7 +1037,7 @@ function renderPmodal() {
     <div class="pmodal-name">${p.name}</div>
     ${p.saleType === 'serial' && p.serialSizes?.length ? `
       <div style="background:#EAF5EF;border-radius:8px;padding:10px 14px;margin-bottom:10px">
-        <div style="font-size:.75rem;font-weight:600;color:#2D7A50;margin-bottom:6px">📦 ${p.serialSizes.length}'lü Set — Paket İçeriği</div>
+        <div style="font-size:.75rem;font-weight:600;color:#2D7A50;margin-bottom:6px">📦 ${setliSuffix(p.serialSizes.length)} Set — Paket İçeriği</div>
         <div style="display:flex;flex-wrap:wrap;gap:5px">
           ${p.serialSizes.map(s=>`<span style="background:#fff;border:1px solid #5C7A5C;border-radius:4px;padding:2px 8px;font-size:.75rem;color:#2D7A50">${s}</span>`).join('')}
         </div>
@@ -1198,6 +1221,16 @@ function updateVariantStock() {
     addBtn.textContent = stock > 0 ? '🛒 Sepete Ekle' : 'Stok Yok';
   }
 }
+window.openLightbox = (src) => {
+  if (!src) return;
+  const lb = document.createElement('div');
+  lb.id = 'lightbox';
+  lb.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+  lb.innerHTML = `<img src="${src}" style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:4px"><button onclick="document.getElementById('lightbox').remove()" style="position:absolute;top:20px;right:20px;background:rgba(255,255,255,.1);border:none;color:#fff;width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:1.2rem">✕</button>`;
+  lb.addEventListener('click', (e) => { if (e.target === lb) lb.remove(); });
+  document.body.appendChild(lb);
+};
+
 window.closePmodal = () => document.getElementById('pmodalOverlay').classList.remove('open');
 window.handlePmodalClick = (e) => { if(e.target===document.getElementById('pmodalOverlay')) closePmodal(); };
 
@@ -1264,7 +1297,7 @@ function renderCart() {
     <div class="cart-item">
       <div class="cart-item-img">${item.image ? `<img src="${item.image}" alt="${item.name}">` : ''}</div>
       <div class="cart-item-info">
-        <div class="cart-item-name">${item.name}${item.saleType==='serial' ? ' <span style="background:#EAF5EF;color:#2D7A50;font-size:.65rem;font-weight:600;padding:1px 6px;border-radius:10px">'+(item.serialSizes?.length||0)+'\u2019lü Set</span>' : ''}</div>
+        <div class="cart-item-name">${item.name}${item.saleType==='serial' ? ' <span style="background:#EAF5EF;color:#2D7A50;font-size:.65rem;font-weight:600;padding:1px 6px;border-radius:10px">'+setliSuffix(item.serialSizes?.length||0)+' Set</span>' : ''}</div>
         <div class="cart-item-meta">${[item.size,item.color].filter(Boolean).join(' · ')}${item.customization==='self'?' · <span style="color:#5C7A5C;font-weight:600">Kendin Uygula</span>':item.customization==='cambel'?` · <span style="color:#C0392B;font-weight:600">Cambel Uygulasın (+${item.cambelDays||7} gün)</span>`:''}
         </div>
         <div class="cart-item-controls">
