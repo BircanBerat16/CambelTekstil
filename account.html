@@ -428,13 +428,12 @@ async function renderOrders() {
   const main = document.getElementById('accMain');
   main.innerHTML = '<div style="color:var(--mid);padding:20px">Siparişler yükleniyor...</div>';
   try {
-    const snap = await getDocs(query(collection(db,'orders'), where('userId','==',currentUser.uid)));
-    // Fallback: userId yoksa email ile sorgula
-    let orders = snap.docs.map(d=>({id:d.id,...d.data()}));
-    if (!orders.length) {
-      const snap2 = await getDocs(query(collection(db,'orders'), where('customerEmail','==',currentUser.email)));
-      orders = snap2.docs.map(d=>({id:d.id,...d.data()}));
-    }
+    const snap = await getDocs(collection(db,'orders'));
+    const allOrders = snap.docs.map(d=>({id:d.id,...d.data()}));
+    const orders = allOrders.filter(o => 
+      o.userId === currentUser.uid || 
+      o.customerEmail?.toLowerCase() === currentUser.email?.toLowerCase()
+    );
     if (!orders.length) {
       main.innerHTML = `
         <div class="acc-section-title">Siparişlerim</div>
