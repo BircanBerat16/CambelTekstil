@@ -1089,8 +1089,15 @@ async function renderProducts() {
     </div>
     <div class="panel">
       <div class="table-wrap">
-        <table id="productsTable">
-          <thead><tr><th>Görsel</th><th>Ürün Adı</th><th>Kategori</th><th>Fiyat</th><th>Stok</th><th>Durum</th><th>İşlem</th></tr></thead>
+        <table id="productsTable" style="table-layout:fixed;width:100%">
+          <thead><tr>
+            <th style="width:220px">Görsel</th>
+            <th style="width:120px">Kategori</th>
+            <th style="width:130px">Fiyat</th>
+            <th style="width:60px">Stok</th>
+            <th style="width:80px">Durum</th>
+            <th style="width:140px">İşlem</th>
+          </tr></thead>
           <tbody id="productsTbody">
             ${renderProductRows(prods)}
           </tbody>
@@ -1118,7 +1125,7 @@ function renderProductRows(prods) {
             <div style="font-weight:600">${p.name}</div>
             <div style="font-size:.72rem;color:var(--mid);margin-top:2px;display:flex;flex-wrap:wrap;gap:3px">
               ${p.sku||''}
-              ${isSerial ? `<span class="badge badge-blue" style="font-size:.65rem">📦 ${(p.serialSizes||[]).length}'li Set</span>` : '<span class="badge badge-gray" style="font-size:.65rem">Tekli</span>'}
+              ${isSerial ? `<span class="badge badge-blue" style="font-size:.65rem">📦 ${setliSuffix((p.serialSizes||[]).length)} Set</span>` : '<span class="badge badge-gray" style="font-size:.65rem">Tekli</span>'}
               ${p.brandKit?'<span class="badge badge-blue" style="font-size:.65rem">Brand Kit</span>':''}
               ${p.buybox?'<span class="badge badge-green" style="font-size:.65rem">Buybox</span>':''}
             </div>
@@ -1794,7 +1801,8 @@ window.openOrder = async (id) => {
       <div>
         <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--light);margin-bottom:8px">Sipariş Özeti</div>
         <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mid)">Ara Toplam</span><span>₺${(o.subtotal||0).toLocaleString('tr-TR')}</span></div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mid)">Kargo</span><span>₺${(o.shipping||0).toLocaleString('tr-TR')}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mid)">Kargo</span><span style="color:var(--mid);font-style:italic">Alıcıya Ait</span></div>
+        ${o.vat ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mid)">KDV</span><span>₺${(o.vat||0).toLocaleString('tr-TR')}</span></div>` : ''}
         <div style="display:flex;justify-content:space-between;font-weight:600;font-size:1rem;border-top:1px solid var(--border);padding-top:8px;margin-top:8px"><span>Toplam</span><span>₺${(o.total||0).toLocaleString('tr-TR')}</span></div>
         <div style="margin-top:8px">${statusBadge(o.status)} ${o.paymentStatus==='paid'?'<span class="badge badge-green">Ödeme Alındı</span>':'<span class="badge badge-warn">Ödeme Bekleniyor</span>'}</div>
       </div>
@@ -2011,7 +2019,7 @@ window.generateCreatives = async () => {
   const products = snap.docs.map(d=>({...d.data()}))
     .filter(p => p.status === 'active')
     .slice(0, 10)
-    .map(p => `- ${p.name}: ₺${p.salePrice||p.price} ${p.buybox?'(Trendyol Buybox)':''} ${p.saleType==='serial'?`(${(p.serialSizes||[]).length}'li Set)`:''}`)
+    .map(p => `- ${p.name}: ₺${p.salePrice||p.price} ${p.buybox?'(Trendyol Buybox)':''} ${p.saleType==='serial'?`(${setliSuffix((p.serialSizes||[]).length)} Set)`:''}`)
     .join('\n');
 
   const kitles = [];
@@ -2464,6 +2472,19 @@ window.showPage = (page, el) => {
 };
 
 // ── HELPERS ──
+function setliSuffix(n) {
+  // Türkçe büyük ünlü uyumu: son ünlüye göre ek
+  if (n === 3) return "3'lü";
+  if (n === 4) return "4'lü";
+  if (n === 5) return "5'li";
+  if (n === 6) return "6'lı";
+  if (n === 7) return "7'li";
+  if (n === 8) return "8'li";
+  if (n === 9) return "9'lu";
+  if (n === 10) return "10'lu";
+  return n + "'li";
+}
+
 window.openModal = (id) => document.getElementById(id).classList.add('open');
 window.closeModal = (id) => document.getElementById(id).classList.remove('open');
 
