@@ -293,6 +293,14 @@
     overflow: hidden;
     transition: transform 0.4s ease;
   }
+  .hero-img-inner img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+  }
   .hero-img-card:hover .hero-img-inner { transform: scale(1.03); }
   .hero-img-label {
     position: absolute;
@@ -1118,10 +1126,15 @@ function toggleMobileNav() {
     <li><a href="#nasil">Nasıl Çalışır</a></li>
     <li><a href="#sss">SSS</a></li>
   </ul>
-  <a href="https://wa.me/905000000000?text=Merhaba%2C%20numune%20talebi%20olu%C5%9Fturmak%20istiyorum." class="nav-cta" target="_blank">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.133 1.535 5.875L.057 23.547a.5.5 0 0 0 .609.613l5.842-1.528A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.898 0-3.668-.524-5.178-1.432l-.37-.22-3.837 1.004 1.023-3.736-.24-.385A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-    WhatsApp'tan Yaz
-  </a>
+  <div style="display:flex;align-items:center;gap:10px">
+    <a href="account.html" id="navAuthBtn" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1.5px solid var(--charcoal);border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;color:var(--charcoal);text-decoration:none;transition:all .2s" onmouseover="this.style.background='var(--charcoal)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='var(--charcoal)'">
+      👤 Giriş Yap
+    </a>
+    <a data-wa="1" data-wa="1" data-wa-text="numune" class="wa-link" href="https://wa.me/905000000000?text=Merhaba%2C%20numune%20talebi%20olu%C5%9Fturmak%20istiyorum." class="nav-cta" target="_blank">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.133 1.535 5.875L.057 23.547a.5.5 0 0 0 .609.613l5.842-1.528A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.898 0-3.668-.524-5.178-1.432l-.37-.22-3.837 1.004 1.023-3.736-.24-.385A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+      WhatsApp'tan Yaz
+    </a>
+  </div>
   <div class="hamburger" onclick="toggleMobileNav()">
     <span></span><span></span><span></span>
   </div>
@@ -1132,7 +1145,8 @@ function toggleMobileNav() {
   <a href="#trendyol" onclick="toggleMobileNav()">Trendyol</a>
   <a href="#nasil" onclick="toggleMobileNav()">Nasıl Çalışır</a>
   <a href="#sss" onclick="toggleMobileNav()">SSS</a>
-  <a href="https://wa.me/905000000000" target="_blank" style="color:var(--wa);font-weight:500;">WhatsApp'tan Yaz →</a>
+  <a href="account.html" style="font-weight:500">👤 Giriş Yap / Üye Ol</a>
+  <a data-wa="1" class="wa-link" href="https://wa.me/905000000000" target="_blank" style="color:var(--wa);font-weight:500;">WhatsApp'tan Yaz →</a>
 </div>
 
 <!-- HERO -->
@@ -1149,7 +1163,7 @@ function toggleMobileNav() {
         Koleksiyonu Keşfet
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
-      <a href="https://wa.me/905000000000?text=Merhaba%2C%20numune%20talebi%20yapmak%20istiyorum." class="btn-secondary" target="_blank">Numune Talep Et →</a>
+      <a data-wa="1" class="wa-link" href="https://wa.me/905000000000?text=Merhaba%2C%20numune%20talebi%20yapmak%20istiyorum." class="btn-secondary" target="_blank">Numune Talep Et →</a>
     </div>
     <div class="hero-stats">
       <div>
@@ -1278,7 +1292,7 @@ function toggleMobileNav() {
     </div>
     <div class="reveal reveal-d1">
       <p class="section-sub" style="max-width:380px;">Toptan bebek kıyafeti almak için büyük stok yatırımı yapmak zorunda değilsin. Cambel'in white label altyapısını kullan, markana odaklan. 48 saatte kapında.</p>
-      <a href="https://wa.me/905000000000" class="btn-secondary" style="margin-top:1.5rem;display:inline-block;" target="_blank">Başlamak için yaz →</a>
+      <a data-wa="1" class="wa-link" href="https://wa.me/905000000000" class="btn-secondary" style="margin-top:1.5rem;display:inline-block;" target="_blank">Başlamak için yaz →</a>
     </div>
   </div>
   <div class="steps-grid reveal">
@@ -1401,7 +1415,7 @@ function toggleMobileNav() {
           </div>
         </div>
       </div>
-      <a href="https://wa.me/905000000000?text=Trendyol%20avantaj%C4%B1%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum." class="btn-primary" style="margin-top:2rem;display:inline-flex" target="_blank">
+      <a data-wa="1" class="wa-link" href="https://wa.me/905000000000?text=Trendyol%20avantaj%C4%B1%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum." class="btn-primary" style="margin-top:2rem;display:inline-flex" target="_blank">
         Buybox Ürünleri Keşfet →
       </a>
     </div>
@@ -1424,7 +1438,7 @@ function toggleMobileNav() {
       <div class="section-label">En Büyük Fark</div>
       <h2 class="section-title">Minimum sipariş<br><em>adedi yok.</em><br>Hiç.</h2>
       <p class="section-sub" style="margin-top:1.2rem;">1 adet body mu istiyorsun? Al. 10 adet pijama mı? Al. 500 adet body mi? Elbette. Marka kurmak için büyük stok yapmak zorunda değilsin.</p>
-      <a href="https://wa.me/905000000000" class="btn-primary" style="margin-top:2rem;" target="_blank">Hemen Başla →</a>
+      <a data-wa="1" class="wa-link" href="https://wa.me/905000000000" class="btn-primary" style="margin-top:2rem;" target="_blank">Hemen Başla →</a>
     </div>
   </div>
   <div class="nomoq-visual">
@@ -1551,7 +1565,7 @@ function toggleMobileNav() {
       <div class="section-label">Sık Sorulanlar</div>
       <h2 class="section-title">Aklına<br><em>takılanlar</em></h2>
       <p class="section-sub" style="margin-top:1.2rem;">Cevabını bulamadın mı? WhatsApp'tan yaz, 5 dakika içinde dönüyoruz.</p>
-      <a href="https://wa.me/905000000000" class="btn-secondary" style="margin-top:1.5rem;display:inline-block;" target="_blank">WhatsApp'tan Sor →</a>
+      <a data-wa="1" class="wa-link" href="https://wa.me/905000000000" class="btn-secondary" style="margin-top:1.5rem;display:inline-block;" target="_blank">WhatsApp'tan Sor →</a>
     </div>
     <div class="faq-list reveal reveal-d1">
       <div class="faq-item open">
@@ -1606,7 +1620,7 @@ function toggleMobileNav() {
   <h2 class="cta-final-title reveal">Bu hafta başlayabilirsin.<br><em>Biz hazırız.</em></h2>
   <p class="cta-final-sub reveal reveal-d1">Numune talep et, ürünleri gör, Brand Kit'i keşfet. WhatsApp üzerinden sana özel teklif oluşturalım.</p>
   <div class="reveal reveal-d2">
-    <a href="https://wa.me/905000000000?text=Merhaba%2C%20Cambel%20Tekstil%20hakk%C4%B1nda%20bilgi%20almak%20ve%20numune%20talep%20etmek%20istiyorum." class="cta-wa-btn" target="_blank">
+    <a data-wa="1" class="wa-link" href="https://wa.me/905000000000?text=Merhaba%2C%20Cambel%20Tekstil%20hakk%C4%B1nda%20bilgi%20almak%20ve%20numune%20talep%20etmek%20istiyorum." class="cta-wa-btn" target="_blank">
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.133 1.535 5.875L.057 23.547a.5.5 0 0 0 .609.613l5.842-1.528A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.898 0-3.668-.524-5.178-1.432l-.37-.22-3.837 1.004 1.023-3.736-.24-.385A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
       WhatsApp'tan Numune Talep Et
     </a>
@@ -1623,7 +1637,7 @@ function toggleMobileNav() {
 
 
 <!-- WA FLOATING -->
-<a href="https://wa.me/905000000000?text=Merhaba%2C%20bilgi%20almak%20istiyorum." class="wa-float" target="_blank" title="WhatsApp">
+<a data-wa="1" class="wa-link" href="https://wa.me/905000000000?text=Merhaba%2C%20bilgi%20almak%20istiyorum." class="wa-float" target="_blank" title="WhatsApp">
   <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.133 1.535 5.875L.057 23.547a.5.5 0 0 0 .609.613l5.842-1.528A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.898 0-3.668-.524-5.178-1.432l-.37-.22-3.837 1.004 1.023-3.736-.24-.385A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
 </a>
 
@@ -1745,6 +1759,53 @@ function toggleMobileNav() {
       if (grid) grid.innerHTML = '';
     }
   }
+  // WhatsApp numarasını Firebase'den yükle
+  (async () => {
+    try {
+      const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+      const { getFirestore, getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+      const firebaseConfig = { apiKey:"AIzaSyBMlsHYnuVbOi7gXf00GfYA7vW8yMXH3Xw", authDomain:"cambel-tekstil.firebaseapp.com", projectId:"cambel-tekstil" };
+      const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const snap = await getDoc(doc(db, 'settings', 'shopSettings'));
+      if (snap.exists()) {
+        const data = snap.data();
+        const phone = data.whatsapp || data.phone || '';
+        if (phone) {
+          const clean = phone.replace(/[^0-9]/g, '');
+          document.querySelectorAll('.wa-link').forEach(a => {
+            const href = a.getAttribute('href');
+            const newHref = href.replace(/wa\.me\/\d+/, `wa.me/${clean}`);
+            a.setAttribute('href', newHref);
+          });
+        }
+      }
+    } catch(e) {}
+  })();
+
   loadFeaturedProducts();
+
+  // Auth durumuna göre navbar butonunu güncelle
+  (async () => {
+    try {
+      const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+      const { getAuth, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+      const firebaseConfig = { apiKey:"AIzaSyBMlsHYnuVbOi7gXf00GfYA7vW8yMXH3Xw", authDomain:"cambel-tekstil.firebaseapp.com", projectId:"cambel-tekstil" };
+      const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      onAuthStateChanged(auth, user => {
+        const btn = document.getElementById('navAuthBtn');
+        if (!btn) return;
+        if (user) {
+          const name = user.displayName || user.email?.split('@')[0] || 'Hesabım';
+          btn.innerHTML = `👤 ${name}`;
+          btn.href = 'account.html';
+        } else {
+          btn.innerHTML = '👤 Giriş Yap';
+          btn.href = 'account.html';
+        }
+      });
+    } catch(e) {}
+  })();
 </script>
 </body>
