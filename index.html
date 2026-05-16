@@ -1654,8 +1654,15 @@ function toggleMobileNav() {
   const revealEls = document.querySelectorAll('.reveal');
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
-  }, { threshold: 0.12 });
+  }, { threshold: 0.05 });
   revealEls.forEach(el => observer.observe(el));
+  // Sayfa yüklenince görünür olanları hemen tetikle
+  setTimeout(() => {
+    revealEls.forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight) el.classList.add('visible');
+    });
+  }, 100);
 
   // Navbar shadow on scroll
   window.addEventListener('scroll', () => {
