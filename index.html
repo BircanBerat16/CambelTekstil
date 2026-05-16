@@ -287,18 +287,18 @@
   .hero-img-inner {
     width: 100%;
     padding-bottom: 130%;
-    background: var(--stone);
-    border-radius: 8px;
+    background: #F5F0E8;
+    border-radius: 12px;
     position: relative;
     overflow: hidden;
     transition: transform 0.4s ease;
   }
   .hero-img-inner img {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    inset: 8px;
+    width: calc(100% - 16px);
+    height: calc(100% - 16px);
+    object-fit: contain;
     border-radius: 8px;
   }
   .hero-img-card:hover .hero-img-inner { transform: scale(1.03); }
@@ -1127,8 +1127,8 @@ function toggleMobileNav() {
     <li><a href="#sss">SSS</a></li>
   </ul>
   <div style="display:flex;align-items:center;gap:10px">
-    <a href="account.html" id="navAuthBtn" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1.5px solid var(--charcoal);border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;color:var(--charcoal);text-decoration:none;transition:all .2s" onmouseover="this.style.background='var(--charcoal)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='var(--charcoal)'">
-      👤 Giriş Yap
+    <a href="account.html" id="navAuthBtn" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--charcoal);border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;color:#fff;text-decoration:none;transition:all .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+      👤 Giriş Yap / Üye Ol
     </a>
     <a data-wa="1" data-wa="1" data-wa-text="numune" class="wa-link" href="https://wa.me/905000000000?text=Merhaba%2C%20numune%20talebi%20olu%C5%9Fturmak%20istiyorum." class="nav-cta" target="_blank">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.133 1.535 5.875L.057 23.547a.5.5 0 0 0 .609.613l5.842-1.528A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.898 0-3.668-.524-5.178-1.432l-.37-.22-3.837 1.004 1.023-3.736-.24-.385A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
@@ -1160,7 +1160,7 @@ function toggleMobileNav() {
     <p class="hero-sub">Cambel Tekstil'in white label toptan bebek kıyafeti koleksiyonunu seç, kendi Brand Kit'inle markalaştır ve satışa başla. Minimum sipariş adedi yok — tek parçadan marka kalitesi.</p>
     <div class="hero-actions">
       <a href="#" onclick="location.href='shop.html'" class="btn-primary">
-        Koleksiyonu Keşfet
+        Ürünleri İncele
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
       <a data-wa="1" class="wa-link" href="https://wa.me/905000000000?text=Merhaba%2C%20numune%20talebi%20yapmak%20istiyorum." class="btn-secondary" target="_blank">Numune Talep Et →</a>
@@ -1637,7 +1637,7 @@ function toggleMobileNav() {
 
 
 <!-- WA FLOATING -->
-<a data-wa="1" class="wa-link" href="https://wa.me/905000000000?text=Merhaba%2C%20bilgi%20almak%20istiyorum." class="wa-float" target="_blank" title="WhatsApp">
+<a class="wa-link wa-float" href="https://wa.me/905000000000?text=Merhaba%2C%20bilgi%20almak%20istiyorum." target="_blank" title="WhatsApp">
   <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.133 1.535 5.875L.057 23.547a.5.5 0 0 0 .609.613l5.842-1.528A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.898 0-3.668-.524-5.178-1.432l-.37-.22-3.837 1.004 1.023-3.736-.24-.385A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
 </a>
 
