@@ -488,7 +488,7 @@ function orderCard(o) {
         <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);margin-bottom:10px">Sipariş İçeriği</div>
         ${(o.items||[]).map(item => `
           <div class="order-item">
-            <div class="order-item-img">${item.image?`<img src="${item.image}" alt="">`:''}</div>
+            <div class="order-item-img">${item.image ? `<img src="${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.4rem">👕</div>'}</div>
             <div>
               <div class="order-item-name">${item.name}</div>
               <div class="order-item-meta">${[item.size,item.color].filter(Boolean).join(' · ')} · ${item.qty} adet
@@ -497,10 +497,15 @@ function orderCard(o) {
             </div>
             <div class="order-item-price">₺${((item.price||0)*(item.qty||1)).toLocaleString('tr-TR')}</div>
           </div>`).join('')}
-        <div style="display:flex;justify-content:flex-end;padding-top:12px;border-top:1px solid var(--brd);margin-top:8px">
-          <div style="text-align:right">
-            <div style="font-size:.8rem;color:var(--mid)">Toplam</div>
-            <div style="font-weight:600;font-size:1rem">₺${(o.total||0).toLocaleString('tr-TR')}</div>
+        <div style="border-top:1px solid var(--brd);margin-top:12px;padding-top:12px">
+          <div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--mid);margin-bottom:4px"><span>Ara Toplam</span><span>₺${(o.subtotal||o.total||0).toLocaleString('tr-TR')}</span></div>
+          ${o.vat ? `<div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--mid);margin-bottom:4px"><span>KDV</span><span>₺${o.vat.toLocaleString('tr-TR')}</span></div>` : ''}
+          <div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--mid);margin-bottom:8px"><span>Kargo</span><span style="font-style:italic">Alıcıya Ait</span></div>
+          <div style="display:flex;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--brd)">
+            <div style="text-align:right">
+              <div style="font-size:.8rem;color:var(--mid)">Toplam</div>
+              <div style="font-weight:600;font-size:1rem">₺${(o.total||0).toLocaleString('tr-TR')}</div>
+            </div>
           </div>
         </div>
       </div>
