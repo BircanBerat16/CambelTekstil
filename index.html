@@ -1744,8 +1744,7 @@ function toggleMobileNav() {
         const img = p.images?.[0] || '';
         const price = p.saleType === 'serial' ? (p.unitPrice || p.serialPrice || p.price) : (p.salePrice || p.price);
         const serialLabel = p.saleType === 'serial' ? `<div style="font-size:.72rem;color:#5C7A5C;font-weight:600;margin-bottom:4px">📦 ${(p.serialSizes?.length||0)}'lü Set</div>` : '';
-        return `<a href="shop.html" style="text-decoration:none;color:inherit">
-          <div style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(42,40,37,.06);transition:transform .25s;cursor:pointer" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
+        return `<div onclick="location.href='shop.html'" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(42,40,37,.06);transition:transform .25s;cursor:pointer;min-width:0" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
             <div style="aspect-ratio:3/4;overflow:hidden;background:#F5F0E8">
               ${img ? `<img src="${img}" alt="${p.name}" style="width:100%;height:100%;object-fit:contain" loading="lazy">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem">👕</div>'}
             </div>
@@ -1754,13 +1753,11 @@ function toggleMobileNav() {
               <div style="font-weight:500;font-size:.9rem;margin:8px 0 4px;color:#2A2825">${p.name}</div>
               ${serialLabel}
               ${isLoggedIn
-                ? `<div style="font-weight:700;color:#2A2825">₺${Number(price).toLocaleString('tr-TR', {minimumFractionDigits:0,maximumFractionDigits:2})}</div>
-                   ${p.saleType === 'serial' ? `<div style="font-size:.72rem;color:#888">Seri: ₺${Number(p.serialPrice||p.price).toLocaleString('tr-TR', {minimumFractionDigits:0,maximumFractionDigits:2})}</div>` : ''}`
-                : '<a href="account.html" style="display:inline-flex;align-items:center;gap:4px;font-size:.8rem;color:#8B7355;font-weight:500;margin-top:4px">🔒 Fiyatı Gör →</a>'
+                ? `<div style="font-weight:700;color:#2A2825">₺${Number(price).toLocaleString('tr-TR', {minimumFractionDigits:0,maximumFractionDigits:2})}</div>`
+                : '<span onclick="event.stopPropagation();location.href='account.html'" style="display:inline-flex;align-items:center;gap:4px;font-size:.8rem;color:#8B7355;font-weight:500;margin-top:4px;cursor:pointer">🔒 Fiyatı Gör →</span>'
               }
             </div>
-          </div>
-        </a>`;
+          </div>`;
       }).join('');
     } catch(e) {
       const grid = document.getElementById('featuredGrid');
