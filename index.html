@@ -1291,7 +1291,7 @@ function toggleMobileNav() {
     </div>
     <div class="reveal reveal-d1">
       <p class="section-sub" style="max-width:380px;">Toptan bebek kıyafeti almak için büyük stok yatırımı yapmak zorunda değilsin. Cambel'in white label altyapısını kullan, markana odaklan. 48 saatte kapında.</p>
-      <a data-wa="1" class="wa-link" href="https://wa.me/905000000000" class="btn-secondary" style="margin-top:1.5rem;display:inline-block;" target="_blank">Başlamak için yaz →</a>
+      <a data-wa="1" class="wa-link" href="https://wa.me/905000000000" style="display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;color:var(--charcoal);text-decoration:none;border-bottom:1.5px solid var(--accent);padding-bottom:2px;transition:all .2s" style="margin-top:1.5rem" target="_blank">Başlamak için yaz →</a>
     </div>
   </div>
   <div class="steps-grid reveal">
@@ -1437,7 +1437,7 @@ function toggleMobileNav() {
       <div class="section-label">En Büyük Fark</div>
       <h2 class="section-title">Minimum sipariş<br><em>adedi yok.</em><br>Hiç.</h2>
       <p class="section-sub" style="margin-top:1.2rem;">1 adet body mu istiyorsun? Al. 10 adet pijama mı? Al. 500 adet body mi? Elbette. Marka kurmak için büyük stok yapmak zorunda değilsin.</p>
-      <a data-wa="1" class="wa-link" href="https://wa.me/905000000000" class="btn-primary" style="margin-top:2rem;" target="_blank">Hemen Başla →</a>
+      <a data-wa="1" class="wa-link" href="https://wa.me/905000000000" style="display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;color:var(--charcoal);text-decoration:none;border-bottom:1.5px solid var(--accent);padding-bottom:2px;transition:all .2s" style="margin-top:2rem" target="_blank">Hemen Başla →</a>
     </div>
   </div>
   <div class="nomoq-visual">
@@ -1564,7 +1564,7 @@ function toggleMobileNav() {
       <div class="section-label">Sık Sorulanlar</div>
       <h2 class="section-title">Aklına<br><em>takılanlar</em></h2>
       <p class="section-sub" style="margin-top:1.2rem;">Cevabını bulamadın mı? WhatsApp'tan yaz, 5 dakika içinde dönüyoruz.</p>
-      <a data-wa="1" class="wa-link" href="https://wa.me/905000000000" class="btn-secondary" style="margin-top:1.5rem;display:inline-block;" target="_blank">WhatsApp'tan Sor →</a>
+      <a data-wa="1" class="wa-link" href="https://wa.me/905000000000" style="display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;color:var(--charcoal);text-decoration:none;border-bottom:1.5px solid var(--accent);padding-bottom:2px;transition:all .2s" style="margin-top:1.5rem" target="_blank">WhatsApp'tan Sor →</a>
     </div>
     <div class="faq-list reveal reveal-d1">
       <div class="faq-item open">
@@ -1703,6 +1703,7 @@ function toggleMobileNav() {
   });
 
   // Hero görsellerini ve öne çıkan ürünleri yükle
+  let cachedFeaturedProducts = null;
   async function loadFeaturedProducts(isLoggedIn) {
     try {
       const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
@@ -1714,8 +1715,11 @@ function toggleMobileNav() {
       };
       const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
       const db = getFirestore(app);
-      const snap = await getDocs(query(collection(db,'products'), where('featured','==',true), where('status','==','active'), limit(8)));
-      const products = snap.docs.map(d => ({id:d.id,...d.data()}));
+      if (!cachedFeaturedProducts) {
+        const snap = await getDocs(query(collection(db,'products'), where('featured','==',true), where('status','==','active'), limit(8)));
+        cachedFeaturedProducts = snap.docs.map(d => ({id:d.id,...d.data()}));
+      }
+      const products = cachedFeaturedProducts;
 
       // Hero grid güncelle
       const heroGrid = document.getElementById('heroImgGrid');
@@ -1785,7 +1789,7 @@ function toggleMobileNav() {
     } catch(e) {}
   })();
 
-  loadFeaturedProducts();
+  loadFeaturedProducts(false);
 
   // Auth durumuna göre navbar butonunu güncelle
   (async () => {
@@ -1797,15 +1801,17 @@ function toggleMobileNav() {
       const auth = getAuth(app);
       onAuthStateChanged(auth, user => {
         const btn = document.getElementById('navAuthBtn');
-        if (!btn) return;
-        if (user) {
-          const name = user.displayName || user.email?.split('@')[0] || 'Hesabım';
-          btn.innerHTML = `👤 ${name}`;
-          btn.href = 'account.html';
-        } else {
-          btn.innerHTML = '👤 Giriş Yap';
+        if (btn) {
+          if (user) {
+            const name = user.displayName || user.email?.split('@')[0] || 'Hesabım';
+            btn.innerHTML = `👤 ${name}`;
+          } else {
+            btn.innerHTML = '👤 Giriş Yap / Üye Ol';
+          }
           btn.href = 'account.html';
         }
+        // Auth durumuna göre fiyatları güncelle
+        loadFeaturedProducts(!!user);
       });
     } catch(e) {}
   })();
