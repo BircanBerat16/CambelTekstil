@@ -1578,8 +1578,12 @@ window.processPayment = async () => {
   }
 
   const subtotal = calcSubtotal(cart);
+  const vatTotal = cart.reduce((s, i) => {
+    if (!i.vat || i.vat === 0) return s;
+    return s + (calcItemPrice(i) * i.qty * i.vat / 100);
+  }, 0);
   const shipping = subtotal >= freeShippingLimit ? 0 : shippingFee;
-  const total = subtotal + shipping;
+  const total = subtotal + vatTotal + shipping;
   const orderNo = 'CBL' + Date.now().toString().slice(-8);
 
   // Save order to Firestore
@@ -1587,8 +1591,10 @@ window.processPayment = async () => {
     orderNo, customerName:`${name} ${surname}`, customerEmail:email, customerPhone:phone,
     userId: currentMember?.uid || null,
     shippingAddress:`${address}, ${document.getElementById('co_district').value}, ${city}`,
-    items:cart.map(i=>({name:i.name,size:i.size,color:i.color,qty:i.qty,price:i.price,image:i.image||'',customization:i.customization||null,cambelFee:i.cambelFee||0})),
-    subtotal, shipping, total,
+    items:cart.map(i=>({name:i.name,size:i.size,color:i.color,qty:i.qty,price:i.price,image:i.image||'',customization:i.customization||null,cambelFee:i.cambelFee||0,vat:i.vat||0})),
+    subtotal: Math.round(subtotal),
+    vatTotal: Math.round(vatTotal),
+    shipping, total: Math.round(total),
     status:'pending', paymentStatus:'pending',
     createdAt:serverTimestamp()
   };
