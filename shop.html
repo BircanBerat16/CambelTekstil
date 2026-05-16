@@ -1625,15 +1625,19 @@ window.processPayment = async () => {
 function showPaymentSuccess(orderNo) {
   closeCheckout();
   cart = []; saveCart(); renderCart();
+  const hasSelfCust = cart.some ? false : false; // cart zaten temizlendi
   document.getElementById('checkoutOverlay').innerHTML = `
     <div class="checkout-modal" style="max-width:480px;text-align:center;padding:48px 40px;">
       <div style="font-size:3rem;margin-bottom:16px">✅</div>
       <div style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;margin-bottom:.5rem">Siparişiniz Alındı</div>
-      <div style="font-size:.85rem;color:var(--mid);margin-bottom:1.5rem">Sipariş No: <strong>${orderNo}</strong></div>
-      <div style="font-size:.88rem;color:var(--mid);line-height:1.7;margin-bottom:2rem">Teşekkürler! Siparişiniz onaylandı.<br>Kargo bilgileriniz e-posta ile iletilecektir.</div>
-      <button class="btn-checkout" onclick="document.getElementById('checkoutOverlay').classList.remove('open')">Alışverişe Devam Et</button>
+      <div style="font-size:.85rem;color:var(--mid);margin-bottom:1rem">Sipariş No: <strong>${orderNo}</strong></div>
+      <div style="font-size:.88rem;color:var(--mid);line-height:1.7;margin-bottom:1.5rem">Teşekkürler! Siparişiniz onaylandı.<br>Kargo bilgileriniz e-posta ile iletilecektir.</div>
+      <button class="btn-checkout" onclick="window.location.href='account.html#orders'" style="margin-bottom:10px">📦 Siparişlerimi Gör</button>
+      <button onclick="document.getElementById('checkoutOverlay').classList.remove('open')" style="display:block;width:100%;padding:10px;background:transparent;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.85rem;color:var(--mid);cursor:pointer;margin-top:8px">Alışverişe Devam Et</button>
     </div>`;
   document.getElementById('checkoutOverlay').classList.add('open');
+  // 5 saniye sonra otomatik yönlendir
+  setTimeout(() => { window.location.href = 'account.html#orders'; }, 5000);
 }
 
 // ── UTILS ──
