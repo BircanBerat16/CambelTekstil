@@ -1074,6 +1074,7 @@
     section { padding: 70px 6vw; }
     .hero-img-grid { gap: 10px; padding: 6%; }
     .float-badge { left: 0; }
+    #featuredGrid { grid-template-columns: repeat(2,1fr) !important; gap: 12px !important; }
   }
 
   /* Mobile nav */
@@ -1473,7 +1474,7 @@ function toggleMobileNav() {
       <h2 class="section-title reveal" style="margin-top:8px">En çok tercih<br><em>edilenler</em></h2>
       <p class="section-sub reveal reveal-d1">Üyelerimizin en çok sipariş verdiği white label ürünler</p>
     </div>
-    <div id="featuredGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:24px;margin-bottom:40px">
+    <div id="featuredGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:40px">
       <div style="grid-column:1/-1;text-align:center;color:var(--mid);padding:40px;font-size:.9rem">Ürünler yükleniyor...</div>
     </div>
     <div style="text-align:center">
