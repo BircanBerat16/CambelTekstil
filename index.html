@@ -1719,7 +1719,7 @@ function toggleMobileNav() {
         const snap = await getDocs(query(collection(db,'products'), where('featured','==',true), where('status','==','active'), limit(8)));
         cachedFeaturedProducts = snap.docs.map(d => ({id:d.id,...d.data()}));
       }
-      const products = cachedFeaturedProducts;
+      const products = [...cachedFeaturedProducts];
 
       // Hero grid güncelle
       const heroGrid = document.getElementById('heroImgGrid');
@@ -1788,8 +1788,6 @@ function toggleMobileNav() {
       }
     } catch(e) {}
   })();
-
-  loadFeaturedProducts(false);
 
   // Auth durumuna göre navbar butonunu güncelle
   (async () => {
