@@ -165,13 +165,13 @@ nav{
 .product-img{
   position:relative;padding-bottom:120%;overflow:hidden;background:var(--cream);
 }
-.product-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .4s;}
-.product-card:hover .product-img img{transform:scale(1.04);}
+.product-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--cream);}
+
 .product-img-placeholder{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   font-size:2.5rem;color:var(--taupe);background:var(--cream);
 }
-.product-badges{position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:5px;}
+
 .p-badge{
   display:inline-flex;align-items:center;gap:4px;
   padding:3px 8px;border-radius:20px;font-size:.65rem;font-weight:600;letter-spacing:.04em;
@@ -950,15 +950,14 @@ function productCard(p) {
       ${p.buybox ? '<div style="background:#5C7A5C;color:#fff;text-align:center;padding:5px;font-size:.72rem;font-weight:600;letter-spacing:.06em">🏆 TRENDYOL BUYBOX</div>' : ''}
       <div class="product-img">
         ${displayImg ? `<img src="${displayImg}" alt="${cardName}" loading="lazy">` : '<div class="product-img-placeholder">👕</div>'}
-        <div class="product-badges">
-          ${p.salePrice ? '<span class="p-badge p-badge-sale">İndirim</span>' : ''}
-          ${p.buybox ? '<span class="p-badge p-badge-buybox">Buybox</span>' : ''}
-          ${p.brandKit ? '<span class="p-badge p-badge-kit">Brand Kit</span>' : ''}
-          ${getBundleLabel(p.id) ? '<span class="p-badge" style="background:#5C6A7A;color:#fff">📦 Bundle</span>' : ''}
-          ${activeCampaigns.length ? '<span class="p-badge" style="background:#8B5E2A;color:#fff">🏷️ Kampanya</span>' : ''}
-        </div>
       </div>
       <div class="product-body">
+        ${(p.buybox||p.brandKit||p.salePrice||activeCampaigns.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">
+          ${p.buybox ? '<span class="p-badge p-badge-buybox">Buybox</span>' : ''}
+          ${p.brandKit ? '<span class="p-badge p-badge-kit">Brand Kit</span>' : ''}
+          ${p.salePrice ? '<span class="p-badge p-badge-sale">İndirim</span>' : ''}
+          ${activeCampaigns.length ? '<span class="p-badge" style="background:#8B5E2A;color:#fff">🏷️ Kampanya</span>' : ''}
+        </div>` : ''}
         <div class="product-cat">
           ${getCatName(p.category)}${getSubcatName(p.category, p.subcategory) ? ' · ' + getSubcatName(p.category, p.subcategory) : ''}
           ${p._variantColor ? `<span style="margin-left:6px;background:var(--stone);padding:1px 7px;border-radius:20px;font-size:.68rem">${p._variantColor}</span>` : ''}
@@ -970,10 +969,12 @@ function productCard(p) {
           ${currentMember
             ? (p.saleType === 'serial'
                 ? `<div>
-                    ${p.serialSalePrice
-                      ? `<span class="price-sale">₺${Number(p.serialSalePrice).toLocaleString('tr-TR')}</span><span class="price-old">₺${Number(p.serialPrice).toLocaleString('tr-TR')}</span>`
-                      : `<span class="price-main">₺${Number(p.serialPrice||p.price).toLocaleString('tr-TR')}</span>`}
-                    <span style="font-size:.72rem;color:var(--mid);display:block">Birim: ₺${Number(p.unitPrice||0).toLocaleString('tr-TR')}</span>
+                    <span class="price-main">₺${Number(p.unitPrice||0).toLocaleString('tr-TR')}</span>
+                    <span style="font-size:.72rem;color:var(--mid);display:block">
+                      ${p.serialSalePrice
+                        ? `Seri: <span style="text-decoration:line-through">₺${Number(p.serialPrice).toLocaleString('tr-TR')}</span> <span style="color:var(--red)">₺${Number(p.serialSalePrice).toLocaleString('tr-TR')}</span>`
+                        : `Seri: ₺${Number(p.serialPrice||p.price).toLocaleString('tr-TR')}`}
+                    </span>
                   </div>`
                 : (p.salePrice
                     ? `<span class="price-sale">₺${Number(p.salePrice).toLocaleString('tr-TR')}</span><span class="price-old">₺${Number(p.price).toLocaleString('tr-TR')}</span>`
@@ -1045,10 +1046,13 @@ function renderPmodal() {
     <div class="pmodal-price">
       ${p.saleType === 'serial'
         ? `<div>
-            ${p.serialSalePrice
-              ? `<span style="color:var(--red);font-weight:700">₺${Number(p.serialSalePrice).toLocaleString('tr-TR')}</span> <span style="font-size:.85rem;color:var(--taupe);text-decoration:line-through;font-weight:400">₺${Number(p.serialPrice).toLocaleString('tr-TR')}</span>`
-              : `<span style="font-weight:700">₺${Number(p.serialPrice||p.price).toLocaleString('tr-TR')}</span>`}
-            <span style="font-size:.78rem;color:var(--mid);display:block;margin-top:2px">Birim fiyat: ₺${Number(p.unitPrice||0).toLocaleString('tr-TR')} / adet</span>
+            <span style="font-weight:700;font-size:1.1rem">₺${Number(p.unitPrice||0).toLocaleString('tr-TR')}</span>
+            <span style="font-size:.78rem;color:var(--mid);display:block;margin-top:2px">/ adet</span>
+            <div style="font-size:.82rem;color:var(--mid);margin-top:4px">
+              ${p.serialSalePrice
+                ? `Seri fiyatı: <span style="text-decoration:line-through;color:var(--taupe)">₺${Number(p.serialPrice).toLocaleString('tr-TR')}</span> <span style="color:var(--red);font-weight:600">₺${Number(p.serialSalePrice).toLocaleString('tr-TR')}</span>`
+                : `Seri fiyatı: <span style="font-weight:600;color:var(--charcoal)">₺${Number(p.serialPrice||p.price).toLocaleString('tr-TR')}</span>`}
+            </div>
           </div>`
         : (p.salePrice
             ? `<span style="color:var(--red)">₺${Number(p.salePrice).toLocaleString('tr-TR')}</span> <span style="font-size:.85rem;color:var(--taupe);text-decoration:line-through;font-weight:400">₺${Number(p.price).toLocaleString('tr-TR')}</span>`
