@@ -1169,7 +1169,7 @@ function toggleMobileNav() {
 
   <div class="hero-right">
     <div class="hero-visual">
-      <div class="hero-img-grid">
+      <div class="hero-img-grid" id="heroImgGrid">
         <div class="hero-img-card">
           <div class="hero-img-inner fabric-1"></div>
           <div class="hero-img-label">Body</div>
@@ -1689,10 +1689,8 @@ function toggleMobileNav() {
     });
   });
 
-  // Öne çıkan ürünleri yükle
+  // Hero görsellerini ve öne çıkan ürünleri yükle
   async function loadFeaturedProducts() {
-    const grid = document.getElementById('featuredGrid');
-    if (!grid) return;
     try {
       const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
       const { getFirestore, getDocs, collection, query, where, limit } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
@@ -1705,7 +1703,24 @@ function toggleMobileNav() {
       const db = getFirestore(app);
       const snap = await getDocs(query(collection(db,'products'), where('featured','==',true), where('status','==','active'), limit(8)));
       const products = snap.docs.map(d => ({id:d.id,...d.data()}));
-      if (!products.length) { grid.innerHTML = ''; return; }
+
+      // Hero grid güncelle
+      const heroGrid = document.getElementById('heroImgGrid');
+      const heroProducts = products.filter(p => p.images?.[0]).slice(0, 4);
+      if (heroGrid && heroProducts.length >= 2) {
+        const labels = ['Takım', 'Body', 'Pijama', 'Set'];
+        heroGrid.innerHTML = heroProducts.map((p, i) => `
+          <div class="hero-img-card">
+            <div class="hero-img-inner" style="background:var(--stone)">
+              <img src="${p.images[0]}" alt="${p.name}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:8px" loading="lazy">
+            </div>
+            <div class="hero-img-label">${labels[i] || p.name.split(' ')[0]}</div>
+          </div>`).join('');
+      }
+
+      // Featured grid
+      const grid = document.getElementById('featuredGrid');
+      if (!grid || !products.length) { if(grid) grid.innerHTML = ''; return; }
       grid.innerHTML = products.map(p => {
         const img = p.images?.[0] || '';
         const price = p.saleType === 'serial' ? (p.unitPrice || p.serialPrice || p.price) : (p.salePrice || p.price);
