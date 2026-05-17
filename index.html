@@ -449,12 +449,13 @@ try {
   else if (s2.exists() && s2.data().whatsapp) phone = s2.data().whatsapp;
   if (phone) {
     phone = phone.replace(/[^0-9]/g,'');
-    document.querySelectorAll('.wa-link').forEach(a => {
-      a.href = `https://wa.me/${phone}`;
+    // Tüm WA linklerini güncelle
+    document.querySelectorAll('a[href*="wa.me"]').forEach(a => {
+      const txt = a.href.includes('text=') ? '?text=Merhaba, bilgi almak istiyorum.' : '';
+      a.href = `https://wa.me/${phone}${txt}`;
     });
-    document.getElementById('ctaWa').href = `https://wa.me/${phone}?text=Merhaba, bilgi almak istiyorum.`;
   }
-} catch(e) {}
+} catch(e) { console.log('WA error:', e); }
 
 // Featured
 let cached = null;
