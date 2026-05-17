@@ -441,9 +441,14 @@ function setliSuffix(n) {
 
 // WhatsApp
 try {
-  const s = await getDoc(doc(db,'settings','shopSettings'));
-  if (s.exists()) {
-    const phone = (s.data().whatsapp||'905000000000').replace(/[^0-9]/g,'');
+  // Önce shopSettings dene, yoksa general'dan oku
+  let phone = '';
+  const s1 = await getDoc(doc(db,'settings','shopSettings'));
+  const s2 = await getDoc(doc(db,'settings','general'));
+  if (s1.exists() && s1.data().whatsapp) phone = s1.data().whatsapp;
+  else if (s2.exists() && s2.data().whatsapp) phone = s2.data().whatsapp;
+  if (phone) {
+    phone = phone.replace(/[^0-9]/g,'');
     document.querySelectorAll('.wa-link').forEach(a => {
       a.href = `https://wa.me/${phone}`;
     });
