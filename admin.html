@@ -1032,21 +1032,26 @@ async function renderDashboard() {
     </div>
     <div class="panel" style="margin-bottom:16px">
       <div class="panel-header">
-        <div class="panel-title">Ziyaretçi Analitikleri</div>
-        <a href="https://vercel.com/bircanberat16s-projects/cambel-tekstil/analytics" target="_blank" class="btn btn-outline btn-sm">Vercel'de Aç →</a>
+        <div class="panel-title">📊 Site Analitikleri</div>
+        <div id="analyticsDate" style="font-size:.78rem;color:var(--mid)"></div>
       </div>
-      <div class="panel-body" style="padding:0">
-        <iframe 
-          src="https://vercel.com/bircanberat16s-projects/cambel-tekstil/analytics?embed=1" 
-          style="width:100%;height:400px;border:none;border-radius:0 0 12px 12px"
-          id="analyticsFrame"
-        ></iframe>
-        <div id="analyticsMsg" style="display:none;text-align:center;padding:40px;color:var(--mid)">
-          <div style="font-size:2rem;margin-bottom:12px">📊</div>
-          <div style="font-weight:500;margin-bottom:8px">Vercel Analytics</div>
-          <div style="font-size:.85rem;margin-bottom:20px">Anlık ziyaretçi, sayfa görüntüleme ve daha fazlası</div>
-          <a href="https://vercel.com/bircanberat16s-projects/cambel-tekstil/analytics" target="_blank" class="btn btn-dark">Analytics Panelini Aç →</a>
+      <div class="panel-body">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
+          <div style="background:var(--surface2);border-radius:10px;padding:20px;text-align:center">
+            <div style="font-size:2rem;font-weight:600;color:var(--text)" id="todayViews">—</div>
+            <div style="font-size:.75rem;color:var(--mid);margin-top:4px">Bugünkü Ziyaret</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:10px;padding:20px;text-align:center">
+            <div style="font-size:2rem;font-weight:600;color:var(--text)" id="weekViews">—</div>
+            <div style="font-size:.75rem;color:var(--mid);margin-top:4px">Bu Hafta</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:10px;padding:20px;text-align:center">
+            <div style="font-size:2rem;font-weight:600;color:var(--text)" id="totalViews">—</div>
+            <div style="font-size:.75rem;color:var(--mid);margin-top:4px">Toplam Ziyaret</div>
+          </div>
         </div>
+        <div style="font-size:.75rem;color:var(--mid);margin-bottom:10px;letter-spacing:.08em;text-transform:uppercase">Sayfa Dağılımı (Bugün)</div>
+        <div id="pageBreakdown" style="display:grid;gap:8px"></div>
       </div>
     </div>
     <div class="dash-panels" style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px;">
@@ -1961,21 +1966,54 @@ window.fetchFromSupplier = async () => {
 };
 
 
-// Analytics iframe kontrolü
-setTimeout(() => {
-  const frame = document.getElementById('analyticsFrame');
-  const msg = document.getElementById('analyticsMsg');
-  if (frame && msg) {
-    frame.onerror = () => { frame.style.display='none'; msg.style.display='block'; };
-    // iframe yüklenemezse (X-Frame-Options) mesaj göster
-    try {
-      frame.onload = () => {
-        try { const d = frame.contentDocument; if (!d || d.title==='') throw new Error(); }
-        catch(e) { frame.style.display='none'; msg.style.display='block'; }
-      };
-    } catch(e) { frame.style.display='none'; msg.style.display='block'; }
-  }
-}, 2000);
+// Analytics yükle
+setTimeout(() => { loadAnalytics(); }, 500);
+
+async function loadAnalytics() {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const el = document.getElementById('analyticsDate');
+    if (el) el.textContent = new Date().toLocaleDateString('tr-TR', {day:'numeric',month:'long',year:'numeric'});
+
+    const promises = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      promises.push(getDoc(doc(db,'analytics',d.toISOString().split('T')[0])).then(s=>s.exists()?s.data():null));
+    }
+    const results = await Promise.all(promises);
+    const todayData = results[0];
+    const weekTotal = results.reduce((s,r)=>s+(r?.totalViews||0),0);
+    const allSnap = await getDocs(collection(db,'analytics'));
+    const grandTotal = allSnap.docs.reduce((s,d)=>s+(d.data().totalViews||0),0);
+
+    const tv = document.getElementById('todayViews');
+    const wv = document.getElementById('weekViews');
+    const tot = document.getElementById('totalViews');
+    const vc = document.getElementById('visitorCount');
+    const vs = document.getElementById('visitorSub');
+    if(tv) tv.textContent = todayData?.totalViews||0;
+    if(wv) wv.textContent = weekTotal;
+    if(tot) tot.textContent = grandTotal;
+    if(vc) vc.textContent = todayData?.totalViews||0;
+    if(vs) vs.textContent = 'bugünkü ziyaret';
+
+    const breakdown = document.getElementById('pageBreakdown');
+    if (breakdown && todayData?.pages) {
+      const pages = Object.entries(todayData.pages).sort((a,b)=>b[1]-a[1]);
+      const maxVal = pages[0]?.[1]||1;
+      breakdown.innerHTML = pages.map(([page,count])=>`
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-size:.82rem;color:var(--mid);width:100px;flex-shrink:0">${page}</div>
+          <div style="flex:1;background:var(--border);border-radius:4px;height:6px;overflow:hidden">
+            <div style="height:100%;background:var(--accent);border-radius:4px;width:${Math.round(count/maxVal*100)}%"></div>
+          </div>
+          <div style="font-size:.82rem;font-weight:500;color:var(--text);width:30px;text-align:right">${count}</div>
+        </div>`).join('');
+    }
+  } catch(e) { console.log('Analytics error:',e); }
+}
+
 async function renderMarketing() {
   const c = document.getElementById('pageContent');
   c.innerHTML = `
