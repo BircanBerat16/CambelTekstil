@@ -636,19 +636,23 @@ window.addEventListener('hashchange', () => {
 </script>
 
 <script>
-// Ziyaretçi sayacı — Firebase'e kaydet
+// Ziyaretçi sayacı — session bazlı (yenileme sayılmaz)
 (async () => {
   try {
+    const today = new Date().toISOString().split('T')[0];
+    const page = window.location.pathname.split('/').pop().replace('.html','') || 'index';
+    const sessionKey = `visited_${today}_${page}`;
+    if (sessionStorage.getItem(sessionKey)) return; // Bu oturumda zaten sayıldı
+    sessionStorage.setItem(sessionKey, '1');
+
     const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-    const { getFirestore, doc, setDoc, increment, serverTimestamp, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const { getFirestore, doc, setDoc, increment, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
     const FB = { apiKey:"AIzaSyBMlsHYnuVbOi7gXf00GfYA7vW8yMXH3Xw", authDomain:"cambel-tekstil.firebaseapp.com", projectId:"cambel-tekstil" };
     const app = getApps().length ? getApps()[0] : initializeApp(FB);
     const db = getFirestore(app);
-    const today = new Date().toISOString().split('T')[0];
-    const page = window.location.pathname.split('/').pop() || 'index.html';
     await setDoc(doc(db, 'analytics', today), {
       totalViews: increment(1),
-      [`pages.${page.replace('.html','')}`]: increment(1),
+      [`pages.${page}`]: increment(1),
       lastVisit: serverTimestamp()
     }, { merge: true });
   } catch(e) {}
