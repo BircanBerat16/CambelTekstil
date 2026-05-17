@@ -470,15 +470,13 @@ footer{background:var(--charcoal);color:rgba(250,248,245,.5);padding:3rem 8vw;di
           <div><label class="co-label">Şehir</label><input class="co-input" id="co_city" placeholder="İstanbul"></div>
         </div>
         <div class="iyzico-area">
-          <div class="co-section-title">Kart Bilgileri</div>
-          <div class="iyzico-card-form">
-            <div class="card-row"><label class="co-label">Kart Üzerindeki İsim</label><input class="co-input" id="co_cardholder" placeholder="AD SOYAD"></div>
-            <div class="card-row"><label class="co-label">Kart Numarası</label><input class="co-input" id="co_cardnum" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatCard(this)"></div>
-            <div class="co-form-grid">
-              <div><label class="co-label">Son Kullanma</label><input class="co-input" id="co_expiry" placeholder="AA/YY" maxlength="5" oninput="formatExpiry(this)"></div>
-              <div><label class="co-label">CVV</label><input class="co-input" id="co_cvv" placeholder="***" maxlength="4" type="password"></div>
+          <div class="co-section-title">Ödeme</div>
+          <div style="background:var(--cream);border-radius:10px;padding:20px;text-align:center">
+            <div style="font-size:2rem;margin-bottom:12px">🔒</div>
+            <div style="font-weight:500;font-size:.95rem;color:var(--charcoal);margin-bottom:8px">Güvenli Ödeme</div>
+            <div style="font-size:.85rem;color:var(--mid);line-height:1.7">
+              Siparişinizi onayladıktan sonra size WhatsApp veya e-posta ile güvenli ödeme linki göndereceğiz. Ödemeniz tamamlanınca siparişiniz hazırlanmaya başlar.
             </div>
-            <div class="secure-note">🔒 256-bit SSL ile şifrelendi · iyzico güvencesiyle</div>
           </div>
         </div>
       </div>
@@ -509,7 +507,7 @@ footer{background:var(--charcoal);color:rgba(250,248,245,.5);padding:3rem 8vw;di
       </div>
       <button class="cart-close" onclick="closeCheckout()" style="padding:0 16px;border-radius:8px;height:44px;">Geri</button>
       <button class="btn-pay" onclick="processPayment()">
-        🔒 Güvenli Ödeme Yap
+        ✅ Siparişi Onayla
       </button>
     </div>
   </div>
