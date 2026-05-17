@@ -593,6 +593,31 @@ select.filter-select{
       <div class="form-group-m">
         <label class="form-label-m">Açıklama</label>
         <textarea class="form-input-m" id="pDesc" placeholder="Ürün açıklaması..."></textarea>
+        <div class="form-group-m" style="margin-top:12px">
+          <label class="form-label-m">Ürün Videosu</label>
+          <input type="hidden" id="pVideo">
+          <div id="videoUploadArea" style="border:1.5px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:border-color .2s" onclick="document.getElementById('videoFileInput').click()" ondragover="event.preventDefault()" ondrop="handleVideoDrop(event)">
+            <div id="videoPreview" style="display:none;margin-bottom:12px">
+              <video id="videoPlayer" controls style="width:100%;border-radius:8px;max-height:200px"></video>
+            </div>
+            <div id="videoPlaceholder">
+              <div style="font-size:1.5rem;margin-bottom:8px">🎬</div>
+              <div style="font-size:.85rem;color:var(--mid)">Video yüklemek için tıkla veya sürükle</div>
+              <div style="font-size:.75rem;color:var(--light);margin-top:4px">MP4, MOV, AVI — Max 100MB</div>
+            </div>
+            <div id="videoProgress" style="display:none;margin-top:8px">
+              <div style="background:var(--border);border-radius:4px;height:6px;overflow:hidden">
+                <div id="videoProgressBar" style="height:100%;background:var(--accent);width:0%;transition:width .3s;border-radius:4px"></div>
+              </div>
+              <div id="videoProgressText" style="font-size:.75rem;color:var(--mid);margin-top:6px">Yükleniyor...</div>
+            </div>
+          </div>
+          <input type="file" id="videoFileInput" accept="video/*" style="display:none" onchange="uploadVideo(this.files[0])">
+          <div id="videoActions" style="display:none;margin-top:8px">
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('videoFileInput').click()">Videoyu Değiştir</button>
+            <button class="btn btn-outline btn-sm" style="color:var(--red);border-color:var(--red)" onclick="removeVideo()">Videoyu Kaldır</button>
+          </div>
+        </div>
       </div>
       <div class="form-group-m">
         <label class="form-label-m">Materyal</label>
@@ -1423,7 +1448,7 @@ window.updateCambelFeeHint = () => {
 window.openAddProduct = (fromImport) => {
   document.getElementById('productModalTitle').textContent = 'Yeni Ürün Ekle';
   document.getElementById('editProductId').value = '';
-  ['pName','pPrice','pSalePrice','pStock','pSku','pSizes','pColors','pDesc','pMaterial'].forEach(id => document.getElementById(id).value = '');
+  ['pName','pPrice','pSalePrice','pStock','pSku','pSizes','pColors','pDesc','pMaterial','pVideo'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('variantGridWrap').style.display = 'none';
   document.getElementById('simpleStockWrap').style.display = 'block';
   document.getElementById('variantGrid').innerHTML = '';
@@ -1479,6 +1504,15 @@ window.openEditProduct = async (id) => {
   document.getElementById('pMaterial').value = p.material||'';
   document.getElementById('pStatus').value = p.status||'active';
   document.getElementById('pVat').value = String(p.vat||0);
+  document.getElementById('pVideo').value = p.video||'';
+  // Video önizleme
+  if (p.video) {
+    document.getElementById('videoPlayer').src = p.video;
+    document.getElementById('videoPreview').style.display = 'block';
+    document.getElementById('videoPlaceholder').style.display = 'none';
+    document.getElementById('videoActions').style.display = 'flex';
+    document.getElementById('videoActions').style.gap = '8px';
+  }
   document.getElementById('pFeatured').value = p.featured?'true':'false';
   document.getElementById('pBrandKit').value = p.brandKit!==false?'true':'false';
   document.getElementById('pBuybox').value = p.buybox?'true':'false';
@@ -1580,6 +1614,7 @@ window.saveProduct = async () => {
     material: document.getElementById('pMaterial').value.trim(),
     status: document.getElementById('pStatus').value,
     vat: parseInt(document.getElementById('pVat').value)||0,
+    video: document.getElementById('pVideo').value.trim()||'',
     featured: document.getElementById('pFeatured').value === 'true',
     brandKit: document.getElementById('pBrandKit').value === 'true',
     buybox: document.getElementById('pBuybox').value === 'true',
@@ -2013,6 +2048,68 @@ async function loadAnalytics() {
     }
   } catch(e) { console.log('Analytics error:',e); }
 }
+
+// ── VIDEO UPLOAD ──
+window.handleVideoDrop = (e) => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('video/')) uploadVideo(file);
+};
+
+window.uploadVideo = async (file) => {
+  if (!file) return;
+  if (file.size > 100 * 1024 * 1024) { showToast('Video 100MB\'dan büyük olamaz', 'error'); return; }
+  const progress = document.getElementById('videoProgress');
+  const progressBar = document.getElementById('videoProgressBar');
+  const progressText = document.getElementById('videoProgressText');
+  const placeholder = document.getElementById('videoPlaceholder');
+  const preview = document.getElementById('videoPreview');
+  const actions = document.getElementById('videoActions');
+  placeholder.style.display = 'none';
+  progress.style.display = 'block';
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_PRESET);
+    formData.append('folder', 'cambel-videos');
+    const xhr = new XMLHttpRequest();
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const pct = Math.round(e.loaded / e.total * 100);
+        progressBar.style.width = pct + '%';
+        progressText.textContent = `Yükleniyor... %${pct}`;
+      }
+    };
+    const result = await new Promise((resolve, reject) => {
+      xhr.onload = () => resolve(JSON.parse(xhr.responseText));
+      xhr.onerror = reject;
+      xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/video/upload`);
+      xhr.send(formData);
+    });
+    if (result.secure_url) {
+      document.getElementById('pVideo').value = result.secure_url;
+      document.getElementById('videoPlayer').src = result.secure_url;
+      progress.style.display = 'none';
+      preview.style.display = 'block';
+      actions.style.display = 'flex';
+      actions.style.gap = '8px';
+      showToast('Video yüklendi ✓', 'success');
+    } else throw new Error('Upload failed');
+  } catch(e) {
+    progress.style.display = 'none';
+    placeholder.style.display = 'block';
+    showToast('Video yüklenemedi', 'error');
+  }
+};
+
+window.removeVideo = () => {
+  document.getElementById('pVideo').value = '';
+  document.getElementById('videoPlayer').src = '';
+  document.getElementById('videoPreview').style.display = 'none';
+  document.getElementById('videoActions').style.display = 'none';
+  document.getElementById('videoPlaceholder').style.display = 'block';
+  document.getElementById('videoFileInput').value = '';
+};
 
 async function renderMarketing() {
   const c = document.getElementById('pageContent');
