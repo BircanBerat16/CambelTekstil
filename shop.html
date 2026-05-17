@@ -1183,7 +1183,6 @@ function renderPmodal() {
         <div style="font-size:.78rem;color:#3d8a60;line-height:1.6">Bu ürün Trendyol'da <strong>satış geçmişine</strong> ve <strong>gerçek yorumlara</strong> sahip. Markını ekle, buybox avantajıyla satışa başla.</div>
       </div>` : ''}
     </div>
-    ${p.description ? `<div class="pmodal-desc" style="margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--border)">${p.description}</div>` : ''}
     ${p.video ? `<div style="margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--border)">
       <div style="font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mid);margin-bottom:10px">🎬 Ürün Videosu</div>
       ${p.video.includes('youtube.com') || p.video.includes('youtu.be')
@@ -1196,6 +1195,7 @@ function renderPmodal() {
         : `<video src="${p.video}" controls style="width:100%;border-radius:10px;max-height:300px"></video>`
       }
     </div>` : ''}
+    ${p.description ? `<div class="pmodal-desc" style="margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--border)">${p.description}</div>` : ''}
     ${p.material ? `<div class="pmodal-material">🧵 ${p.material}</div>` : ''}`;
 }
 
