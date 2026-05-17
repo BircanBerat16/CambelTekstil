@@ -495,6 +495,17 @@ footer{background:var(--charcoal);color:rgba(250,248,245,.5);padding:3rem 8vw;di
       </div>
     </div>
     <div class="co-footer">
+      <div style="width:100%;margin-bottom:12px">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:.78rem;color:var(--mid);line-height:1.6">
+          <input type="checkbox" id="legalCheck" style="margin-top:2px;flex-shrink:0;accent-color:var(--charcoal)">
+          <span>
+            <a href="mesafeli-satis-sozlesmesi.html" target="_blank" style="color:var(--accent)">Mesafeli Satış Sözleşmesi</a>'ni,
+            <a href="iptal-iade.html" target="_blank" style="color:var(--accent)">Cayma ve İade Politikası</a>'nı,
+            <a href="kargo-teslimat.html" target="_blank" style="color:var(--accent)">Kargo ve Teslimat Politikası</a>'nı ve
+            <a href="gizlilik-politikasi.html" target="_blank" style="color:var(--accent)">Gizlilik Politikası</a>'nı okudum, kabul ediyorum.
+          </span>
+        </label>
+      </div>
       <button class="cart-close" onclick="closeCheckout()" style="padding:0 16px;border-radius:8px;height:44px;">Geri</button>
       <button class="btn-pay" onclick="processPayment()">
         🔒 Güvenli Ödeme Yap
@@ -512,6 +523,14 @@ footer{background:var(--charcoal);color:rgba(250,248,245,.5);padding:3rem 8vw;di
   <div class="footer-logo">Cambel<span>.</span></div>
   <div>Bebek & Çocuk Giyim · Toptan & Perakende</div>
   <div>© 2025 Cambel Tekstil. Tüm hakları saklıdır.</div>
+<div style="text-align:center;padding:12px 0 0;border-top:1px solid rgba(139,115,85,.1);margin-top:16px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
+          <a href="uyelik-sozlesmesi.html">Üyelik Sözleşmesi</a>
+          <a href="gizlilik-politikasi.html">Gizlilik & KVKK</a>
+          <a href="cerez-politikasi.html">Çerez Politikası</a>
+          <a href="mesafeli-satis-sozlesmesi.html">Mesafeli Satış</a>
+          <a href="iptal-iade.html">İptal & İade</a>
+          <a href="kargo-teslimat.html">Kargo & Teslimat</a>
+          <a href="yasal-bildirim.html">Yasal Bildirim</a></div>
 </footer>
 
 <div class="toast" id="toast"></div>
@@ -1540,6 +1559,10 @@ function renderCheckoutSummary() {
 
 // ── PAYMENT (iyzico backend) ──
 window.processPayment = async () => {
+  if (!document.getElementById('legalCheck')?.checked) {
+    showToast('Lütfen sözleşmeleri okuyup onaylayın.', 'error');
+    return;
+  }
   const name = document.getElementById('co_name').value.trim();
   const surname = document.getElementById('co_surname').value.trim();
   const email = document.getElementById('co_email').value.trim();
