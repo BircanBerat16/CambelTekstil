@@ -626,14 +626,18 @@ async function init() {
   const urlParams = new URLSearchParams(window.location.search);
   const catParam = urlParams.get('cat');
   if (catParam) {
-    currentCategory = catParam;
-    currentSubcategory = '';
-    renderProducts();
-    // Sidebar'da aktif kategoriye scroll et
     setTimeout(() => {
-      const catEl = document.getElementById(`cat-${catParam}`);
-      if (catEl) { catEl.classList.add('active'); catEl.scrollIntoView({behavior:'smooth', block:'center'}); }
-    }, 500);
+      // Kategoriler yüklendikten sonra filtrele
+      const catEl = [...document.querySelectorAll('.cat-item')].find(el => 
+        el.getAttribute('onclick')?.includes(catParam) || 
+        el.textContent.toLowerCase().includes(catParam.replace('-',' '))
+      );
+      if (catEl) catEl.click();
+      else {
+        // Direkt ID ile filtrele
+        filterCat(catParam, '', null);
+      }
+    }, 800);
   }
   renderSidebar();
   // Hash'ten kategori filtresi geri yükle
