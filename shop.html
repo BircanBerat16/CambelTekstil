@@ -622,6 +622,19 @@ let freeShippingLimit = 100000;
 async function init() {
   // Auth state ve veri yüklemesini paralel bekle
   await Promise.all([authReady, loadSettings(), loadCategories(), loadProducts(), loadBundles(), loadCampaigns()]);
+  // URL parametresiyle gelen kategori filtresi
+  const urlParams = new URLSearchParams(window.location.search);
+  const catParam = urlParams.get('cat');
+  if (catParam) {
+    currentCategory = catParam;
+    currentSubcategory = '';
+    renderProducts();
+    // Sidebar'da aktif kategoriye scroll et
+    setTimeout(() => {
+      const catEl = document.getElementById(`cat-${catParam}`);
+      if (catEl) { catEl.classList.add('active'); catEl.scrollIntoView({behavior:'smooth', block:'center'}); }
+    }, 500);
+  }
   renderSidebar();
   // Hash'ten kategori filtresi geri yükle
   const hash = window.location.hash.replace('#','');
@@ -668,13 +681,16 @@ async function loadSettings() {
   try {
     const snap = await getDocs(collection(db,'settings'));
     snap.docs.forEach(d => {
-      if (d.id === 'general') {
+      if (d.id === 'general' || d.id === 'shopSettings') {
         const data = d.data();
-        shippingFee = 0; // Kargo alıcıya ait — sabit 0
-        // freeShippingLimit sabit 100000 — Firebase'den alınmaz
+        shippingFee = 0;
         if (data.whatsapp) {
-          document.querySelectorAll('a.wa-float').forEach(a => {
-            a.href = `https://wa.me/${data.whatsapp}?text=Merhaba`;
+          const phone = data.whatsapp.replace(/[^0-9]/g, '');
+          document.querySelectorAll('.wa-float, .wa-link').forEach(a => {
+            const href = a.getAttribute('href') || '';
+            if (href.includes('wa.me')) {
+              a.href = `https://wa.me/${phone}?text=Merhaba`;
+            }
           });
         }
       }
@@ -1435,7 +1451,7 @@ window.openCheckout = () => {
             <div style="font-size:.78rem;color:#3d8a60;line-height:1.65">DTF tabakası · Ense baskısı · Yıkama etiketi · Sallantı kart · Ambalaj · Barkod</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:8px">
-            <button onclick="document.getElementById('brandKitWarning').remove();filterCat('marka-kiti','',document.getElementById('cat-marka-kiti'));toggleCart();" 
+            <button onclick="document.getElementById('brandKitWarning').remove();window.location.href='shop.html?cat=marka-kiti';" 
               style="width:100%;padding:12px;background:#2A2825;color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:500;cursor:pointer">
               Brand Kit'e Git →
             </button>
