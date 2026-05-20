@@ -1600,12 +1600,8 @@ window.processPayment = async () => {
   const phone = document.getElementById('co_phone').value.trim();
   const address = document.getElementById('co_address').value.trim();
   const city = document.getElementById('co_city').value.trim();
-  const cardNum = document.getElementById('co_cardnum').value.replace(/\s/g,'');
-  const expiry = document.getElementById('co_expiry').value;
-  const cvv = document.getElementById('co_cvv').value;
-  const cardholder = document.getElementById('co_cardholder').value.trim();
 
-  if (!name||!email||!address||!city||!cardNum||!expiry||!cvv||!cardholder) {
+  if (!name||!surname||!email||!phone||!address||!city) {
     showToast('Lütfen tüm alanları doldurun','');
     return;
   }
