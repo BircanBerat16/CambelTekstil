@@ -564,7 +564,7 @@ const authReady = new Promise(resolve => {
     if (!resolved) { resolved = true; resolve(); }
   }, 2000);
   onAuthStateChanged(auth, user => {
-    currentMember = user && user.emailVerified ? user : null;
+    currentMember = user || null;
     updateAuthUI();
     if (!resolved) {
       resolved = true;
