@@ -301,11 +301,7 @@ onAuthStateChanged(auth, async user => {
   currentUser = user;
   document.getElementById('navLogoutBtn').style.display = 'flex';
 
-  if (!user.emailVerified) {
-    document.getElementById('verifyEmail').textContent = user.email;
-    showScreen('verify');
-    return;
-  }
+  // Email doğrulama kaldırıldı — direkt giriş
 
   // Load user profile from Firestore
   await loadUserProfile(user);
@@ -388,7 +384,10 @@ window.doRegister = async () => {
       createdAt: serverTimestamp(), favorites: []
     });
     errEl.style.display = 'none';
-    document.getElementById('registerSuccess').style.display = 'block';
+    // Direkt hesaba yönlendir
+    currentUser = cred.user;
+    showScreen('account');
+    initAccountPage();
   } catch(e) {
     errEl.style.display = 'block';
     errEl.textContent = e.code==='auth/email-already-in-use' ? 'Bu e-posta zaten kayıtlı.' : 'Kayıt başarısız: ' + e.message;
