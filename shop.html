@@ -990,9 +990,12 @@ function productCard(p) {
         ${displayImg ? `<img src="${displayImg}" alt="${cardName}" loading="lazy">` : '<div class="product-img-placeholder">👕</div>'}
       </div>
       <div class="product-body">
-        ${(p.buybox||p.brandKit||p.salePrice||activeCampaigns.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">
+        ${(p.buybox||p.brandKit||p.salePrice||p.oekoTex||p.gots||p.dropshipping||activeCampaigns.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">
           ${p.buybox ? '<span class="p-badge p-badge-buybox">Buybox</span>' : ''}
           ${p.brandKit ? '<span class="p-badge p-badge-kit">Brand Kit</span>' : ''}
+          ${p.dropshipping ? '<span class="p-badge" style="background:#4A6FA5;color:#fff">📦 Dropshipping</span>' : ''}
+          ${p.oekoTex ? '<span class="p-badge" style="background:#2D7A50;color:#fff">✓ OEKO-TEX</span>' : ''}
+          ${p.gots ? '<span class="p-badge" style="background:#2D7A50;color:#fff">✓ GOTS</span>' : ''}
           ${p.salePrice ? '<span class="p-badge p-badge-sale">İndirim</span>' : ''}
           ${activeCampaigns.length ? '<span class="p-badge" style="background:#8B5E2A;color:#fff">🏷️ Kampanya</span>' : ''}
         </div>` : ''}
@@ -1074,6 +1077,13 @@ function renderPmodal() {
   document.getElementById('pmodalInfo').innerHTML = `
     <div class="pmodal-cat">${getCatName(p.category)}</div>
     <div class="pmodal-name">${p.name}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+      ${p.buybox ? '<span class="p-badge p-badge-buybox">🏆 Buybox</span>' : ''}
+      ${p.brandKit ? '<span class="p-badge p-badge-kit">🎨 Brand Kit</span>' : ''}
+      ${p.dropshipping ? '<span class="p-badge" style="background:#4A6FA5;color:#fff">📦 Dropshipping</span>' : ''}
+      ${p.oekoTex ? '<span style="display:inline-flex;align-items:center;gap:4px;background:#EAF5EF;color:#2D7A50;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:600;border:1px solid #2D7A50">✓ OEKO-TEX Sertifikalı</span>' : ''}
+      ${p.gots ? '<span style="display:inline-flex;align-items:center;gap:4px;background:#EAF5EF;color:#2D7A50;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:600;border:1px solid #2D7A50">✓ GOTS Sertifikalı</span>' : ''}
+    </div>
     ${p.saleType === 'serial' && p.serialSizes?.length ? `
       <div style="background:#EAF5EF;border-radius:8px;padding:10px 14px;margin-bottom:10px">
         <div style="font-size:.75rem;font-weight:600;color:#2D7A50;margin-bottom:6px">📦 ${setliSuffix(p.serialSizes.length)} Set — Paket İçeriği</div>
