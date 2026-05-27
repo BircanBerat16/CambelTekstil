@@ -147,7 +147,7 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
   .lang-btn:not(.active):hover{background:rgba(42,40,37,0.08);color:#2A2825}
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
-<script src="lang.js" type="module"></script>
+<script src="lang.js"></script>
 </head>
 <body>
 
@@ -664,11 +664,6 @@ window.addEventListener('hashchange', () => {
   } catch(e) {}
 })();
 </script>
-<script type="module">
-import { setLang, applyTranslations } from './lang.js';
-window.setLang = setLang;
-const saved = localStorage.getItem('cambel_lang');
-if (saved && saved !== 'tr') setLang(saved);
-</script>
+
 </body>
 </html>
