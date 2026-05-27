@@ -185,6 +185,11 @@ footer { background: #1a1a18; padding: 40px 8vw; display: flex; align-items: cen
   .mobile-nav.open { transform: translateY(0); }
   .mobile-nav a { font-size: .9rem; color: var(--charcoal); text-decoration: none; padding: 12px 0; border-bottom: 1px solid var(--cream); }
 }
+
+  .lang-switcher{display:inline-flex;align-items:center;background:rgba(42,40,37,0.08);border-radius:100px;padding:3px;gap:1px}
+  .lang-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:100px;border:none;background:transparent;color:#6B6560;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
+  .lang-btn.active{background:#2A2825;color:#F5F0E8}
+  .lang-btn:not(.active):hover{background:rgba(42,40,37,0.08);color:#2A2825}
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
 <script src="lang.js" type="module"></script>
@@ -200,9 +205,9 @@ footer { background: #1a1a18; padding: 40px 8vw; display: flex; align-items: cen
     <li><a href="#sss">SSS</a></li>
   </ul>
   <div class="lang-switcher">
-    <button class="lang-btn active" data-lang="tr" onclick="setLang('tr')">TR</button>
-    <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
-    <button class="lang-btn" data-lang="de" onclick="setLang('de')">DE</button>
+    <button class="lang-btn active" data-lang="tr" onclick="setLang('tr')">🇹🇷 TR</button>
+    <button class="lang-btn" data-lang="en" onclick="setLang('en')">🇬🇧 EN</button>
+    <button class="lang-btn" data-lang="de" onclick="setLang('de')">🇩🇪 DE</button>
   </div>
   <a href="account.html" id="navAuthBtn" class="nav-btn" data-i18n="nav_login">👤 Giriş Yap / Üye Ol</a>
   <div class="hamburger" onclick="document.getElementById('mobileNav').classList.toggle('open')">
