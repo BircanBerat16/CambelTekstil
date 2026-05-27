@@ -690,6 +690,27 @@ select.filter-select{
         </select>
       </div>
       <div class="form-group-m">
+        <label class="form-label-m">OEKO-TEX Sertifikası</label>
+        <select class="form-input-m" id="pOekoTex">
+          <option value="false">Yok</option>
+          <option value="true">Var</option>
+        </select>
+      </div>
+      <div class="form-group-m">
+        <label class="form-label-m">GOTS Sertifikası</label>
+        <select class="form-input-m" id="pGots">
+          <option value="false">Yok</option>
+          <option value="true">Var</option>
+        </select>
+      </div>
+      <div class="form-group-m">
+        <label class="form-label-m">Dropshipping Uyumlu</label>
+        <select class="form-input-m" id="pDropshipping">
+          <option value="false">Hayır</option>
+          <option value="true">Evet — Stok tutmadan sat</option>
+        </select>
+      </div>
+      <div class="form-group-m">
         <label class="form-label-m">Kişiselleştirme Seçenekleri</label>
         <div class="form-hint" style="margin-bottom:10px">Aktif olanları işaretle ve ücretini gir. Boş = ücretsiz.</div>
         <div style="display:flex;flex-direction:column;gap:6px">
@@ -1449,6 +1470,7 @@ window.openAddProduct = (fromImport) => {
   document.getElementById('productModalTitle').textContent = 'Yeni Ürün Ekle';
   document.getElementById('editProductId').value = '';
   ['pName','pPrice','pSalePrice','pStock','pSku','pSizes','pColors','pDesc','pMaterial','pVideo'].forEach(id => document.getElementById(id).value = '');
+  ['pOekoTex','pGots','pDropshipping'].forEach(id => document.getElementById(id).value = 'false');
   document.getElementById('variantGridWrap').style.display = 'none';
   document.getElementById('simpleStockWrap').style.display = 'block';
   document.getElementById('variantGrid').innerHTML = '';
@@ -1618,6 +1640,9 @@ window.saveProduct = async () => {
     featured: document.getElementById('pFeatured').value === 'true',
     brandKit: document.getElementById('pBrandKit').value === 'true',
     buybox: document.getElementById('pBuybox').value === 'true',
+    oekoTex: document.getElementById('pOekoTex').value === 'true',
+    gots: document.getElementById('pGots').value === 'true',
+    dropshipping: document.getElementById('pDropshipping').value === 'true',
     saleType: document.getElementById('pSaleType').value,
     serialSizes: document.getElementById('pSaleType').value === 'serial'
       ? document.getElementById('pSerialSizes').value.split(',').map(s=>s.trim()).filter(Boolean)
@@ -1842,15 +1867,19 @@ window.openOrder = async (id) => {
   const snap = await getDoc(doc(db,'orders',id));
   if (!snap.exists()) return;
   const o = {id:snap.id,...snap.data()};
+
+  // Ürün görsellerini products koleksiyonundan çek
+  const prodSnap = await getDocs(collection(db,'products'));
+  const productMap = Object.fromEntries(prodSnap.docs.map(d=>[d.data().name, d.data()]));
+
   document.getElementById('orderModalTitle').textContent = `Sipariş #${(o.orderNo||o.id.slice(-6)).toUpperCase()}`;
   document.getElementById('orderStatusBtn').textContent = `Durumu Güncelle → ${statusLabel(nextStatus(o.status))}`;
-  // İptal butonu — teslim edilmiş veya zaten iptal ise gösterme
   const cancelBtn = document.getElementById('orderCancelBtn');
   cancelBtn.style.display = (o.status === 'delivered' || o.status === 'cancelled') ? 'none' : 'inline-flex';
-  // Teslim edilmişse güncelle butonu da gizle
   document.getElementById('orderStatusBtn').style.display = (o.status === 'delivered' || o.status === 'cancelled') ? 'none' : 'inline-flex';
+
   document.getElementById('orderModalBody').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
       <div>
         <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--light);margin-bottom:8px">Müşteri Bilgileri</div>
         <div style="font-weight:500">${o.customerName||'-'}</div>
@@ -1860,24 +1889,133 @@ window.openOrder = async (id) => {
       </div>
       <div>
         <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--light);margin-bottom:8px">Sipariş Özeti</div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mid)">Ara Toplam</span><span>₺${(o.subtotal||0).toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:2})}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mid)">Ara Toplam</span><span>₺${(o.subtotal||0).toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}</span></div>
         <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mid)">Kargo</span><span style="color:var(--mid);font-style:italic">Alıcıya Ait</span></div>
-        ${o.vatTotal ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mid)">KDV</span><span>+₺${Math.round(o.vatTotal).toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:2})}</span></div>` : ''}
-        <div style="display:flex;justify-content:space-between;font-weight:600;font-size:1rem;border-top:1px solid var(--border);padding-top:8px;margin-top:8px"><span>Toplam</span><span>₺${(o.total||0).toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:2})}</span></div>
+        ${o.vatTotal?`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mid)">KDV</span><span>+₺${Math.round(o.vatTotal).toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}</span></div>`:''}
+        <div style="display:flex;justify-content:space-between;font-weight:600;font-size:1rem;border-top:1px solid var(--border);padding-top:8px;margin-top:8px"><span>Toplam</span><span>₺${(o.total||0).toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}</span></div>
         <div style="margin-top:8px">${statusBadge(o.status)} ${o.paymentStatus==='paid'?'<span class="badge badge-green">Ödeme Alındı</span>':'<span class="badge badge-warn">Ödeme Bekleniyor</span>'}</div>
       </div>
     </div>
-    <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--light);margin-bottom:10px">Sipariş Kalemleri</div>
-    ${(o.items||[]).map(item=>`
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+
+    <!-- Sipariş Düzenleme -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:20px">
+      <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--light);margin-bottom:12px">Sipariş Düzenle</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
         <div>
+          <label class="form-label-m">Ödeme Durumu</label>
+          <select class="form-input-m" id="editPaymentStatus">
+            <option value="pending" ${o.paymentStatus==='pending'?'selected':''}>Ödeme Bekleniyor</option>
+            <option value="paid" ${o.paymentStatus==='paid'?'selected':''}>Ödeme Alındı</option>
+            <option value="refunded" ${o.paymentStatus==='refunded'?'selected':''}>İade Edildi</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label-m">Kargo Takip No</label>
+          <input type="text" class="form-input-m" id="editTrackingNo" value="${o.trackingNo||''}" placeholder="Takip numarası...">
+        </div>
+      </div>
+      <div style="margin-bottom:12px">
+        <label class="form-label-m">Admin Notu</label>
+        <input type="text" class="form-input-m" id="editOrderNote" value="${o.note||''}" placeholder="Dahili not...">
+      </div>
+      <button class="btn btn-green btn-sm" onclick="saveOrderEdits()">💾 Değişiklikleri Kaydet</button>
+    </div>
+
+    <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--light);margin-bottom:10px">
+      Sipariş Kalemleri
+      <button class="btn btn-outline btn-sm" style="margin-left:8px;font-size:.68rem" onclick="showAddProductToOrder()">+ Ürün Ekle</button>
+    </div>
+    <div id="orderItemsList">
+    ${(o.items||[]).map((item,idx) => {
+      const img = item.image || productMap[item.name]?.images?.[0] || '';
+      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)" id="orderItem_${idx}">
+        <div style="width:48px;height:56px;border-radius:6px;background:var(--surface2);overflow:hidden;flex-shrink:0">
+          ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`:'<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.2rem">👕</div>'}
+        </div>
+        <div style="flex:1">
           <div style="font-weight:500">${item.name}</div>
           <div style="font-size:.78rem;color:var(--mid)">${item.size||''} ${item.color?'· '+item.color:''} · ${item.qty} adet</div>
+          ${item.customization==='self'?'<span class="badge badge-green" style="font-size:.65rem">Kendin Uygula</span>':item.customization==='cambel'?'<span class="badge badge-warn" style="font-size:.65rem">Cambel Uygulasın</span>':''}
         </div>
-        <div style="font-weight:500">₺${((item.price||0)*(item.qty||1)).toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:2})}</div>
-      </div>`).join('')}
-    ${o.trackingNo ? `<div style="margin-top:16px;padding:12px;background:var(--green-bg);border-radius:8px;font-size:.85rem"><strong>Kargo No:</strong> ${o.trackingNo}</div>` : ''}`;
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="font-weight:500">₺${((item.price||0)*(item.qty||1)).toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}</div>
+          <button onclick="removeOrderItem(${idx})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:1rem;padding:4px" title="Kaldır">🗑️</button>
+        </div>
+      </div>`;
+    }).join('')}
+    </div>
+
+    <!-- Ürün Ekle Formu (gizli) -->
+    <div id="addProductForm" style="display:none;margin-top:12px;background:var(--surface2);border-radius:8px;padding:14px">
+      <div style="font-size:.82rem;font-weight:500;margin-bottom:10px">Ürün Ekle</div>
+      <select class="form-input-m" id="addProductSelect" style="margin-bottom:8px" onchange="fillAddProductFields()">
+        <option value="">Ürün seç...</option>
+        ${Object.entries(productMap).map(([name,p])=>`<option value="${p.id||name}" data-price="${p.salePrice||p.serialPrice||p.price||0}" data-name="${name}">${name}</option>`).join('')}
+      </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+        <input type="text" class="form-input-m" id="addProductSize" placeholder="Beden">
+        <input type="text" class="form-input-m" id="addProductColor" placeholder="Renk">
+        <input type="number" class="form-input-m" id="addProductQty" placeholder="Adet" value="1" min="1">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-green btn-sm" onclick="addProductToOrder()">Ekle</button>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('addProductForm').style.display='none'">İptal</button>
+      </div>
+    </div>
+
+    ${o.trackingNo?`<div style="margin-top:16px;padding:12px;background:var(--green-bg);border-radius:8px;font-size:.85rem"><strong>Kargo No:</strong> ${o.trackingNo}</div>`:''}
   openModal('orderModal');
+};
+
+window.saveOrderEdits = async () => {
+  if (!currentOrderId) return;
+  const paymentStatus = document.getElementById('editPaymentStatus').value;
+  const trackingNo = document.getElementById('editTrackingNo').value.trim();
+  const note = document.getElementById('editOrderNote').value.trim();
+  const updateData = { paymentStatus };
+  if (trackingNo) updateData.trackingNo = trackingNo;
+  if (note) updateData.note = note;
+  await updateDoc(doc(db,'orders',currentOrderId), updateData);
+  showToast('Sipariş güncellendi ✓','success');
+};
+
+window.showAddProductToOrder = () => {
+  const form = document.getElementById('addProductForm');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+};
+
+window.removeOrderItem = async (idx) => {
+  if (!confirm('Bu ürünü siparişten kaldırmak istediğinden emin misin?')) return;
+  const snap = await getDoc(doc(db,'orders',currentOrderId));
+  const o = snap.data();
+  const items = [...(o.items||[])];
+  items.splice(idx, 1);
+  const subtotal = items.reduce((s,i)=>(i.price||0)*(i.qty||1)+s, 0);
+  await updateDoc(doc(db,'orders',currentOrderId), { items, subtotal, total: subtotal + (o.vatTotal||0) });
+  showToast('Ürün kaldırıldı ✓','success');
+  document.getElementById(`orderItem_${idx}`)?.remove();
+  renderOrders();
+};
+
+window.addProductToOrder = async () => {
+  const sel = document.getElementById('addProductSelect');
+  const name = sel.options[sel.selectedIndex]?.getAttribute('data-name');
+  const price = parseFloat(sel.options[sel.selectedIndex]?.getAttribute('data-price')||0);
+  const size = document.getElementById('addProductSize').value.trim();
+  const color = document.getElementById('addProductColor').value.trim();
+  const qty = parseInt(document.getElementById('addProductQty').value)||1;
+  if (!name) { showToast('Ürün seçin','error'); return; }
+
+  const snap = await getDoc(doc(db,'orders',currentOrderId));
+  const o = snap.data();
+  const items = [...(o.items||[]), { name, size, color, qty, price, image:'', customization:null, cambelFee:0, vat:0 }];
+  const subtotal = items.reduce((s,i)=>(i.price||0)*(i.qty||1)+s, 0);
+  await updateDoc(doc(db,'orders',currentOrderId), { items, subtotal, total: subtotal + (o.vatTotal||0) });
+  showToast(`${name} eklendi ✓`,'success');
+  document.getElementById('addProductForm').style.display = 'none';
+  // Modalı yenile
+  openOrder(currentOrderId);
+  renderOrders();
 };
 
 window.updateOrderStatus = async () => {
