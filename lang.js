@@ -405,6 +405,10 @@ function applyTranslations() {
   document.documentElement.lang = currentLang;
 }
 
+// Global'e bağla
+window.setLang = setLang;
+window.t = t;
+
 // Sayfa yüklenince uygula
 window.addEventListener('DOMContentLoaded', () => {
   applyTranslations();
@@ -412,5 +416,3 @@ window.addEventListener('DOMContentLoaded', () => {
     btn.classList.toggle('active', btn.dataset.lang === currentLang);
   });
 });
-
-export { t, setLang, currentLang, applyTranslations, LANGS };
