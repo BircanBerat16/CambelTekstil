@@ -139,8 +139,15 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
   .profile-grid{grid-template-columns:1fr}
   .order-timeline{gap:0}
 }
+
+
+  .lang-switcher{display:inline-flex;align-items:center;background:rgba(42,40,37,0.08);border-radius:100px;padding:3px;gap:1px}
+  .lang-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:100px;border:none;background:transparent;color:#6B6560;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
+  .lang-btn.active{background:#2A2825;color:#F5F0E8}
+  .lang-btn:not(.active):hover{background:rgba(42,40,37,0.08);color:#2A2825}
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
+<script src="lang.js" type="module"></script>
 </head>
 <body>
 
@@ -449,7 +456,7 @@ async function renderOrders() {
 
     if (!orders.length) {
       main.innerHTML = `
-        <div class="acc-section-title">Siparişlerim</div>
+        <div class="acc-section-title" data-i18n="acc_orders">Siparişlerim</div>
         <div class="empty-acc">
           <div class="empty-acc-icon">📦</div>
           <div class="empty-acc-text">Henüz siparişiniz yok.</div>
@@ -534,7 +541,7 @@ window.toggleOrder = (id) => {
 // ── FAVORITES ──
 async function renderFavorites() {
   const main = document.getElementById('accMain');
-  main.innerHTML = `<div class="acc-section-title">Favorilerim</div>`;
+  main.innerHTML = `<div class="acc-section-title" data-i18n="acc_favorites">Favorilerim</div>`;
   if (!allFavorites.length) {
     main.innerHTML += `<div class="empty-acc"><div class="empty-acc-icon">❤️</div><div class="empty-acc-text">Favori ürününüz yok.</div><a href="shop.html" style="display:inline-flex;padding:10px 20px;background:var(--ch);color:#fff;border-radius:8px;text-decoration:none;font-size:.85rem;font-weight:500">Ürünlere Göz At →</a></div>`;
     return;
@@ -564,7 +571,7 @@ window.removeFavorite = async (productId) => {
 async function renderBrandKit() {
   const main = document.getElementById('accMain');
   main.innerHTML = `
-    <div class="acc-section-title">Brand Kit <em>Siparişlerim</em></div>
+    <div class="acc-section-title">Brand Kit <em data-i18n="acc_orders">Siparişlerim</em></div>
     <div style="background:#EAF5EF;border:1px solid #5C7A5C;border-radius:12px;padding:20px;margin-bottom:24px">
       <div style="font-weight:600;font-size:.88rem;color:#2D7A50;margin-bottom:6px">🏷️ Brand Kit Nedir?</div>
       <div style="font-size:.82rem;color:#3d8a60;line-height:1.75">DTF tabakası ile ürünlerinizi kendiniz kişiselleştirebilirsiniz. Ense baskısı, yıkama etiketi, sallantı kart ve daha fazlası için Brand Kit'i inceleyin.</div>
@@ -656,6 +663,12 @@ window.addEventListener('hashchange', () => {
     }, { merge: true });
   } catch(e) {}
 })();
+</script>
+<script type="module">
+import { setLang, applyTranslations } from './lang.js';
+window.setLang = setLang;
+const saved = localStorage.getItem('cambel_lang');
+if (saved && saved !== 'tr') setLang(saved);
 </script>
 </body>
 </html>
