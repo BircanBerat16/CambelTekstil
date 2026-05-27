@@ -363,7 +363,7 @@ footer{background:var(--charcoal);color:rgba(250,248,245,.5);padding:3rem 8vw;di
   .lang-btn:not(.active):hover{background:rgba(42,40,37,0.08);color:#2A2825}
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
-<script src="lang.js" type="module"></script>
+<script src="lang.js"></script>
 </head>
 <body>
 
@@ -1738,12 +1738,6 @@ init();
   } catch(e) {}
 })();
 </script>
-<script type="module">
-import { setLang, applyTranslations, t, currentLang } from './lang.js';
-window.setLang = setLang;
-window.getLangT = t;
-const saved = localStorage.getItem('cambel_lang');
-if (saved && saved !== 'tr') setLang(saved);
-</script>
+
 </body>
 </html>
