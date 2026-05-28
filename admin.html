@@ -519,7 +519,12 @@ select.filter-select{
           <label class="form-label-m">Kategoriler * <span style="font-size:.72rem;color:var(--mid)">(birden fazla seçilebilir)</span></label>
           <div id="pCategoryList" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;min-height:44px"></div>
           <input type="hidden" id="pCategory">
-          <input type="hidden" id="pSubcategory">
+        </div>
+        <div class="form-group-m">
+          <label class="form-label-m">Alt Kategori</label>
+          <select class="form-input-m" id="pSubcategory">
+            <option value="">Alt kategori seç</option>
+          </select>
         </div>
       </div>
       <div id="singleFields">
@@ -1714,6 +1719,8 @@ window.openEditProduct = async (id) => {
     `<div class="img-preview-item"><img src="${im.url}"><button class="img-preview-del" onclick="removeImg(${i})">✕</button></div>`
   ).join('');
   populateCategorySelects(p.categories || (p.category ? [p.category] : []), p.subcategory);
+  // Alt kategoriyi yükle
+  setTimeout(() => loadSubcats(p.subcategory), 100);
   openModal('productModal');
 };
 
@@ -1747,16 +1754,24 @@ window.toggleCategoryChip = (checkbox) => {
     label.style.color = 'var(--text)';
     label.style.borderColor = 'var(--border)';
   }
-  // Seçili kategorileri hidden input'a yaz
   const selected = [...document.querySelectorAll('#pCategoryList input[type=checkbox]:checked')].map(c=>c.value);
   document.getElementById('pCategory').value = selected[0]||'';
+  // İlk seçili kategorinin alt kategorilerini yükle
+  loadSubcats();
 };
 
 window.getSelectedCategories = () => {
   return [...document.querySelectorAll('#pCategoryList input[type=checkbox]:checked')].map(c=>c.value);
 };
 
-window.loadSubcats = () => {}; // Artık kullanılmıyor
+window.loadSubcats = (selectedSub) => {
+  const catId = document.getElementById('pCategory').value;
+  const cat = allCategories.find(c=>c.id===catId);
+  const sel = document.getElementById('pSubcategory');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Alt kategori seç</option>' +
+    (cat ? (cat.subcategories||[]).map(s=>`<option value="${s.id}" ${s.id===selectedSub?'selected':''}>${s.name}</option>`).join('') : '');
+};
 
 window.saveProduct = async () => {
   const id = document.getElementById('editProductId').value;
