@@ -8,7 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Cormorant+Garamond:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  
   --bg: #F5F3F0;
   --surface: #FFFFFF;
   --surface2: #F9F7F4;
@@ -1082,9 +1081,10 @@ async function renderDashboard() {
   const month = now.getMonth() + 1;
   const quarter = Math.ceil(month / 3);
 
-  function isThisMonth(o) { const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null; return d && d.getFullYear()===year && d.getMonth()+1===month; }
+  const activeOrds = ords.filter(o=>o.status!=='cancelled');
+  function isThisMonth(o) { const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null; return d && d.getFullYear()===year && d.getMonth()+1===month && o.status!=='cancelled'; }
   function calcProfit(filterFn) {
-    return ords.filter(filterFn).reduce((s,o) => {
+    return activeOrds.filter(filterFn).reduce((s,o) => {
       return s + (o.items||[]).reduce((ps,item) => {
         const prod = prodMap[item.name];
         return ps + ((item.price||0) - (prod?.purchasePrice||0)) * (item.qty||1);
@@ -1092,7 +1092,7 @@ async function renderDashboard() {
     }, 0);
   }
 
-  const mRev = ords.filter(isThisMonth).reduce((s,o)=>s+(o.total||0), 0);
+  const mRev = activeOrds.filter(isThisMonth).reduce((s,o)=>s+(o.total||0), 0);
   const mProfit = calcProfit(isThisMonth);
   const mRevGoal = goals[`m${month}_rev`] || (goals.year_rev ? goals.year_rev/12 : 0);
   const mProfitGoal = goals[`m${month}_profit`] || (goals.year_profit ? goals.year_profit/12 : 0);
@@ -1101,15 +1101,14 @@ async function renderDashboard() {
 
   const yRevGoal = goals.year_rev || 0;
   const yProfitGoal = goals.year_profit || 0;
-  const isThisYear = o => { const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null; return d && d.getFullYear()===year; };
-  const yRev = ords.filter(isThisYear).reduce((s,o)=>s+(o.total||0), 0);
+  const isThisYear = o => { const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null; return d && d.getFullYear()===year && o.status!=='cancelled'; };
+  const yRev = activeOrds.filter(isThisYear).reduce((s,o)=>s+(o.total||0), 0);
   const yProfit = calcProfit(isThisYear);
   const yRevPct = yRevGoal ? Math.min(100, Math.round(yRev/yRevGoal*100)) : 0;
   const yProfitPct = yProfitGoal ? Math.min(100, Math.round(yProfit/yProfitGoal*100)) : 0;
 
-  const monthNames = ['','Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
-
-  const c = document.getElementById('pageContent');
+  // Analytics yükle
+  setTimeout(() => loadAnalytics(), 300);
   c.innerHTML = `
     <div class="stats-grid">
       <div class="stat-card">
@@ -2972,9 +2971,9 @@ async function renderGoals() {
     }, 0);
   }
 
-  const isThisYear = o => { const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null; return d && d.getFullYear() === year; };
-  const isThisQuarter = o => { const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null; return d && d.getFullYear() === year && Math.ceil((d.getMonth()+1)/3) === quarter; };
-  const isThisMonth = o => { const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null; return d && d.getFullYear() === year && d.getMonth()+1 === month; };
+  const isThisYear = o => { const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null; return d && d.getFullYear() === year && o.status!=='cancelled'; };
+  const isThisQuarter = o => { const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null; return d && d.getFullYear() === year && Math.ceil((d.getMonth()+1)/3) === quarter && o.status!=='cancelled'; };
+  const isThisMonth = o => { const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null; return d && d.getFullYear() === year && d.getMonth()+1 === month && o.status!=='cancelled'; };
 
   const yearRev = calcRevenue(isThisYear);
   const yearProfit = calcProfit(isThisYear);
@@ -3101,7 +3100,8 @@ window.saveGoals = async () => {
 // ── RAPORLAR ──
 async function renderReports() {
   const orderSnap = await getDocs(collection(db,'orders'));
-  const orders = orderSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const allOrders = orderSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const orders = allOrders.filter(o=>o.status!=='cancelled');
   const prodSnap = await getDocs(collection(db,'products'));
   const prodMap = Object.fromEntries(prodSnap.docs.map(d=>[d.data().name, d.data()]));
   const catSnap = await getDocs(collection(db,'categories'));
