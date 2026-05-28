@@ -399,6 +399,11 @@ footer{background:var(--charcoal);color:rgba(250,248,245,.5);padding:3rem 8vw;di
     <div class="shop-topbar">
       <div class="shop-topbar-title" id="shopTopbarTitle">Tüm Ürünler</div>
       <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;">
+        <div id="dropExcelBtn" style="display:none">
+          <button onclick="exportDropshippingExcel()" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#1D6F42;color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;cursor:pointer">
+            📥 Excel İndir
+          </button>
+        </div>
         <div class="search-bar">
           <span style="color:var(--taupe)">🔍</span>
           <input type="text" placeholder="Ürün ara..." data-i18n-placeholder="shop_search" id="productSearch" oninput="onSearch()">
@@ -685,6 +690,8 @@ async function init() {
     } else if (category === '__dropshipping__') {
       document.getElementById('cat-dropshipping')?.classList.add('active');
       document.getElementById('shopTopbarTitle').textContent = '📦 Dropshipping Ürünleri';
+      const btn = document.getElementById('dropExcelBtn');
+      if (btn) btn.style.display = 'block';
     } else if (category) {
       document.getElementById('cat-'+category)?.classList.add('active');
       const cat = allCategories.find(c=>c.id===category);
@@ -920,6 +927,7 @@ window.filterDropshipping = (el) => {
   document.querySelectorAll('.sidebar-cat,.sidebar-subcat').forEach(e=>e.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('shopTopbarTitle').textContent = '📦 Dropshipping Ürünleri';
+  document.getElementById('dropExcelBtn').style.display = 'block';
   window.location.hash = 'dropshipping';
   applyFilters();
   renderProducts();
@@ -930,9 +938,48 @@ window.filterBuybox = (el) => {
   document.querySelectorAll('.sidebar-cat,.sidebar-subcat').forEach(e=>e.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('shopTopbarTitle').textContent = '🏆 Trendyol Buybox Ürünleri';
+  document.getElementById('dropExcelBtn').style.display = 'none';
   window.location.hash = 'buybox';
   applyFilters();
   renderProducts();
+};
+
+window.exportDropshippingExcel = () => {
+  const products = allProducts.filter(p => p.dropshipping && p.status === 'active');
+  if (!products.length) { alert('Dropshipping ürünü bulunamadı.'); return; }
+
+  // Her ürün için tüm varyantları ayrı satır yap
+  const rows = [['Ürün Adı', 'Renk', 'Beden', 'Açıklama', 'Fiyat (₺)', 'Stok', 'Görsel URL', 'Ürün URL']];
+
+  products.forEach(p => {
+    const colors = p.colors?.length ? p.colors : [''];
+    const sizes = p.sizes?.length ? p.sizes : [''];
+    const desc = p.description || '';
+    const price = p.salePrice || p.price || '';
+    const stock = p.stock || 0;
+    const img = p.images?.[0] || '';
+    const url = `https://www.cambeltekstil.com/shop.html`;
+
+    colors.forEach(color => {
+      sizes.forEach(size => {
+        rows.push([p.name, color, size, desc, price, stock, img, url]);
+      });
+    });
+  });
+
+  // CSV oluştur (Excel'de açılır)
+  const csvContent = rows.map(row =>
+    row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')
+  ).join('\n');
+
+  const bom = '\uFEFF'; // Türkçe karakter için BOM
+  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'cambel-dropshipping-urunler.csv';
+  a.click();
+  URL.revokeObjectURL(url);
 };
 window.filterCat = (catId, subId, el) => {
   currentFilter = {category:catId, subcategory:subId};
