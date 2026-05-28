@@ -2804,7 +2804,7 @@ async function renderSuppliers() {
   const snap = await getDocs(collection(db,'suppliers'));
   const suppliers = snap.docs.map(d=>({id:d.id,...d.data()}));
 
-  document.getElementById('mainContent').innerHTML = `
+  document.getElementById('pageContent').innerHTML = `
     <div class="page-header">
       <div>
         <h1 class="page-title">Tedarikçiler</h1>
