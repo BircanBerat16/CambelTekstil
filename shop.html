@@ -679,14 +679,20 @@ async function init() {
     if (subcategory) {
       const el = document.getElementById('subcat-'+subcategory);
       if (el) { el.classList.add('active'); const parent = document.getElementById('subcats-'+category); if(parent) parent.classList.add('open'); const catEl = document.getElementById('cat-'+category); if(catEl) catEl.classList.add('open'); }
+    } else if (category === '__buybox__') {
+      document.getElementById('cat-buybox')?.classList.add('active');
+      document.getElementById('shopTopbarTitle').textContent = '🏆 Trendyol Buybox Ürünleri';
+    } else if (category === '__dropshipping__') {
+      document.getElementById('cat-dropshipping')?.classList.add('active');
+      document.getElementById('shopTopbarTitle').textContent = '📦 Dropshipping Ürünleri';
     } else if (category) {
       document.getElementById('cat-'+category)?.classList.add('active');
+      const cat = allCategories.find(c=>c.id===category);
+      document.getElementById('shopTopbarTitle').textContent = cat?.name || 'Tüm Ürünler';
     } else {
       document.getElementById('cat-all')?.classList.add('active');
+      document.getElementById('shopTopbarTitle').textContent = 'Tüm Ürünler';
     }
-    const cat = allCategories.find(c=>c.id===currentFilter.category);
-    const sub = cat?.subcategories?.find(s=>s.id===currentFilter.subcategory);
-    document.getElementById('shopTopbarTitle').textContent = sub?.name || cat?.name || 'Tüm Ürünler';
   }, 100);
 }
 
@@ -948,6 +954,8 @@ function applyFilters() {
   let prods = [...allProducts];
   if (currentFilter.category === '__buybox__') {
     prods = prods.filter(p => p.buybox);
+  } else if (currentFilter.category === '__dropshipping__') {
+    prods = prods.filter(p => p.dropshipping);
   } else {
     if (currentFilter.category) prods = prods.filter(p => p.category === currentFilter.category);
     if (currentFilter.subcategory) prods = prods.filter(p => p.subcategory === currentFilter.subcategory);
