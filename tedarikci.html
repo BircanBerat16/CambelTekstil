@@ -265,7 +265,7 @@ async function loadData() {
     let sold = 0, revenue = 0;
     orders.forEach(o => {
       (o.items||[]).forEach(item => {
-        if (item.name === p.name) { sold += item.qty||1; revenue += (item.price||0)*(item.qty||1); }
+        if (item.name === p.name) { sold += item.qty||1; revenue += (p.purchasePrice||0)*(item.qty||1); }
       });
     });
     totalStock += p.stock||0;
@@ -281,6 +281,7 @@ async function loadData() {
 
   // Ürünler tablosu
   const prodNames = new Set(products.map(p=>p.name));
+  const prodNames_map = Object.fromEntries(products.map(p=>[p.name, p]));
   const tbody = document.getElementById('productsTable');
   if (!products.length) {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--mid)">Henüz ürün yok</td></tr>';
@@ -324,7 +325,7 @@ async function loadData() {
         <td style="font-size:.78rem;color:var(--mid)">#${(order.orderNo||order.id.slice(-6)).toUpperCase()}</td>
         <td>${item.name}</td>
         <td>${item.qty||1} adet</td>
-        <td>₺${((item.price||0)*(item.qty||1)).toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+        <td>₺${((prodNames_map[item.name]?.purchasePrice||0)*(item.qty||1)).toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
         <td style="font-size:.82rem;color:var(--mid)">${date}</td>
         <td><span class="badge ${statusColors[status]||'badge-mid'}">${statusLabels[status]||status}</span></td>
       </tr>`;
