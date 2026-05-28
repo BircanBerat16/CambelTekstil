@@ -649,7 +649,9 @@ async function init() {
   renderSidebar();
   // Hash'ten kategori filtresi geri yükle
   const hash = window.location.hash.replace('#','');
-  if (hash === 'buybox') {
+  if (hash === 'dropshipping') {
+    currentFilter = {category:'__dropshipping__', subcategory:''};
+  } else if (hash === 'buybox') {
     currentFilter = {category:'__buybox__', subcategory:''};
   } else if (hash && hash !== 'all') {
     const parts = hash.split('-');
@@ -857,6 +859,9 @@ function renderSidebar() {
     <div class="sidebar-cat active" id="cat-all" onclick="filterCat('','',this)">Tüm Ürünler</div>
     <div class="sidebar-cat" id="cat-buybox" onclick="filterBuybox(this)" style="color:#5C7A5C;font-weight:600">
       <span>🏆 Trendyol Buybox</span>
+    </div>
+    <div class="sidebar-cat" id="cat-dropshipping" onclick="filterDropshipping(this)" style="color:#4A6FA5;font-weight:600">
+      <span>📦 Dropshipping</span>
     </div>`;
   let navHtml = '<li><a href="index.html">Ana Sayfa</a></li>';
   let mobileHtml = '<a href="index.html">Ana Sayfa</a>';
@@ -902,6 +907,15 @@ window.toggleSidebarCat = (catId, el) => {
   }
   // Kategoriyi filtrele
   filterCat(catId, '', el);
+};
+
+window.filterDropshipping = (el) => {
+  currentFilter = {category:'__dropshipping__', subcategory:''};
+  document.querySelectorAll('.sidebar-cat,.sidebar-subcat').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('shopTopbarTitle').textContent = '📦 Dropshipping Ürünleri';
+  window.location.hash = 'dropshipping';
+  renderProducts();
 };
 
 window.filterBuybox = (el) => {
