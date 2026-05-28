@@ -1063,15 +1063,57 @@ window.showPage = (page, el) => {
 // ── DASHBOARD ──
 async function renderDashboard() {
   const [prods, ords] = await Promise.all([loadProducts(), loadOrders()]);
-  const totalRevenue = ords.filter(o=>o.status!='cancelled')
-    .reduce((s,o)=>s+(o.total||0),0);
+  const totalRevenue = ords.filter(o=>o.status!='cancelled').reduce((s,o)=>s+(o.total||0),0);
   const pending = ords.filter(o=>o.status==='pending').length;
+
+  // Hedefleri ve ürün maliyetlerini çek
+  let goals = {};
+  try {
+    const gSnap = await getDoc(doc(db,'settings','goals'));
+    if (gSnap.exists()) goals = gSnap.data();
+  } catch(e) {}
+
+  const prodSnap = await getDocs(collection(db,'products'));
+  const prodMap = Object.fromEntries(prodSnap.docs.map(d=>[d.data().name, d.data()]));
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const quarter = Math.ceil(month / 3);
+
+  function isThisMonth(o) { const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null; return d && d.getFullYear()===year && d.getMonth()+1===month; }
+  function calcProfit(filterFn) {
+    return ords.filter(filterFn).reduce((s,o) => {
+      return s + (o.items||[]).reduce((ps,item) => {
+        const prod = prodMap[item.name];
+        return ps + ((item.price||0) - (prod?.purchasePrice||0)) * (item.qty||1);
+      }, 0);
+    }, 0);
+  }
+
+  const mRev = ords.filter(isThisMonth).reduce((s,o)=>s+(o.total||0), 0);
+  const mProfit = calcProfit(isThisMonth);
+  const mRevGoal = goals[`m${month}_rev`] || (goals.year_rev ? goals.year_rev/12 : 0);
+  const mProfitGoal = goals[`m${month}_profit`] || (goals.year_profit ? goals.year_profit/12 : 0);
+  const mRevPct = mRevGoal ? Math.min(100, Math.round(mRev/mRevGoal*100)) : 0;
+  const mProfitPct = mProfitGoal ? Math.min(100, Math.round(mProfit/mProfitGoal*100)) : 0;
+
+  const yRevGoal = goals.year_rev || 0;
+  const yProfitGoal = goals.year_profit || 0;
+  const isThisYear = o => { const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null; return d && d.getFullYear()===year; };
+  const yRev = ords.filter(isThisYear).reduce((s,o)=>s+(o.total||0), 0);
+  const yProfit = calcProfit(isThisYear);
+  const yRevPct = yRevGoal ? Math.min(100, Math.round(yRev/yRevGoal*100)) : 0;
+  const yProfitPct = yProfitGoal ? Math.min(100, Math.round(yProfit/yProfitGoal*100)) : 0;
+
+  const monthNames = ['','Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
   const c = document.getElementById('pageContent');
   c.innerHTML = `
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-card-label">Toplam Gelir</div>
-        <div class="stat-card-num">₺${totalRevenue.toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:2})}</div>
+        <div class="stat-card-num">₺${totalRevenue.toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}</div>
         <div class="stat-card-sub">${ords.length} sipariş</div>
         <div class="stat-card-icon">💰</div>
       </div>
@@ -1092,6 +1134,81 @@ async function renderDashboard() {
         <div class="stat-card-num" id="visitorCount">—</div>
         <div class="stat-card-sub" id="visitorSub">Vercel Analytics</div>
         <div class="stat-card-icon">👁️</div>
+      </div>
+    </div>
+
+    <!-- HEDEFLER -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <!-- Aylık Hedef -->
+      <div class="panel">
+        <div class="panel-header" style="justify-content:space-between">
+          <div class="panel-title">🎯 ${monthNames[month]} Hedefleri</div>
+          <button class="btn btn-outline btn-sm" onclick="showPage('goals',null)">Düzenle</button>
+        </div>
+        <div class="panel-body" style="padding:20px;display:grid;gap:16px">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px">
+              <span style="font-size:.78rem;color:var(--mid)">Ciro</span>
+              <span style="font-size:.82rem;font-weight:600">₺${mRev.toLocaleString('tr-TR',{maximumFractionDigits:0})} <span style="color:var(--mid);font-weight:400">/ ₺${mRevGoal.toLocaleString('tr-TR',{maximumFractionDigits:0})}</span></span>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;height:10px;overflow:hidden">
+              <div style="height:100%;background:linear-gradient(90deg,#8B7355,#C4A882);border-radius:6px;width:${mRevPct}%;transition:width .8s ease"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px">
+              <span style="font-size:.7rem;color:var(--mid)">%${mRevPct} tamamlandı</span>
+              <span style="font-size:.7rem;color:${mRevPct>=100?'#5CBA8A':'var(--mid)'}">${mRevPct>=100?'✅ Hedefe Ulaşıldı!':'₺'+(mRevGoal-mRev).toLocaleString('tr-TR',{maximumFractionDigits:0})+' kaldı'}</span>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px">
+              <span style="font-size:.78rem;color:var(--mid)">Brüt Kar</span>
+              <span style="font-size:.82rem;font-weight:600">₺${mProfit.toLocaleString('tr-TR',{maximumFractionDigits:0})} <span style="color:var(--mid);font-weight:400">/ ₺${mProfitGoal.toLocaleString('tr-TR',{maximumFractionDigits:0})}</span></span>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;height:10px;overflow:hidden">
+              <div style="height:100%;background:linear-gradient(90deg,#3D6B4F,#5CBA8A);border-radius:6px;width:${mProfitPct}%;transition:width .8s ease"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px">
+              <span style="font-size:.7rem;color:var(--mid)">%${mProfitPct} tamamlandı</span>
+              <span style="font-size:.7rem;color:${mProfitPct>=100?'#5CBA8A':'var(--mid)'}">${mProfitPct>=100?'✅ Hedefe Ulaşıldı!':'₺'+(mProfitGoal-mProfit).toLocaleString('tr-TR',{maximumFractionDigits:0})+' kaldı'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Yıllık Hedef -->
+      <div class="panel">
+        <div class="panel-header" style="justify-content:space-between">
+          <div class="panel-title">🗓️ ${year} Yıllık Hedefler</div>
+          <button class="btn btn-outline btn-sm" onclick="showPage('goals',null)">Düzenle</button>
+        </div>
+        <div class="panel-body" style="padding:20px;display:grid;gap:16px">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px">
+              <span style="font-size:.78rem;color:var(--mid)">Ciro</span>
+              <span style="font-size:.82rem;font-weight:600">₺${yRev.toLocaleString('tr-TR',{maximumFractionDigits:0})} <span style="color:var(--mid);font-weight:400">/ ₺${yRevGoal.toLocaleString('tr-TR',{maximumFractionDigits:0})}</span></span>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;height:10px;overflow:hidden">
+              <div style="height:100%;background:linear-gradient(90deg,#8B7355,#C4A882);border-radius:6px;width:${yRevPct}%;transition:width .8s ease"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px">
+              <span style="font-size:.7rem;color:var(--mid)">%${yRevPct} tamamlandı</span>
+              <span style="font-size:.7rem;color:${yRevPct>=100?'#5CBA8A':'var(--mid)'}">${yRevPct>=100?'✅ Hedefe Ulaşıldı!':'₺'+(yRevGoal-yRev).toLocaleString('tr-TR',{maximumFractionDigits:0})+' kaldı'}</span>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px">
+              <span style="font-size:.78rem;color:var(--mid)">Brüt Kar</span>
+              <span style="font-size:.82rem;font-weight:600">₺${yProfit.toLocaleString('tr-TR',{maximumFractionDigits:0})} <span style="color:var(--mid);font-weight:400">/ ₺${yProfitGoal.toLocaleString('tr-TR',{maximumFractionDigits:0})}</span></span>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;height:10px;overflow:hidden">
+              <div style="height:100%;background:linear-gradient(90deg,#3D6B4F,#5CBA8A);border-radius:6px;width:${yProfitPct}%;transition:width .8s ease"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px">
+              <span style="font-size:.7rem;color:var(--mid)">%${yProfitPct} tamamlandı</span>
+              <span style="font-size:.7rem;color:${yProfitPct>=100?'#5CBA8A':'var(--mid)'}">${yProfitPct>=100?'✅ Hedefe Ulaşıldı!':'₺'+(yProfitGoal-yProfit).toLocaleString('tr-TR',{maximumFractionDigits:0})+' kaldı'}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="panel" style="margin-bottom:16px">
