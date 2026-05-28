@@ -11,7 +11,6 @@
   --bg:#0F0F0E;--surface:#1A1A18;--surface2:#222220;--border:rgba(255,255,255,.08);
   --text:#F5F0E8;--mid:#9B9690;--light:#6B6560;--accent:#8B7355;--green:#3D6B4F;
   --green-bg:rgba(61,107,79,.15);--warn:#C0392B;--warn-bg:rgba(192,57,43,.15);
-  
 }
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between}
@@ -209,20 +208,28 @@ async function loginWithCredentials(email, password, id) {
 }
 
 window.doLogin = async () => {
-  const email = document.getElementById('loginEmail').value.trim();
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
   const password = document.getElementById('loginPassword').value.trim();
   if (!email || !password) return;
 
   try {
-    const snap = await getDocs(query(collection(db,'suppliers'), where('email','==',email)));
-    if (snap.empty) { document.getElementById('authError').style.display = 'block'; return; }
-    const s = {id: snap.docs[0].id, ...snap.docs[0].data()};
-    if (s.password !== password || s.active === false) { document.getElementById('authError').style.display = 'block'; return; }
-    currentSupplier = s;
-    sessionStorage.setItem('cambel_supplier', JSON.stringify(s));
+    // Tüm tedarikçileri çek, client'ta filtrele
+    const snap = await getDocs(collection(db,'suppliers'));
+    const found = snap.docs.find(d => {
+      const s = d.data();
+      return s.email?.toLowerCase() === email && s.password === password && s.active !== false;
+    });
+    if (!found) { 
+      document.getElementById('authError').style.display = 'block'; 
+      return; 
+    }
+    currentSupplier = {id: found.id, ...found.data()};
+    sessionStorage.setItem('cambel_supplier', JSON.stringify(currentSupplier));
     showDashboard();
     loadData();
   } catch(e) {
+    console.log('Login error:', e);
+    document.getElementById('authError').textContent = 'Bağlantı hatası: ' + e.message;
     document.getElementById('authError').style.display = 'block';
   }
 };
