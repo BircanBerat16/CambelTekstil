@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tedarikçi Paneli — Cambel Tekstil</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0F0F0E;--surface:#1A1A18;--surface2:#222220;--border:rgba(255,255,255,.08);
+  --text:#F5F0E8;--mid:#9B9690;--light:#6B6560;--accent:#8B7355;--green:#3D6B4F;
+  --green-bg:rgba(61,107,79,.15);--warn:#C0392B;--warn-bg:rgba(192,57,43,.15);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--text)}
+.nav-logo span{color:var(--accent)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.sup-name{font-size:.85rem;color:var(--mid)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:none;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+
+/* AUTH */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;width:100%;max-width:400px}
+.auth-logo{font-family:'Cormorant Garamond',serif;font-size:1.8rem;color:var(--text);text-align:center;margin-bottom:8px}
+.auth-logo span{color:var(--accent)}
+.auth-sub{text-align:center;font-size:.85rem;color:var(--mid);margin-bottom:32px}
+.form-label{font-size:.78rem;color:var(--mid);margin-bottom:6px;display:block;letter-spacing:.04em;text-transform:uppercase}
+.form-input{width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;margin-bottom:16px}
+.form-input:focus{outline:none;border-color:var(--accent)}
+.btn-primary{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:500;cursor:pointer;transition:opacity .2s}
+.btn-primary:hover{opacity:.9}
+.auth-error{background:var(--warn-bg);border:1px solid var(--warn);border-radius:8px;padding:10px 14px;font-size:.82rem;color:#e74c3c;margin-bottom:16px;display:none}
+
+/* DASHBOARD */
+.dashboard{display:none;padding:32px;max-width:1200px;margin:0 auto}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;margin-bottom:4px}
+.page-sub{font-size:.85rem;color:var(--mid);margin-bottom:32px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+.stat-label{font-size:.72rem;color:var(--mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.stat-num{font-size:1.8rem;font-weight:600;color:var(--text)}
+.stat-sub{font-size:.75rem;color:var(--mid);margin-top:4px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.panel-title{font-size:.9rem;font-weight:600}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 16px;text-align:left;font-size:.72rem;color:var(--mid);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border)}
+td{padding:12px 16px;font-size:.85rem;border-bottom:1px solid rgba(255,255,255,.04)}
+tr:last-child td{border-bottom:none}
+.badge{display:inline-flex;align-items:center;padding:2px 10px;border-radius:20px;font-size:.7rem;font-weight:500}
+.badge-green{background:var(--green-bg);color:#5CBA8A}
+.badge-warn{background:var(--warn-bg);color:#e74c3c}
+.badge-mid{background:rgba(255,255,255,.06);color:var(--mid)}
+
+@media(max-width:768px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .dashboard{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH EKRANI -->
+<div class="auth-wrap" id="authWrap">
+  <div class="auth-box">
+    <div class="auth-logo">Cambel<span>.</span></div>
+    <div class="auth-sub">Tedarikçi Paneli</div>
+    <div class="auth-error" id="authError">E-posta veya şifre hatalı.</div>
+    <label class="form-label">E-posta</label>
+    <input type="email" class="form-input" id="loginEmail" placeholder="tedarikci@email.com">
+    <label class="form-label">Şifre</label>
+    <input type="password" class="form-input" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-primary" onclick="doLogin()">Giriş Yap</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav id="mainNav" style="display:none">
+  <div class="nav-logo">Cambel<span>.</span> <span style="font-size:.75rem;color:var(--mid);font-family:'DM Sans',sans-serif;margin-left:8px">Tedarikçi Paneli</span></div>
+  <div class="nav-right">
+    <span class="sup-name" id="supName"></span>
+    <button class="btn btn-outline" onclick="doLogout()">Çıkış</button>
+  </div>
+</nav>
+
+<!-- DASHBOARD -->
+<div class="dashboard" id="mainDashboard">
+  <div class="page-title" id="welcomeTitle">Merhaba</div>
+  <div class="page-sub" id="welcomeSub">Ürünlerinizin stok ve satış durumunu görüntüleyin</div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Toplam Ürün</div>
+      <div class="stat-num" id="statProducts">—</div>
+      <div class="stat-sub">Aktif ürün sayısı</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Toplam Stok</div>
+      <div class="stat-num" id="statStock">—</div>
+      <div class="stat-sub">Mevcut stok adedi</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Satılan Adet</div>
+      <div class="stat-num" id="statSold">—</div>
+      <div class="stat-sub">Toplam satış</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Toplam Ciro</div>
+      <div class="stat-num" id="statRevenue">—</div>
+      <div class="stat-sub">Satış tutarı</div>
+    </div>
+  </div>
+
+  <!-- Ürünler -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Ürünlerim</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Ürün</th>
+          <th>Stok</th>
+          <th>Satılan</th>
+          <th>Ciro</th>
+          <th>Durum</th>
+        </tr>
+      </thead>
+      <tbody id="productsTable">
+        <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--mid)">Yükleniyor...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Satışlar -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Son Satışlar</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Sipariş No</th>
+          <th>Ürün</th>
+          <th>Adet</th>
+          <th>Tutar</th>
+          <th>Tarih</th>
+          <th>Durum</th>
+        </tr>
+      </thead>
+      <tbody id="salesTable">
+        <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--mid)">Yükleniyor...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getFirestore, getDocs, getDoc, doc, collection, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+const FB = { apiKey:"AIzaSyBMlsHYnuVbOi7gXf00GfYA7vW8yMXH3Xw", authDomain:"cambel-tekstil.firebaseapp.com", projectId:"cambel-tekstil" };
+const app = getApps().length ? getApps()[0] : initializeApp(FB);
+const db = getFirestore(app);
+
+let currentSupplier = null;
+
+// URL'den direkt giriş
+const params = new URLSearchParams(window.location.search);
+const supId = params.get('id');
+const supKey = params.get('key');
+
+if (supId && supKey) {
+  try {
+    const decoded = atob(supKey);
+    const [email, password] = decoded.split(':');
+    await loginWithCredentials(email, password, supId);
+  } catch(e) {}
+}
+
+// Kayıtlı oturum
+const saved = sessionStorage.getItem('cambel_supplier');
+if (saved && !currentSupplier) {
+  try {
+    currentSupplier = JSON.parse(saved);
+    showDashboard();
+    loadData();
+  } catch(e) {}
+}
+
+async function loginWithCredentials(email, password, id) {
+  const snap = await getDoc(doc(db,'suppliers', id||'x'));
+  if (snap.exists()) {
+    const s = snap.data();
+    if (s.email === email && s.password === password && s.active !== false) {
+      currentSupplier = {id: snap.id, ...s};
+      sessionStorage.setItem('cambel_supplier', JSON.stringify(currentSupplier));
+      showDashboard();
+      loadData();
+    } else {
+      document.getElementById('authError').style.display = 'block';
+    }
+  }
+}
+
+window.doLogin = async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+  if (!email || !password) return;
+
+  try {
+    const snap = await getDocs(query(collection(db,'suppliers'), where('email','==',email)));
+    if (snap.empty) { document.getElementById('authError').style.display = 'block'; return; }
+    const s = {id: snap.docs[0].id, ...snap.docs[0].data()};
+    if (s.password !== password || s.active === false) { document.getElementById('authError').style.display = 'block'; return; }
+    currentSupplier = s;
+    sessionStorage.setItem('cambel_supplier', JSON.stringify(s));
+    showDashboard();
+    loadData();
+  } catch(e) {
+    document.getElementById('authError').style.display = 'block';
+  }
+};
+
+window.doLogout = () => {
+  sessionStorage.removeItem('cambel_supplier');
+  currentSupplier = null;
+  document.getElementById('mainNav').style.display = 'none';
+  document.getElementById('mainDashboard').style.display = 'none';
+  document.getElementById('authWrap').style.display = 'flex';
+};
+
+function showDashboard() {
+  document.getElementById('authWrap').style.display = 'none';
+  document.getElementById('mainNav').style.display = 'flex';
+  document.getElementById('mainDashboard').style.display = 'block';
+  document.getElementById('supName').textContent = currentSupplier.name;
+  document.getElementById('welcomeTitle').textContent = 'Merhaba, ' + currentSupplier.name;
+}
+
+async function loadData() {
+  // Ürünleri çek
+  const prodSnap = await getDocs(query(collection(db,'products'), where('supplierId','==',currentSupplier.id)));
+  const products = prodSnap.docs.map(d=>({id:d.id,...d.data()}));
+
+  // Siparişleri çek
+  const orderSnap = await getDocs(collection(db,'orders'));
+  const orders = orderSnap.docs.map(d=>({id:d.id,...d.data()}));
+
+  // İstatistikler
+  let totalStock = 0, totalSold = 0, totalRevenue = 0;
+  const productStats = products.map(p => {
+    let sold = 0, revenue = 0;
+    orders.forEach(o => {
+      (o.items||[]).forEach(item => {
+        if (item.name === p.name) { sold += item.qty||1; revenue += (item.price||0)*(item.qty||1); }
+      });
+    });
+    totalStock += p.stock||0;
+    totalSold += sold;
+    totalRevenue += revenue;
+    return {p, sold, revenue};
+  });
+
+  document.getElementById('statProducts').textContent = products.length;
+  document.getElementById('statStock').textContent = totalStock;
+  document.getElementById('statSold').textContent = totalSold;
+  document.getElementById('statRevenue').textContent = '₺' + totalRevenue.toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2});
+
+  // Ürünler tablosu
+  const prodNames = new Set(products.map(p=>p.name));
+  const tbody = document.getElementById('productsTable');
+  if (!products.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--mid)">Henüz ürün yok</td></tr>';
+  } else {
+    tbody.innerHTML = productStats.map(({p, sold, revenue}) => {
+      const stockBadge = p.stock <= 0 ? '<span class="badge badge-warn">Stok Yok</span>' :
+                         p.stock <= 5 ? `<span class="badge badge-warn">Az Stok: ${p.stock}</span>` :
+                         `<span class="badge badge-green">${p.stock} adet</span>`;
+      return `<tr>
+        <td><strong>${p.name}</strong></td>
+        <td>${stockBadge}</td>
+        <td>${sold} adet</td>
+        <td>₺${revenue.toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+        <td><span class="badge ${p.status==='active'?'badge-green':'badge-mid'}">${p.status==='active'?'Aktif':'Pasif'}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Satışlar tablosu
+  const salesBody = document.getElementById('salesTable');
+  const salesRows = [];
+  orders.forEach(o => {
+    (o.items||[]).forEach(item => {
+      if (prodNames.has(item.name)) {
+        salesRows.push({order: o, item});
+      }
+    });
+  });
+
+  salesRows.sort((a,b) => (b.order.createdAt?.seconds||0) - (a.order.createdAt?.seconds||0));
+
+  if (!salesRows.length) {
+    salesBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--mid)">Henüz satış yok</td></tr>';
+  } else {
+    const statusLabels = {pending:'Bekliyor',confirmed:'Onaylandı',preparing:'Hazırlanıyor',shipped:'Kargoda',delivered:'Teslim Edildi',cancelled:'İptal'};
+    const statusColors = {pending:'badge-mid',confirmed:'badge-mid',preparing:'badge-mid',shipped:'badge-green',delivered:'badge-green',cancelled:'badge-warn'};
+    salesBody.innerHTML = salesRows.slice(0,50).map(({order, item}) => {
+      const date = order.createdAt?.seconds ? new Date(order.createdAt.seconds*1000).toLocaleDateString('tr-TR') : '—';
+      const status = order.status||'pending';
+      return `<tr>
+        <td style="font-size:.78rem;color:var(--mid)">#${(order.orderNo||order.id.slice(-6)).toUpperCase()}</td>
+        <td>${item.name}</td>
+        <td>${item.qty||1} adet</td>
+        <td>₺${((item.price||0)*(item.qty||1)).toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+        <td style="font-size:.82rem;color:var(--mid)">${date}</td>
+        <td><span class="badge ${statusColors[status]||'badge-mid'}">${statusLabels[status]||status}</span></td>
+      </tr>`;
+    }).join('');
+  }
+}
+</script>
+</body>
+</html>
