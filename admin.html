@@ -2856,9 +2856,139 @@ window.saveBundleRules = async (pid) => {
 async function renderCampaigns() {
   const snap = await getDocs(collection(db,'campaigns'));
   const campaigns = snap.docs.map(d=>({id:d.id,...d.data()}));
+
+  // Vitrin ayarlarını çek
+  let vitrin = {};
+  try {
+    const vs = await getDoc(doc(db,'settings','vitrin'));
+    if (vs.exists()) vitrin = vs.data();
+  } catch(e) {}
+
   const c = document.getElementById('pageContent');
   c.innerHTML = `
-    <div style="display:flex;justify-content:flex-end;margin-bottom:20px">
+    <!-- VİTRİN YÖNETİMİ -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+
+      <!-- Duyuru Bandı -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">📢 Duyuru Bandı</div>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.82rem">
+            <input type="checkbox" id="band_active" ${vitrin.band_active?'checked':''} onchange="saveVitrin()">
+            <span>Aktif</span>
+          </label>
+        </div>
+        <div class="panel-body" style="padding:16px;display:grid;gap:10px">
+          <div>
+            <label class="form-label-m">Metin</label>
+            <input class="form-input-m" id="band_text" value="${vitrin.band_text||''}" placeholder="🚚 500₺ üzeri kargo bedava!" onblur="saveVitrin()">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label class="form-label-m">Arka Plan</label>
+              <input type="color" class="form-input-m" id="band_bg" value="${vitrin.band_bg||'#2A2825'}" style="height:38px;padding:4px" onchange="saveVitrin()">
+            </div>
+            <div>
+              <label class="form-label-m">Metin Rengi</label>
+              <input type="color" class="form-input-m" id="band_color" value="${vitrin.band_color||'#F5F0E8'}" style="height:38px;padding:4px" onchange="saveVitrin()">
+            </div>
+          </div>
+          <div>
+            <label class="form-label-m">Link (opsiyonel)</label>
+            <input class="form-input-m" id="band_link" value="${vitrin.band_link||''}" placeholder="https://..." onblur="saveVitrin()">
+          </div>
+          <div>
+            <label class="form-label-m">Kayan metin</label>
+            <select class="form-input-m" id="band_scroll" onchange="saveVitrin()">
+              <option value="0" ${!vitrin.band_scroll?'selected':''}>Sabit</option>
+              <option value="1" ${vitrin.band_scroll?'selected':''}>Kayan</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Banner -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">🖼️ Kampanya Banner'ı</div>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.82rem">
+            <input type="checkbox" id="banner_active" ${vitrin.banner_active?'checked':''} onchange="saveVitrin()">
+            <span>Aktif</span>
+          </label>
+        </div>
+        <div class="panel-body" style="padding:16px;display:grid;gap:10px">
+          <div>
+            <label class="form-label-m">Başlık</label>
+            <input class="form-input-m" id="banner_title" value="${vitrin.banner_title||''}" placeholder="Yaz Kampanyası" onblur="saveVitrin()">
+          </div>
+          <div>
+            <label class="form-label-m">Alt Metin</label>
+            <input class="form-input-m" id="banner_sub" value="${vitrin.banner_sub||''}" placeholder="%20 indirim fırsatını kaçırma!" onblur="saveVitrin()">
+          </div>
+          <div>
+            <label class="form-label-m">Buton Metni</label>
+            <input class="form-input-m" id="banner_btn" value="${vitrin.banner_btn||''}" placeholder="Hemen İncele" onblur="saveVitrin()">
+          </div>
+          <div>
+            <label class="form-label-m">Link</label>
+            <input class="form-input-m" id="banner_link" value="${vitrin.banner_link||''}" placeholder="shop.html#buybox" onblur="saveVitrin()">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label class="form-label-m">Arka Plan</label>
+              <input type="color" class="form-input-m" id="banner_bg" value="${vitrin.banner_bg||'#8B7355'}" style="height:38px;padding:4px" onchange="saveVitrin()">
+            </div>
+            <div>
+              <label class="form-label-m">Metin Rengi</label>
+              <input type="color" class="form-input-m" id="banner_color" value="${vitrin.banner_color||'#ffffff'}" style="height:38px;padding:4px" onchange="saveVitrin()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pop-up -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">💬 Pop-up</div>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.82rem">
+            <input type="checkbox" id="popup_active" ${vitrin.popup_active?'checked':''} onchange="saveVitrin()">
+            <span>Aktif</span>
+          </label>
+        </div>
+        <div class="panel-body" style="padding:16px;display:grid;gap:10px">
+          <div>
+            <label class="form-label-m">Başlık</label>
+            <input class="form-input-m" id="popup_title" value="${vitrin.popup_title||''}" placeholder="Özel Teklif!" onblur="saveVitrin()">
+          </div>
+          <div>
+            <label class="form-label-m">Metin</label>
+            <textarea class="form-input-m" id="popup_text" placeholder="İlk siparişinde %10 indirim..." onblur="saveVitrin()" style="height:60px">${vitrin.popup_text||''}</textarea>
+          </div>
+          <div>
+            <label class="form-label-m">Buton Metni</label>
+            <input class="form-input-m" id="popup_btn" value="${vitrin.popup_btn||''}" placeholder="Alışverişe Başla" onblur="saveVitrin()">
+          </div>
+          <div>
+            <label class="form-label-m">Link</label>
+            <input class="form-input-m" id="popup_link" value="${vitrin.popup_link||''}" placeholder="shop.html" onblur="saveVitrin()">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label class="form-label-m">Kaç sn sonra çıksın</label>
+              <input type="number" class="form-input-m" id="popup_delay" value="${vitrin.popup_delay||3}" min="0" onblur="saveVitrin()">
+            </div>
+            <div>
+              <label class="form-label-m">Günde kaç kez</label>
+              <input type="number" class="form-input-m" id="popup_freq" value="${vitrin.popup_freq||1}" min="1" onblur="saveVitrin()">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KAMPANYALAR -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:.9rem;font-weight:600;color:var(--text)">İndirim Kampanyaları</div>
       <button class="btn btn-dark" onclick="openCampaignModal()">+ Kampanya Ekle</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px">
@@ -2946,6 +3076,33 @@ window.updateCampFields = () => {
         <div class="form-group-m"><label class="form-label-m">Kaç Adet Ödesin</label><input type="number" class="form-input-m" id="c_payY" placeholder="2"></div>
       </div>`;
   }
+};
+
+window.saveVitrin = async () => {
+  const data = {
+    band_active: document.getElementById('band_active')?.checked||false,
+    band_text: document.getElementById('band_text')?.value||'',
+    band_bg: document.getElementById('band_bg')?.value||'#2A2825',
+    band_color: document.getElementById('band_color')?.value||'#F5F0E8',
+    band_link: document.getElementById('band_link')?.value||'',
+    band_scroll: document.getElementById('band_scroll')?.value==='1',
+    banner_active: document.getElementById('banner_active')?.checked||false,
+    banner_title: document.getElementById('banner_title')?.value||'',
+    banner_sub: document.getElementById('banner_sub')?.value||'',
+    banner_btn: document.getElementById('banner_btn')?.value||'',
+    banner_link: document.getElementById('banner_link')?.value||'',
+    banner_bg: document.getElementById('banner_bg')?.value||'#8B7355',
+    banner_color: document.getElementById('banner_color')?.value||'#ffffff',
+    popup_active: document.getElementById('popup_active')?.checked||false,
+    popup_title: document.getElementById('popup_title')?.value||'',
+    popup_text: document.getElementById('popup_text')?.value||'',
+    popup_btn: document.getElementById('popup_btn')?.value||'',
+    popup_link: document.getElementById('popup_link')?.value||'',
+    popup_delay: parseInt(document.getElementById('popup_delay')?.value)||3,
+    popup_freq: parseInt(document.getElementById('popup_freq')?.value)||1,
+  };
+  await setDoc(doc(db,'settings','vitrin'), data);
+  showToast('Vitrin ayarları kaydedildi ✓','success');
 };
 
 window.openCampaignModal = () => {
