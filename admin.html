@@ -1109,6 +1109,7 @@ async function renderDashboard() {
 
   // Analytics yükle
   setTimeout(() => loadAnalytics(), 300);
+  const c = document.getElementById('pageContent');
   c.innerHTML = `
     <div class="stats-grid">
       <div class="stat-card">
