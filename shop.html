@@ -949,7 +949,7 @@ window.exportDropshippingExcel = () => {
   if (!products.length) { alert('Dropshipping ürünü bulunamadı.'); return; }
 
   // Her ürün için tüm varyantları ayrı satır yap
-  const rows = [['Ürün Adı', 'Renk', 'Beden', 'Açıklama', 'Fiyat (₺)', 'Stok', 'Görsel URL', 'Ürün URL']];
+  const rows = [['Ürün Adı', 'Renk', 'Beden', 'Açıklama', 'Fiyat (₺)', 'Görsel URL', 'Ürün URL']];
 
   products.forEach(p => {
     const colors = p.colors?.length ? p.colors : [''];
@@ -962,7 +962,7 @@ window.exportDropshippingExcel = () => {
 
     colors.forEach(color => {
       sizes.forEach(size => {
-        rows.push([p.name, color, size, desc, price, stock, img, url]);
+        rows.push([p.name, color, size, desc, price, img, url]);
       });
     });
   });
