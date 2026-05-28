@@ -3370,7 +3370,17 @@ window.openManualOrder = async () => {
           <div id="mo_items" style="display:grid;gap:6px"></div>
         </div>
 
-        <div style="border-top:1px solid var(--border);padding-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="border-top:1px solid var(--border);padding-top:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+          <div><label class="form-label-m">İskonto (%)</label>
+            <input class="form-input-m" id="mo_discount" type="number" value="0" min="0" max="100" placeholder="0" oninput="updateManualTotal()">
+          </div>
+          <div><label class="form-label-m">KDV (%)</label>
+            <select class="form-input-m" id="mo_vat" onchange="updateManualTotal()">
+              <option value="0">KDV Yok</option>
+              <option value="10">%10</option>
+              <option value="20">%20</option>
+            </select>
+          </div>
           <div><label class="form-label-m">Ödeme Durumu</label>
             <select class="form-input-m" id="mo_payment">
               <option value="pending">Ödeme Bekleniyor</option>
@@ -3386,9 +3396,23 @@ window.openManualOrder = async () => {
           </div>
         </div>
 
-        <div style="background:var(--surface2);border-radius:8px;padding:12px;display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:.85rem;color:var(--mid)">Toplam</span>
-          <span style="font-size:1.2rem;font-weight:600" id="mo_total">₺0</span>
+        <div style="background:var(--surface2);border-radius:8px;padding:16px;display:grid;gap:8px">
+          <div style="display:flex;justify-content:space-between;font-size:.85rem">
+            <span style="color:var(--mid)">Ara Toplam</span>
+            <span id="mo_subtotal">₺0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.85rem" id="mo_discount_row" style="display:none">
+            <span style="color:var(--mid)">İskonto</span>
+            <span id="mo_discount_val" style="color:#e74c3c">-₺0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.85rem" id="mo_vat_row">
+            <span style="color:var(--mid)">KDV</span>
+            <span id="mo_vat_val">₺0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:1.1rem;font-weight:600;border-top:1px solid var(--border);padding-top:8px">
+            <span>Toplam</span>
+            <span id="mo_total">₺0</span>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -3452,10 +3476,25 @@ function renderManualOrderItems() {
         <button onclick="removeManualItem(${i})" style="background:none;border:none;cursor:pointer;color:var(--red)">🗑️</button>
       </div>
     </div>`).join('');
-  const total = manualOrderItems.reduce((s,i)=>s+i.price*i.qty, 0);
-  const totalEl = document.getElementById('mo_total');
-  if (totalEl) totalEl.textContent = '₺' + total.toLocaleString('tr-TR',{maximumFractionDigits:0});
+  updateManualTotal();
 }
+
+window.updateManualTotal = () => {
+  const subtotal = manualOrderItems.reduce((s,i)=>s+i.price*i.qty, 0);
+  const discountPct = parseFloat(document.getElementById('mo_discount')?.value)||0;
+  const vatPct = parseFloat(document.getElementById('mo_vat')?.value)||0;
+  const discountAmt = subtotal * discountPct / 100;
+  const afterDiscount = subtotal - discountAmt;
+  const vatAmt = afterDiscount * vatPct / 100;
+  const total = afterDiscount + vatAmt;
+
+  const fmt = v => '₺' + v.toLocaleString('tr-TR',{maximumFractionDigits:0});
+  const sub = document.getElementById('mo_subtotal'); if(sub) sub.textContent = fmt(subtotal);
+  const dv = document.getElementById('mo_discount_val'); if(dv) dv.textContent = '-'+fmt(discountAmt);
+  const dr = document.getElementById('mo_discount_row'); if(dr) dr.style.display = discountPct>0?'flex':'none';
+  const vv = document.getElementById('mo_vat_val'); if(vv) vv.textContent = fmt(vatAmt);
+  const tot = document.getElementById('mo_total'); if(tot) tot.textContent = fmt(total);
+};
 
 window.removeManualItem = (idx) => {
   manualOrderItems.splice(idx, 1);
@@ -3476,6 +3515,12 @@ window.saveManualOrder = async () => {
   if (!manualOrderItems.length) { showToast('En az 1 ürün ekleyin','error'); return; }
 
   const subtotal = manualOrderItems.reduce((s,i)=>s+i.price*i.qty, 0);
+  const discountPct = parseFloat(document.getElementById('mo_discount').value)||0;
+  const vatPct = parseFloat(document.getElementById('mo_vat').value)||0;
+  const discountAmt = subtotal * discountPct / 100;
+  const afterDiscount = subtotal - discountAmt;
+  const vatTotal = afterDiscount * vatPct / 100;
+  const total = afterDiscount + vatTotal;
   const orderNo = 'MNL' + Date.now().toString().slice(-6);
 
   await addDoc(collection(db,'orders'), {
@@ -3487,8 +3532,11 @@ window.saveManualOrder = async () => {
     note,
     items: manualOrderItems,
     subtotal,
-    vatTotal: 0,
-    total: subtotal,
+    discountPct,
+    discountAmt,
+    vatPct,
+    vatTotal,
+    total,
     status,
     paymentStatus,
     source: 'manual',
