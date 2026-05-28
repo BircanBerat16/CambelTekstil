@@ -2537,7 +2537,8 @@ window.copyCreatives = () => {
 // ── MEMBERS ──
 async function renderMembers() {
   const snap = await getDocs(collection(db,'users'));
-  const members = snap.docs.map(d=>({id:d.id,...d.data()}));
+  const members = snap.docs.map(d=>({id:d.id,...d.data()}))
+    .sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
   const c = document.getElementById('pageContent');
   c.innerHTML = `
     <div class="panel">
