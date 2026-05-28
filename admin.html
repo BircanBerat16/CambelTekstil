@@ -1108,8 +1108,8 @@ async function renderDashboard() {
   const yRevPct = yRevGoal ? Math.min(100, Math.round(yRev/yRevGoal*100)) : 0;
   const yProfitPct = yProfitGoal ? Math.min(100, Math.round(yProfit/yProfitGoal*100)) : 0;
 
-  // Analytics yükle
-  setTimeout(() => loadAnalytics(), 300);
+  // Analytics yükle — DOM hazır olduktan sonra
+  setTimeout(() => loadAnalytics(), 800);
   const monthNames = ['','Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
   const c = document.getElementById('pageContent');
   c.innerHTML = `
