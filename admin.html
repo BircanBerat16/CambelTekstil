@@ -1109,6 +1109,7 @@ async function renderDashboard() {
 
   // Analytics yükle
   setTimeout(() => loadAnalytics(), 300);
+  const monthNames = ['','Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
   const c = document.getElementById('pageContent');
   c.innerHTML = `
     <div class="stats-grid">
