@@ -368,6 +368,9 @@ footer{background:var(--charcoal);color:rgba(250,248,245,.5);padding:3rem 8vw;di
 <script src="lang.js"></script>
 
 <!-- NAV -->
+<!-- Duyuru Bandı -->
+<div id="announcementBand" style="display:none;text-align:center;padding:10px 20px;font-size:.82rem;font-weight:500;cursor:pointer"></div>
+
 <nav id="navbar">
   <a href="index.html" class="nav-logo">Cambel<span>.</span></a>
   <ul class="nav-links" id="navLinks"></ul>
@@ -416,6 +419,7 @@ footer{background:var(--charcoal);color:rgba(250,248,245,.5);padding:3rem 8vw;di
         </select>
       </div>
     </div>
+    <div id="campaignBanner" style="display:none;margin-bottom:16px"></div>
     <div id="productsContainer">
       <div class="products-loading"><div class="spinner"></div> Ürünler yükleniyor...</div>
     </div>
@@ -1829,6 +1833,72 @@ init();
     onDisconnect(presenceRef).remove();
   } catch(e) { console.log('Presence error:', e); }
 })();
+</script>
+<!-- Pop-up -->
+<div id="vitrinPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:16px;max-width:420px;width:100%;overflow:hidden;position:relative">
+    <button onclick="document.getElementById('vitrinPopup').style.display='none'" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#666">✕</button>
+    <div id="vitrinPopupContent" style="padding:32px;text-align:center"></div>
+  </div>
+</div>
+
+<script>
+async function loadVitrin() {
+  try {
+    const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+    const { getFirestore, getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const FB = { apiKey:"AIzaSyBMlsHYnuVbOi7gXf00GfYA7vW8yMXH3Xw", authDomain:"cambel-tekstil.firebaseapp.com", projectId:"cambel-tekstil" };
+    const app = getApps().length ? getApps()[0] : initializeApp(FB);
+    const db = getFirestore(app);
+    const snap = await getDoc(doc(db,'settings','vitrin'));
+    if (!snap.exists()) return;
+    const v = snap.data();
+
+    // Duyuru Bandı
+    if (v.band_active && v.band_text) {
+      const band = document.getElementById('announcementBand');
+      band.style.display = 'block';
+      band.style.background = v.band_bg||'#2A2825';
+      band.style.color = v.band_color||'#F5F0E8';
+      band.innerHTML = v.band_scroll
+        ? `<marquee behavior="scroll" direction="left" scrollamount="3">${v.band_text}</marquee>`
+        : v.band_text;
+      if (v.band_link) band.onclick = () => window.location.href = v.band_link;
+    }
+
+    // Kampanya Banner
+    if (v.banner_active && v.banner_title) {
+      const banner = document.getElementById('campaignBanner');
+      banner.style.display = 'block';
+      banner.innerHTML = `
+        <div style="background:${v.banner_bg||'#8B7355'};color:${v.banner_color||'#fff'};border-radius:12px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:1.1rem;font-weight:600;margin-bottom:4px">${v.banner_title}</div>
+            ${v.banner_sub?`<div style="font-size:.85rem;opacity:.85">${v.banner_sub}</div>`:''}
+          </div>
+          ${v.banner_btn?`<a href="${v.banner_link||'#'}" style="padding:10px 20px;background:rgba(255,255,255,.2);color:inherit;border-radius:8px;text-decoration:none;font-weight:500;font-size:.85rem;border:1px solid rgba(255,255,255,.3)">${v.banner_btn}</a>`:''}
+        </div>`;
+    }
+
+    // Pop-up
+    if (v.popup_active && v.popup_title) {
+      const today = new Date().toDateString();
+      const key = 'popup_shown_' + today;
+      const shown = parseInt(sessionStorage.getItem(key)||'0');
+      if (shown < (v.popup_freq||1)) {
+        setTimeout(() => {
+          document.getElementById('vitrinPopupContent').innerHTML = `
+            <div style="font-size:1.4rem;font-weight:600;margin-bottom:10px;color:#2A2825">${v.popup_title}</div>
+            ${v.popup_text?`<div style="font-size:.9rem;color:#6B6560;line-height:1.7;margin-bottom:20px">${v.popup_text}</div>`:''}
+            ${v.popup_btn?`<a href="${v.popup_link||'#'}" onclick="document.getElementById('vitrinPopup').style.display='none'" style="display:inline-block;padding:12px 28px;background:#2A2825;color:#fff;border-radius:8px;text-decoration:none;font-weight:500">${v.popup_btn}</a>`:''}`;
+          document.getElementById('vitrinPopup').style.display = 'flex';
+          sessionStorage.setItem(key, shown + 1);
+        }, (v.popup_delay||3) * 1000);
+      }
+    }
+  } catch(e) {}
+}
+loadVitrin();
 </script>
 </body>
 </html>
