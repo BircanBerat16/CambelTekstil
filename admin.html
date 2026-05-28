@@ -683,6 +683,12 @@ select.filter-select{
         </select>
       </div>
       <div class="form-group-m">
+        <label class="form-label-m">Tedarikçi</label>
+        <select class="form-input-m" id="pSupplier">
+          <option value="">— Tedarikçi Yok (Cambel Stoğu) —</option>
+        </select>
+      </div>
+      <div class="form-group-m">
         <label class="form-label-m">Trendyol Buybox Avantajı</label>
         <select class="form-input-m" id="pBuybox">
           <option value="false">Yok</option>
@@ -1471,6 +1477,7 @@ window.openAddProduct = (fromImport) => {
   document.getElementById('editProductId').value = '';
   ['pName','pPrice','pSalePrice','pStock','pSku','pSizes','pColors','pDesc','pMaterial','pVideo'].forEach(id => document.getElementById(id).value = '');
   ['pOekoTex','pGots','pDropshipping'].forEach(id => document.getElementById(id).value = 'false');
+  document.getElementById('pSupplier').value = '';
   document.getElementById('variantGridWrap').style.display = 'none';
   document.getElementById('simpleStockWrap').style.display = 'block';
   document.getElementById('variantGrid').innerHTML = '';
@@ -1643,6 +1650,7 @@ window.saveProduct = async () => {
     oekoTex: document.getElementById('pOekoTex').value === 'true',
     gots: document.getElementById('pGots').value === 'true',
     dropshipping: document.getElementById('pDropshipping').value === 'true',
+    supplierId: document.getElementById('pSupplier').value || '',
     saleType: document.getElementById('pSaleType').value,
     serialSizes: document.getElementById('pSaleType').value === 'serial'
       ? document.getElementById('pSerialSizes').value.split(',').map(s=>s.trim()).filter(Boolean)
@@ -2790,6 +2798,215 @@ window.saveBrandKit = async () => {
 };
 
 // ── SETTINGS ──
+async function renderSuppliers() {
+  const snap = await getDocs(collection(db,'suppliers'));
+  const suppliers = snap.docs.map(d=>({id:d.id,...d.data()}));
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Tedarikçiler</h1>
+        <p class="page-sub">Konsinye mal veren tedarikçileri yönetin</p>
+      </div>
+      <button class="btn btn-dark" onclick="openAddSupplier()">+ Tedarikçi Ekle</button>
+    </div>
+    <div class="panel">
+      <table class="data-table">
+        <thead><tr><th>Ad Soyad / Firma</th><th>E-posta</th><th>Telefon</th><th>Ürün Sayısı</th><th>Durum</th><th></th></tr></thead>
+        <tbody>
+          ${suppliers.length ? suppliers.map(s => `
+            <tr>
+              <td><strong>${s.name||'-'}</strong><div style="font-size:.75rem;color:var(--mid)">${s.company||''}</div></td>
+              <td>${s.email||'-'}</td>
+              <td>${s.phone||'-'}</td>
+              <td id="supProdCount_${s.id}">—</td>
+              <td><span class="badge ${s.active!==false?'badge-green':'badge-warn'}">${s.active!==false?'Aktif':'Pasif'}</span></td>
+              <td style="display:flex;gap:6px">
+                <button class="btn btn-outline btn-sm" onclick="editSupplier('${s.id}')">Düzenle</button>
+                <button class="btn btn-outline btn-sm" onclick="viewSupplierReport('${s.id}')">Rapor</button>
+                <button class="btn btn-outline btn-sm" onclick="copySupplierLink('${s.id}')">🔗 Link</button>
+              </td>
+            </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--mid)">Henüz tedarikçi yok</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tedarikçi Modal -->
+    <div class="modal-overlay" id="supplierModal">
+      <div class="modal" style="max-width:520px">
+        <div class="modal-header">
+          <div class="modal-title" id="supplierModalTitle">Tedarikçi Ekle</div>
+          <button class="modal-close" onclick="closeModal('supplierModal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group-m"><label class="form-label-m">Ad Soyad / Firma Adı *</label><input class="form-input-m" id="sup_name" placeholder="Ahmet Yılmaz"></div>
+          <div class="form-group-m"><label class="form-label-m">Firma Adı (opsiyonel)</label><input class="form-input-m" id="sup_company" placeholder="Yılmaz Tekstil"></div>
+          <div class="form-group-m"><label class="form-label-m">E-posta *</label><input class="form-input-m" id="sup_email" type="email" placeholder="tedarikci@email.com"></div>
+          <div class="form-group-m"><label class="form-label-m">Telefon</label><input class="form-input-m" id="sup_phone" placeholder="05XX XXX XX XX"></div>
+          <div class="form-group-m"><label class="form-label-m">Şifre (Panel Girişi) *</label><input class="form-input-m" id="sup_password" type="text" placeholder="Tedarikçi panel şifresi"></div>
+          <div class="form-group-m"><label class="form-label-m">Not</label><textarea class="form-input-m" id="sup_note" placeholder="Ödeme koşulları, anlaşma detayları..."></textarea></div>
+          <div class="form-group-m"><label class="form-label-m">Durum</label>
+            <select class="form-input-m" id="sup_active">
+              <option value="true">Aktif</option>
+              <option value="false">Pasif</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeModal('supplierModal')">İptal</button>
+          <button class="btn btn-dark" onclick="saveSupplier()">Kaydet</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rapor Modal -->
+    <div class="modal-overlay" id="supplierReportModal">
+      <div class="modal" style="max-width:700px">
+        <div class="modal-header">
+          <div class="modal-title" id="supplierReportTitle">Tedarikçi Raporu</div>
+          <button class="modal-close" onclick="closeModal('supplierReportModal')">✕</button>
+        </div>
+        <div class="modal-body" id="supplierReportBody"></div>
+      </div>
+    </div>`;
+
+  // Ürün sayılarını yükle
+  const prodSnap = await getDocs(collection(db,'products'));
+  const products = prodSnap.docs.map(d=>({id:d.id,...d.data()}));
+  suppliers.forEach(s => {
+    const count = products.filter(p=>p.supplierId===s.id).length;
+    const el = document.getElementById(`supProdCount_${s.id}`);
+    if(el) el.textContent = count + ' ürün';
+  });
+
+  // Tedarikçi select'ini güncelle
+  loadSupplierSelect(suppliers);
+}
+
+function loadSupplierSelect(suppliers) {
+  const sel = document.getElementById('pSupplier');
+  if(!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— Tedarikçi Yok (Cambel Stoğu) —</option>';
+  suppliers.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.name + (s.company ? ' / ' + s.company : '');
+    sel.appendChild(opt);
+  });
+  sel.value = current;
+}
+
+let editingSupplierId = null;
+window.openAddSupplier = () => {
+  editingSupplierId = null;
+  document.getElementById('supplierModalTitle').textContent = 'Tedarikçi Ekle';
+  ['sup_name','sup_company','sup_email','sup_phone','sup_password','sup_note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sup_active').value = 'true';
+  openModal('supplierModal');
+};
+
+window.editSupplier = async (id) => {
+  editingSupplierId = id;
+  const snap = await getDoc(doc(db,'suppliers',id));
+  const s = snap.data();
+  document.getElementById('supplierModalTitle').textContent = 'Tedarikçi Düzenle';
+  document.getElementById('sup_name').value = s.name||'';
+  document.getElementById('sup_company').value = s.company||'';
+  document.getElementById('sup_email').value = s.email||'';
+  document.getElementById('sup_phone').value = s.phone||'';
+  document.getElementById('sup_password').value = s.password||'';
+  document.getElementById('sup_note').value = s.note||'';
+  document.getElementById('sup_active').value = String(s.active!==false);
+  openModal('supplierModal');
+};
+
+window.saveSupplier = async () => {
+  const name = document.getElementById('sup_name').value.trim();
+  const email = document.getElementById('sup_email').value.trim();
+  const password = document.getElementById('sup_password').value.trim();
+  if(!name||!email||!password) { showToast('Ad, e-posta ve şifre zorunlu','error'); return; }
+  const data = {
+    name, email, password,
+    company: document.getElementById('sup_company').value.trim(),
+    phone: document.getElementById('sup_phone').value.trim(),
+    note: document.getElementById('sup_note').value.trim(),
+    active: document.getElementById('sup_active').value === 'true',
+    updatedAt: new Date().toISOString()
+  };
+  if(editingSupplierId) {
+    await updateDoc(doc(db,'suppliers',editingSupplierId), data);
+    showToast('Tedarikçi güncellendi ✓','success');
+  } else {
+    data.createdAt = new Date().toISOString();
+    await addDoc(collection(db,'suppliers'), data);
+    showToast('Tedarikçi eklendi ✓','success');
+  }
+  closeModal('supplierModal');
+  renderSuppliers();
+};
+
+window.copySupplierLink = async (id) => {
+  const snap = await getDoc(doc(db,'suppliers',id));
+  const s = snap.data();
+  const url = `${window.location.origin}/tedarikci.html?id=${id}&key=${btoa(s.email+':'+s.password)}`;
+  navigator.clipboard.writeText(url);
+  showToast('Panel linki kopyalandı ✓','success');
+};
+
+window.viewSupplierReport = async (id) => {
+  const supSnap = await getDoc(doc(db,'suppliers',id));
+  const s = supSnap.data();
+  const prodSnap = await getDocs(query(collection(db,'products'), where('supplierId','==',id)));
+  const products = prodSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const orderSnap = await getDocs(collection(db,'orders'));
+  const orders = orderSnap.docs.map(d=>({id:d.id,...d.data()}));
+
+  const body = document.getElementById('supplierReportBody');
+  document.getElementById('supplierReportTitle').textContent = s.name + ' — Rapor';
+
+  let totalSold = 0, totalRevenue = 0;
+  const productStats = products.map(p => {
+    let sold = 0, revenue = 0;
+    orders.forEach(o => {
+      (o.items||[]).forEach(item => {
+        if(item.name === p.name) { sold += item.qty||1; revenue += (item.price||0)*(item.qty||1); }
+      });
+    });
+    totalSold += sold; totalRevenue += revenue;
+    return {p, sold, revenue};
+  });
+
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+      <div style="background:var(--surface2);border-radius:10px;padding:16px;text-align:center">
+        <div style="font-size:1.8rem;font-weight:600">${products.length}</div>
+        <div style="font-size:.75rem;color:var(--mid)">Ürün</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:16px;text-align:center">
+        <div style="font-size:1.8rem;font-weight:600">${totalSold}</div>
+        <div style="font-size:.75rem;color:var(--mid)">Satılan Adet</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:16px;text-align:center">
+        <div style="font-size:1.8rem;font-weight:600">₺${totalRevenue.toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}</div>
+        <div style="font-size:.75rem;color:var(--mid)">Toplam Ciro</div>
+      </div>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>Ürün</th><th>Stok</th><th>Satılan</th><th>Ciro</th></tr></thead>
+      <tbody>
+        ${productStats.map(({p,sold,revenue}) => `
+          <tr>
+            <td><strong>${p.name}</strong></td>
+            <td>${p.stock||0}</td>
+            <td>${sold}</td>
+            <td>₺${revenue.toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+  openModal('supplierReportModal');
+};
+
 async function renderSettings() {
   const snap = await getDoc(doc(db,'settings','general'));
   const d = snap.exists() ? snap.data() : {};
