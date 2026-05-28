@@ -62,7 +62,7 @@ nav{
   padding:0 5vw;height:68px;
   background:rgba(250,248,245,.94);backdrop-filter:blur(16px);
   border-bottom:1px solid rgba(196,185,168,.3);
-  transition:box-shadow .3s;
+  transition:box-shadow .3s, top .2s;
 }
 .nav-logo{font-family:'DM Sans',sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--charcoal);text-decoration:none;}
 .nav-logo span{color:var(--accent);}
@@ -369,7 +369,7 @@ footer{background:var(--charcoal);color:rgba(250,248,245,.5);padding:3rem 8vw;di
 
 <!-- NAV -->
 <!-- Duyuru Bandı -->
-<div id="announcementBand" style="display:none;text-align:center;padding:10px 20px;font-size:.82rem;font-weight:500;cursor:pointer"></div>
+<div id="announcementBand" style="display:none;position:fixed;top:0;left:0;right:0;z-index:101;text-align:center;padding:10px 20px;font-size:.82rem;font-weight:500;cursor:pointer"></div>
 
 <nav id="navbar">
   <a href="index.html" class="nav-logo">Cambel<span>.</span></a>
@@ -1864,6 +1864,18 @@ async function loadVitrin() {
         ? `<marquee behavior="scroll" direction="left" scrollamount="3">${v.band_text}</marquee>`
         : v.band_text;
       if (v.band_link) band.onclick = () => window.location.href = v.band_link;
+      // Navbar ve layout'u band yüksekliği kadar aşağı it
+      setTimeout(() => {
+        const bandH = band.offsetHeight;
+        const nav = document.getElementById('navbar');
+        if (nav) nav.style.top = bandH + 'px';
+        const mobileNav = document.getElementById('mobileNav');
+        if (mobileNav) mobileNav.style.top = (68 + bandH) + 'px';
+        const layout = document.querySelector('.shop-layout');
+        if (layout) layout.style.paddingTop = (68 + bandH) + 'px';
+        const shopHead = document.querySelector('.shop-header');
+        if (shopHead) shopHead.style.paddingTop = (68 + bandH) + 'px';
+      }, 200);
     }
 
     // Kampanya Banner
