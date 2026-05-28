@@ -921,6 +921,7 @@ window.filterDropshipping = (el) => {
   el.classList.add('active');
   document.getElementById('shopTopbarTitle').textContent = '📦 Dropshipping Ürünleri';
   window.location.hash = 'dropshipping';
+  applyFilters();
   renderProducts();
 };
 
@@ -931,8 +932,8 @@ window.filterBuybox = (el) => {
   document.getElementById('shopTopbarTitle').textContent = '🏆 Trendyol Buybox Ürünleri';
   window.location.hash = 'buybox';
   applyFilters();
+  renderProducts();
 };
-
 window.filterCat = (catId, subId, el) => {
   currentFilter = {category:catId, subcategory:subId};
   document.querySelectorAll('.sidebar-cat,.sidebar-subcat').forEach(e=>e.classList.remove('active'));
