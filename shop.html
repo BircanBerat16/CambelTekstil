@@ -1763,21 +1763,21 @@ init();
 </script>
 
 
+
 <script type="module">
-// Anlık ziyaretçi takibi
 (async () => {
   try {
     const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-    const { getDatabase, ref, onDisconnect, set, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+    const { getDatabase, ref, onDisconnect, set } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
     const FB = { apiKey:"AIzaSyBMlsHYnuVbOi7gXf00GfYA7vW8yMXH3Xw", authDomain:"cambel-tekstil.firebaseapp.com", projectId:"cambel-tekstil", databaseURL:"https://cambel-tekstil-default-rtdb.europe-west1.firebasedatabase.app" };
     const app = getApps().length ? getApps()[0] : initializeApp(FB);
     const db = getDatabase(app);
-    const sessionId = Math.random().toString(36).slice(2);
+    const sessionId = Math.random().toString(36).slice(2) + Date.now();
     const page = window.location.pathname.split('/').pop().replace('.html','') || 'index';
     const presenceRef = ref(db, 'online/' + sessionId);
-    await set(presenceRef, { page, ts: serverTimestamp() });
+    await set(presenceRef, { page, ts: Date.now() });
     onDisconnect(presenceRef).remove();
-  } catch(e) {}
+  } catch(e) { console.log('Presence error:', e); }
 })();
 </script>
 </body>
