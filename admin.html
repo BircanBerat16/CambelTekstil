@@ -462,6 +462,9 @@ select.filter-select{
     <div class="nav-item" onclick="showPage('members',this)"><span class="icon">👥</span> Üyeler</div>
     <div class="nav-section">Pazarlama</div>
     <div class="nav-item" onclick="showPage('marketing',this)"><span class="icon">📣</span> Meta Kreatifler</div>
+    <div class="nav-section">Analiz</div>
+    <div class="nav-item" onclick="showPage('goals',this)"><span class="icon">🎯</span> Hedefler</div>
+    <div class="nav-item" onclick="showPage('reports',this)"><span class="icon">📈</span> Raporlar</div>
     <div class="nav-section">Sistem</div>
     <div class="nav-item" onclick="showPage('suppliers',this)"><span class="icon">🤝</span> Tedarikçiler</div>
     <div class="nav-item" onclick="showPage('settings',this)"><span class="icon">⚙️</span> Ayarlar</div>
@@ -1050,6 +1053,8 @@ window.showPage = (page, el) => {
     case 'bundles':   renderBundles();   break;
     case 'campaigns': renderCampaigns(); break;
     case 'brandkit':  renderBrandKit();  break;
+    case 'goals':     renderGoals();     break;
+    case 'reports':   renderReports();   break;
     case 'suppliers': renderSuppliers(); break;
     case 'settings':  renderSettings();  break;
   }
@@ -2814,6 +2819,338 @@ window.saveBrandKit = async () => {
 };
 
 // ── SETTINGS ──
+// ── HEDEFLER ──
+async function renderGoals() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const quarter = Math.ceil(month / 3);
+
+  // Mevcut hedefleri çek
+  let goals = {};
+  try {
+    const snap = await getDoc(doc(db,'settings','goals'));
+    if (snap.exists()) goals = snap.data();
+  } catch(e) {}
+
+  // Gerçek verileri hesapla
+  const orderSnap = await getDocs(collection(db,'orders'));
+  const orders = orderSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const prodSnap = await getDocs(collection(db,'products'));
+  const prodMap = Object.fromEntries(prodSnap.docs.map(d=>[d.data().name, d.data()]));
+
+  function calcRevenue(filterFn) {
+    return orders.filter(filterFn).reduce((s,o) => s + (o.total||0), 0);
+  }
+  function calcProfit(filterFn) {
+    return orders.filter(filterFn).reduce((s,o) => {
+      const orderProfit = (o.items||[]).reduce((ps, item) => {
+        const prod = prodMap[item.name];
+        const purchasePrice = prod?.purchasePrice || 0;
+        const salePrice = item.price || 0;
+        return ps + (salePrice - purchasePrice) * (item.qty||1);
+      }, 0);
+      return s + orderProfit;
+    }, 0);
+  }
+
+  const isThisYear = o => { const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null; return d && d.getFullYear() === year; };
+  const isThisQuarter = o => { const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null; return d && d.getFullYear() === year && Math.ceil((d.getMonth()+1)/3) === quarter; };
+  const isThisMonth = o => { const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null; return d && d.getFullYear() === year && d.getMonth()+1 === month; };
+
+  const yearRev = calcRevenue(isThisYear);
+  const yearProfit = calcProfit(isThisYear);
+  const qRev = calcRevenue(isThisQuarter);
+  const qProfit = calcProfit(isThisQuarter);
+  const mRev = calcRevenue(isThisMonth);
+  const mProfit = calcProfit(isThisMonth);
+
+  function progressBar(current, target, color='#8B7355') {
+    if (!target) return '<div style="font-size:.75rem;color:var(--mid)">Hedef girilmedi</div>';
+    const pct = Math.min(100, Math.round(current/target*100));
+    return `<div style="margin-top:8px">
+      <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--mid);margin-bottom:4px">
+        <span>₺${current.toLocaleString('tr-TR',{maximumFractionDigits:0})}</span>
+        <span>%${pct}</span>
+      </div>
+      <div style="background:var(--border);border-radius:4px;height:8px;overflow:hidden">
+        <div style="height:100%;background:${color};border-radius:4px;width:${pct}%;transition:width .5s"></div>
+      </div>
+      <div style="font-size:.72rem;color:var(--mid);margin-top:4px">Hedef: ₺${Number(target).toLocaleString('tr-TR',{maximumFractionDigits:0})}</div>
+    </div>`;
+  }
+
+  const quarterNames = ['','Q1 (Oca-Mar)','Q2 (Nis-Haz)','Q3 (Tem-Eyl)','Q4 (Eki-Ara)'];
+  const monthNames = ['','Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
+  document.getElementById('pageContent').innerHTML = `
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Hedefler</h1>
+        <p class="page-sub">${year} yılı satış ve kar hedefleri</p>
+      </div>
+      <button class="btn btn-dark" onclick="saveGoals()">💾 Hedefleri Kaydet</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+      <!-- Yıllık -->
+      <div class="panel" style="overflow:visible">
+        <div class="panel-header"><div class="panel-title">🗓️ Yıllık — ${year}</div></div>
+        <div class="panel-body" style="padding:20px">
+          <div style="margin-bottom:16px">
+            <div class="form-label-m">Ciro Hedefi (₺)</div>
+            <input type="number" class="form-input-m" id="goal_year_rev" value="${goals.year_rev||''}" placeholder="örn: 5000000">
+            ${progressBar(yearRev, goals.year_rev, '#8B7355')}
+          </div>
+          <div>
+            <div class="form-label-m">Brüt Kar Hedefi (₺)</div>
+            <input type="number" class="form-input-m" id="goal_year_profit" value="${goals.year_profit||''}" placeholder="örn: 1500000">
+            ${progressBar(yearProfit, goals.year_profit, '#3D6B4F')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Çeyreklik -->
+      <div class="panel" style="overflow:visible">
+        <div class="panel-header"><div class="panel-title">📅 ${quarterNames[quarter]} — ${year}</div></div>
+        <div class="panel-body" style="padding:20px">
+          <div style="margin-bottom:16px">
+            <div class="form-label-m">Ciro Hedefi (₺)</div>
+            <input type="number" class="form-input-m" id="goal_q_rev" value="${goals['q'+quarter+'_rev']||Math.round((goals.year_rev||0)/4)||''}" placeholder="Otomatik: Yıllık ÷ 4">
+            ${progressBar(qRev, goals['q'+quarter+'_rev'] || (goals.year_rev ? goals.year_rev/4 : 0), '#8B7355')}
+          </div>
+          <div>
+            <div class="form-label-m">Brüt Kar Hedefi (₺)</div>
+            <input type="number" class="form-input-m" id="goal_q_profit" value="${goals['q'+quarter+'_profit']||Math.round((goals.year_profit||0)/4)||''}" placeholder="Otomatik: Yıllık ÷ 4">
+            ${progressBar(qProfit, goals['q'+quarter+'_profit'] || (goals.year_profit ? goals.year_profit/4 : 0), '#3D6B4F')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Aylık -->
+      <div class="panel" style="overflow:visible">
+        <div class="panel-header"><div class="panel-title">📆 ${monthNames[month]} ${year}</div></div>
+        <div class="panel-body" style="padding:20px">
+          <div style="margin-bottom:16px">
+            <div class="form-label-m">Ciro Hedefi (₺)</div>
+            <input type="number" class="form-input-m" id="goal_m_rev" value="${goals['m'+month+'_rev']||Math.round((goals.year_rev||0)/12)||''}" placeholder="Otomatik: Yıllık ÷ 12">
+            ${progressBar(mRev, goals['m'+month+'_rev'] || (goals.year_rev ? goals.year_rev/12 : 0), '#8B7355')}
+          </div>
+          <div>
+            <div class="form-label-m">Brüt Kar Hedefi (₺)</div>
+            <input type="number" class="form-input-m" id="goal_m_profit" value="${goals['m'+month+'_profit']||Math.round((goals.year_profit||0)/12)||''}" placeholder="Otomatik: Yıllık ÷ 12">
+            ${progressBar(mProfit, goals['m'+month+'_profit'] || (goals.year_profit ? goals.year_profit/12 : 0), '#3D6B4F')}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Özet -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px">
+      ${[['Bu Ay', mRev, mProfit], ['Bu Çeyrek', qRev, qProfit], ['Bu Yıl', yearRev, yearProfit]].map(([label, rev, profit]) => `
+        <div class="panel"><div class="panel-body" style="padding:20px">
+          <div style="font-size:.72rem;color:var(--mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">${label}</div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:.85rem;color:var(--mid)">Ciro</span>
+            <span style="font-weight:600">₺${rev.toLocaleString('tr-TR',{maximumFractionDigits:0})}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span style="font-size:.85rem;color:var(--mid)">Brüt Kar</span>
+            <span style="font-weight:600;color:#5CBA8A">₺${profit.toLocaleString('tr-TR',{maximumFractionDigits:0})}</span>
+          </div>
+        </div></div>`).join('')}
+    </div>`;
+}
+
+window.saveGoals = async () => {
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const quarter = Math.ceil(month / 3);
+  const data = {
+    year_rev: parseFloat(document.getElementById('goal_year_rev').value)||0,
+    year_profit: parseFloat(document.getElementById('goal_year_profit').value)||0,
+    [`q${quarter}_rev`]: parseFloat(document.getElementById('goal_q_rev').value)||0,
+    [`q${quarter}_profit`]: parseFloat(document.getElementById('goal_q_profit').value)||0,
+    [`m${month}_rev`]: parseFloat(document.getElementById('goal_m_rev').value)||0,
+    [`m${month}_profit`]: parseFloat(document.getElementById('goal_m_profit').value)||0,
+    updatedAt: new Date().toISOString()
+  };
+  await setDoc(doc(db,'settings','goals'), data, {merge:true});
+  showToast('Hedefler kaydedildi ✓','success');
+  renderGoals();
+};
+
+// ── RAPORLAR ──
+async function renderReports() {
+  const orderSnap = await getDocs(collection(db,'orders'));
+  const orders = orderSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const prodSnap = await getDocs(collection(db,'products'));
+  const prodMap = Object.fromEntries(prodSnap.docs.map(d=>[d.data().name, d.data()]));
+  const catSnap = await getDocs(collection(db,'categories'));
+  const catMap = Object.fromEntries(catSnap.docs.map(d=>[d.id, d.data().name]));
+  const supSnap = await getDocs(collection(db,'suppliers'));
+  const supMap = Object.fromEntries(supSnap.docs.map(d=>[d.id, d.data().name]));
+
+  // En çok satan ürünler
+  const productSales = {};
+  orders.forEach(o => {
+    (o.items||[]).forEach(item => {
+      if (!productSales[item.name]) productSales[item.name] = {qty:0, revenue:0, profit:0};
+      const qty = item.qty||1;
+      const prod = prodMap[item.name];
+      const purchasePrice = prod?.purchasePrice||0;
+      productSales[item.name].qty += qty;
+      productSales[item.name].revenue += (item.price||0) * qty;
+      productSales[item.name].profit += ((item.price||0) - purchasePrice) * qty;
+    });
+  });
+  const topProducts = Object.entries(productSales).sort((a,b)=>b[1].revenue-a[1].revenue).slice(0,10);
+
+  // En çok sipariş veren müşteriler
+  const customerOrders = {};
+  orders.forEach(o => {
+    const key = o.customerEmail||o.customerId||'bilinmiyor';
+    if (!customerOrders[key]) customerOrders[key] = {name:o.customerName||'-', email:o.customerEmail||'-', count:0, total:0};
+    customerOrders[key].count++;
+    customerOrders[key].total += o.total||0;
+  });
+  const topCustomers = Object.values(customerOrders).sort((a,b)=>b.total-a.total).slice(0,10);
+
+  // Kategori bazlı satış
+  const catSales = {};
+  orders.forEach(o => {
+    (o.items||[]).forEach(item => {
+      const prod = prodMap[item.name];
+      const catId = prod?.category||'diğer';
+      const catName = catMap[catId]||catId;
+      if (!catSales[catName]) catSales[catName] = {revenue:0, qty:0};
+      catSales[catName].revenue += (item.price||0)*(item.qty||1);
+      catSales[catName].qty += item.qty||1;
+    });
+  });
+  const topCats = Object.entries(catSales).sort((a,b)=>b[1].revenue-a[1].revenue);
+
+  // Tedarikçi bazlı satış
+  const supSales = {};
+  orders.forEach(o => {
+    (o.items||[]).forEach(item => {
+      const prod = prodMap[item.name];
+      const supId = prod?.supplierId||'';
+      const supName = supId ? (supMap[supId]||'Bilinmiyor') : 'Cambel Stoğu';
+      if (!supSales[supName]) supSales[supName] = {revenue:0, qty:0, profit:0};
+      const purchasePrice = prod?.purchasePrice||0;
+      const salePrice = item.price||0;
+      supSales[supName].revenue += salePrice * (item.qty||1);
+      supSales[supName].qty += item.qty||1;
+      supSales[supName].profit += (salePrice - purchasePrice) * (item.qty||1);
+    });
+  });
+  const topSups = Object.entries(supSales).sort((a,b)=>b[1].revenue-a[1].revenue);
+
+  // Aylık ciro (son 12 ay)
+  const monthlyRev = {};
+  orders.forEach(o => {
+    const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null;
+    if (!d) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!monthlyRev[key]) monthlyRev[key] = 0;
+    monthlyRev[key] += o.total||0;
+  });
+  const sortedMonths = Object.entries(monthlyRev).sort((a,b)=>a[0].localeCompare(b[0])).slice(-12);
+  const maxMonthRev = Math.max(...sortedMonths.map(([,v])=>v), 1);
+  const monthNames = ['','Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+
+  document.getElementById('pageContent').innerHTML = `
+    <div class="page-header">
+      <h1 class="page-title">Raporlar</h1>
+      <p class="page-sub">Satış analiz ve istatistikleri</p>
+    </div>
+
+    <!-- Aylık Ciro Grafiği -->
+    <div class="panel" style="margin-bottom:20px">
+      <div class="panel-header"><div class="panel-title">📊 Aylık Ciro (Son 12 Ay)</div></div>
+      <div style="padding:24px">
+        <div style="display:flex;align-items:flex-end;gap:8px;height:160px">
+          ${sortedMonths.map(([key, val]) => {
+            const [y, m] = key.split('-');
+            const h = Math.round(val/maxMonthRev*100);
+            return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+              <div style="font-size:.65rem;color:var(--mid)">₺${(val/1000).toFixed(0)}K</div>
+              <div style="width:100%;background:var(--accent);border-radius:4px 4px 0 0;height:${h}%;min-height:4px;transition:height .5s"></div>
+              <div style="font-size:.65rem;color:var(--mid)">${monthNames[parseInt(m)]}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+      <!-- En çok satan ürünler -->
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">🏆 En Çok Satan Ürünler</div></div>
+        <table>
+          <thead><tr><th>Ürün</th><th>Adet</th><th>Ciro</th><th>Brüt Kar</th></tr></thead>
+          <tbody>
+            ${topProducts.map(([name, d]) => `<tr>
+              <td><strong>${name}</strong></td>
+              <td>${d.qty}</td>
+              <td>₺${d.revenue.toLocaleString('tr-TR',{maximumFractionDigits:0})}</td>
+              <td style="color:#5CBA8A">₺${d.profit.toLocaleString('tr-TR',{maximumFractionDigits:0})}</td>
+            </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--mid)">Veri yok</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- En çok sipariş veren müşteriler -->
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">👥 En Çok Sipariş Veren Müşteriler</div></div>
+        <table>
+          <thead><tr><th>Müşteri</th><th>Sipariş</th><th>Toplam</th></tr></thead>
+          <tbody>
+            ${topCustomers.map(c => `<tr>
+              <td><strong>${c.name}</strong><div style="font-size:.72rem;color:var(--mid)">${c.email}</div></td>
+              <td>${c.count}</td>
+              <td>₺${c.total.toLocaleString('tr-TR',{maximumFractionDigits:0})}</td>
+            </tr>`).join('') || '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--mid)">Veri yok</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <!-- Kategori bazlı satış -->
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">📁 Kategori Bazlı Satış</div></div>
+        <table>
+          <thead><tr><th>Kategori</th><th>Adet</th><th>Ciro</th></tr></thead>
+          <tbody>
+            ${topCats.map(([name, d]) => `<tr>
+              <td><strong>${name}</strong></td>
+              <td>${d.qty}</td>
+              <td>₺${d.revenue.toLocaleString('tr-TR',{maximumFractionDigits:0})}</td>
+            </tr>`).join('') || '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--mid)">Veri yok</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tedarikçi bazlı satış -->
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">🤝 Tedarikçi Bazlı Satış</div></div>
+        <table>
+          <thead><tr><th>Tedarikçi</th><th>Adet</th><th>Ciro</th><th>Brüt Kar</th></tr></thead>
+          <tbody>
+            ${topSups.map(([name, d]) => `<tr>
+              <td><strong>${name}</strong></td>
+              <td>${d.qty}</td>
+              <td>₺${d.revenue.toLocaleString('tr-TR',{maximumFractionDigits:0})}</td>
+              <td style="color:#5CBA8A">₺${d.profit.toLocaleString('tr-TR',{maximumFractionDigits:0})}</td>
+            </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--mid)">Veri yok</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
 async function renderSuppliers() {
   const snap = await getDocs(collection(db,'suppliers'));
   const suppliers = snap.docs.map(d=>({id:d.id,...d.data()}));
