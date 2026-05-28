@@ -8,7 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Cormorant+Garamond:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  
   --bg: #F5F3F0;
   --surface: #FFFFFF;
   --surface2: #F9F7F4;
@@ -464,6 +463,7 @@ select.filter-select{
     <div class="nav-section">Pazarlama</div>
     <div class="nav-item" onclick="showPage('marketing',this)"><span class="icon">📣</span> Meta Kreatifler</div>
     <div class="nav-section">Sistem</div>
+    <div class="nav-item" onclick="showPage('suppliers',this)"><span class="icon">🤝</span> Tedarikçiler</div>
     <div class="nav-item" onclick="showPage('settings',this)"><span class="icon">⚙️</span> Ayarlar</div>
   </nav>
   <div class="sidebar-footer">
@@ -1045,6 +1045,7 @@ window.showPage = (page, el) => {
     case 'bundles':   renderBundles();   break;
     case 'campaigns': renderCampaigns(); break;
     case 'brandkit':  renderBrandKit();  break;
+    case 'suppliers': renderSuppliers(); break;
     case 'settings':  renderSettings();  break;
   }
 };
