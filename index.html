@@ -194,14 +194,15 @@ footer { background: #1a1a18; padding: 40px 8vw; display: flex; align-items: cen
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
+<script src="lang.js"></script>
 
 <nav id="navbar">
   <a href="/" class="nav-logo">Cambel<span>.</span></a>
   <ul class="nav-links">
-    <li><a href="shop.html">Mağaza</a></li>
+    <li><a href="shop.html" data-i18n="nav_shop">Mağaza</a></li>
     <li><a href="#brandkit">Brand Kit</a></li>
-    <li><a href="#nasil">Nasıl Çalışır</a></li>
-    <li><a href="#sss">SSS</a></li>
+    <li><a href="#nasil" data-i18n="nav_how">Nasıl Çalışır</a></li>
+    <li><a href="#sss" data-i18n="nav_faq">SSS</a></li>
   </ul>
   <div class="lang-switcher">
     <button class="lang-btn active" data-lang="tr" onclick="setLang('tr')">🇹🇷 TR</button>
@@ -215,9 +216,9 @@ footer { background: #1a1a18; padding: 40px 8vw; display: flex; align-items: cen
 </nav>
 
 <div class="mobile-nav" id="mobileNav">
-  <a href="shop.html">Mağaza</a>
+  <a href="shop.html" data-i18n="nav_shop">Mağaza</a>
   <a href="#brandkit">Brand Kit</a>
-  <a href="#nasil">Nasıl Çalışır</a>
+  <a href="#nasil" data-i18n="nav_how">Nasıl Çalışır</a>
   <a href="account.html">Giriş Yap / Üye Ol</a>
 </div>
 
@@ -280,10 +281,10 @@ footer { background: #1a1a18; padding: 40px 8vw; display: flex; align-items: cen
 <div class="featured" id="urunler">
   <div class="featured-head">
     <div>
-      <div class="section-tag">Öne Çıkan Ürünler</div>
-      <div class="section-title">En çok tercih <em>edilenler</em></div>
+      <div class="section-tag" data-i18n="featured_tag">Öne Çıkan Ürünler</div>
+      <div class="section-title" data-i18n-html="featured_title">En çok tercih <em>edilenler</em></div>
     </div>
-    <a href="shop.html" class="btn-ghost">Tümünü Gör →</a>
+    <a href="shop.html" class="btn-ghost" data-i18n="featured_all">Tümünü Gör →</a>
   </div>
   <div class="featured-grid" id="featuredGrid">
     <div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--mid)">Ürünler yükleniyor...</div>
@@ -297,17 +298,17 @@ footer { background: #1a1a18; padding: 40px 8vw; display: flex; align-items: cen
     <div class="how-step">
       <div class="how-num">01</div>
       <h3 data-i18n="how_step1_title">Ürün Seç</h3>
-      <p>200+ white label bebek ürünü arasından seç. Body, müslin, pijama, tulum — hepsi etiketsiz, sana özel.</p>
+      <p data-i18n="how_step1_desc">200+ white label bebek ürünü arasından seç. Body, müslin, pijama, tulum — hepsi etiketsiz, sana özel.</p>
     </div>
     <div class="how-step">
       <div class="how-num">02</div>
       <h3 data-i18n="how_step2_title">Brand Kit Al</h3>
-      <p>Ense baskısı ile logo ve marka adını ekle. Yıkama etiketi, sallantı kart, baskılı ambalaj — tam profesyonel.</p>
+      <p data-i18n="how_step2_desc">Ense baskısı ile logo ve marka adını ekle. Yıkama etiketi, sallantı kart, baskılı ambalaj — tam profesyonel.</p>
     </div>
     <div class="how-step">
       <div class="how-num">03</div>
       <h3 data-i18n="how_step3_title">Sat</h3>
-      <p>Instagram, Trendyol veya kendi e-ticaret siten — artık gerçek bir bebek giyim markan var.</p>
+      <p data-i18n="how_step3_desc">Instagram, Trendyol veya kendi e-ticaret siten — artık gerçek bir bebek giyim markan var.</p>
     </div>
   </div>
 </section>
@@ -317,26 +318,26 @@ footer { background: #1a1a18; padding: 40px 8vw; display: flex; align-items: cen
   <div class="brandkit-inner">
     <div>
       <div class="section-tag">Brand Kit</div>
-      <div class="section-title">Ürünü senin<br><em>markanla çık.</em></div>
-      <p class="section-sub">Blank ürünü tamamen kendi markanıza dönüştürün.</p>
+      <div class="section-title"><span data-i18n="bk_title1">Ürünü senin</span><br><em data-i18n="bk_title2">markanla çık.</em></div>
+      <p class="section-sub" data-i18n="bk_sub">Blank ürünü tamamen kendi markanıza dönüştürün.</p>
       <div class="brandkit-items">
         <div class="bk-item">
           <div class="bk-icon">🏷️</div>
-          <div><h4>Ense Baskısı</h4><p>DTF tabaka ile marka adın ve logon ürünün iç boynuna basılır. Yıkamaya dayanıklı.</p></div>
+          <div><h4 data-i18n="bk_item1_title">Ense Baskısı</h4><p data-i18n="bk_item1_desc">DTF tabaka ile marka adın ve logon ürünün iç boynuna basılır. Yıkamaya dayanıklı.</p></div>
         </div>
         <div class="bk-item">
           <div class="bk-icon">📋</div>
-          <div><h4>Yıkama Talimatı Etiketi</h4><p>Profesyonel görünüm için markalı yıkama talimatı etiketi.</p></div>
+          <div><h4 data-i18n="bk_item2_title">Yıkama Talimatı Etiketi</h4><p data-i18n="bk_item2_desc">Profesyonel görünüm için markalı yıkama talimatı etiketi.</p></div>
         </div>
         <div class="bk-item">
           <div class="bk-icon">🎴</div>
-          <div><h4>Sallantı Kart & Ambalaj</h4><p>Ürün hikayeni anlatan sallantı kart ve baskılı ambalajla unboxing deneyimi.</p></div>
+          <div><h4 data-i18n="bk_item3_title">Sallantı Kart & Ambalaj</h4><p data-i18n="bk_item3_desc">Ürün hikayeni anlatan sallantı kart ve baskılı ambalajla unboxing deneyimi.</p></div>
         </div>
       </div>
     </div>
     <div class="bk-visual">
       <div class="bk-mockup">
-        <div class="bk-mockup-label">Örnek Brand Kit</div>
+        <div class="bk-mockup-label" data-i18n="bk_mockup_label">Örnek Brand Kit</div>
         <div class="bk-box">
           <div class="bk-box-inner">
             <div class="bk-box-brand">MARKA</div>
@@ -345,7 +346,7 @@ footer { background: #1a1a18; padding: 40px 8vw; display: flex; align-items: cen
           </div>
         </div>
         <div class="bk-tags">
-          <span class="bk-tag" style="background:var(--charcoal);color:var(--warm)">Ense Baskısı</span>
+          <span class="bk-tag" style="background:var(--charcoal);color:var(--warm)" data-i18n="bk_tag1">Ense Baskısı</span>
           <span class="bk-tag" style="background:var(--cream);color:var(--mid)">Etiket</span>
           <span class="bk-tag" style="background:var(--cream);color:var(--mid)">Kart</span>
           <span class="bk-tag" style="background:var(--cream);color:var(--mid)">Ambalaj</span>
@@ -358,13 +359,13 @@ footer { background: #1a1a18; padding: 40px 8vw; display: flex; align-items: cen
 <!-- PROOF -->
 <section class="proof">
   <div class="proof-head">
-    <div class="section-tag">Müşteri Hikayeleri</div>
-    <div class="section-title">500+ marka <em>Cambel ile</em> başladı</div>
+    <div class="section-tag" data-i18n="proof_tag">Müşteri Hikayeleri</div>
+    <div class="section-title"><span data-i18n="proof_title1">500+ marka</span> <em data-i18n="proof_title2">Cambel ile başladı</em></div>
   </div>
   <div class="reviews">
     <div class="review">
       <div class="review-stars">★★★★★</div>
-      <p class="review-text">"1 adet numune aldım, kaliteye hayran kaldım. Brand Kit ile ilk siparişimi 3 günde teslim ettim. Şu an ayda 200+ sipariş alıyorum."</p>
+      <p class="review-text"><span data-i18n="review1">"1 adet numune aldım, kaliteye hayran kaldım. Brand Kit ile ilk siparişimi 3 günde teslim ettim. Şu an ayda 200+ sipariş alıyorum."</span></p>
       <div class="review-author">
         <div class="review-av">AK</div>
         <div><div class="review-name">Ayşe K.</div><div class="review-role">@minik.bebek.butik · Instagram</div></div>
@@ -372,26 +373,26 @@ footer { background: #1a1a18; padding: 40px 8vw; display: flex; align-items: cen
     </div>
     <div class="review">
       <div class="review-stars">★★★★★</div>
-      <p class="review-text">"Cambel'in buybox ürünleriyle Trendyol'da ilk ayda öne çıktım. Sıfır yorum olmadan başlamak artık çok kolay."</p>
+      <p class="review-text"><span data-i18n="review2">"Cambel'in buybox ürünleriyle Trendyol'da ilk ayda öne çıktım. Sıfır yorum olmadan başlamak artık çok kolay."</span></p>
       <div class="review-author">
         <div class="review-av">MT</div>
-        <div><div class="review-name">Mert T.</div><div class="review-role">Trendyol Üst Satıcı</div></div>
+        <div><div class="review-name">Mert T.</div><div class="review-role" data-i18n="review2_role">Trendyol Üst Satıcı</div></div>
       </div>
     </div>
     <div class="review">
       <div class="review-stars">★★★★★</div>
-      <p class="review-text">"Kendi logomu ürünlerime basmak istiyordum. 10 adet aldım, kendi etiketimle çıktı. Şimdi gerçek bir markam var."</p>
+      <p class="review-text"><span data-i18n="review3">"Kendi logomu ürünlerime basmak istiyordum. 10 adet aldım, kendi etiketimle çıktı. Şimdi gerçek bir markam var."</span></p>
       <div class="review-author">
         <div class="review-av">SD</div>
-        <div><div class="review-name">Selin D.</div><div class="review-role">Little Drops Bebek Giyim</div></div>
+        <div><div class="review-name">Selin D.</div><div class="review-role" data-i18n="review3_role">Little Drops Bebek Giyim</div></div>
       </div>
     </div>
   </div>
   <div class="stats-row">
-    <div class="stat-cell"><div class="stat-big">500+</div><div class="stat-small">Aktif Marka Ortağı</div></div>
-    <div class="stat-cell"><div class="stat-big">48s</div><div class="stat-small">Kargo Süresi</div></div>
-    <div class="stat-cell"><div class="stat-big">%98</div><div class="stat-small">Memnuniyet</div></div>
-    <div class="stat-cell"><div class="stat-big">0</div><div class="stat-small">Min. Sipariş</div></div>
+    <div class="stat-cell"><div class="stat-big">500+</div><div class="stat-small" data-i18n="stat1">Aktif Marka Ortağı</div></div>
+    <div class="stat-cell"><div class="stat-big">48s</div><div class="stat-small" data-i18n="stat2">Kargo Süresi</div></div>
+    <div class="stat-cell"><div class="stat-big">%98</div><div class="stat-small" data-i18n="stat3">Memnuniyet</div></div>
+    <div class="stat-cell"><div class="stat-big">0</div><div class="stat-small" data-i18n="stat4">Min. Sipariş</div></div>
   </div>
 
   <!-- Sertifikalar & AB İhracat -->
@@ -399,8 +400,8 @@ footer { background: #1a1a18; padding: 40px 8vw; display: flex; align-items: cen
     <div style="background:var(--white);border-radius:16px;padding:28px;display:flex;align-items:flex-start;gap:16px">
       <div style="font-size:2rem;flex-shrink:0">🌿</div>
       <div>
-        <div style="font-weight:600;font-size:.95rem;color:var(--charcoal);margin-bottom:6px">OEKO-TEX & GOTS Sertifikalı</div>
-        <div style="font-size:.85rem;color:var(--mid);line-height:1.7">Tüm ürünlerimiz OEKO-TEX Standard 100 ve GOTS (Global Organic Textile Standard) sertifikalarına sahip, insan sağlığına ve çevreye duyarlı organik pamuktan üretilmektedir.</div>
+        <div style="font-weight:600;font-size:.95rem;color:var(--charcoal);margin-bottom:6px" data-i18n="cert_title">OEKO-TEX & GOTS Sertifikalı</div>
+        <div style="font-size:.85rem;color:var(--mid);line-height:1.7" data-i18n="cert_desc">Tüm ürünlerimiz OEKO-TEX Standard 100 ve GOTS (Global Organic Textile Standard) sertifikalarına sahip, insan sağlığına ve çevreye duyarlı organik pamuktan üretilmektedir.</div>
         <div style="display:flex;gap:8px;margin-top:12px">
           <span style="background:#EAF5EF;color:#2D7A50;padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:600;border:1px solid #2D7A50">✓ OEKO-TEX</span>
           <span style="background:#EAF5EF;color:#2D7A50;padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:600;border:1px solid #2D7A50">✓ GOTS</span>
@@ -410,9 +411,9 @@ footer { background: #1a1a18; padding: 40px 8vw; display: flex; align-items: cen
     <div style="background:var(--white);border-radius:16px;padding:28px;display:flex;align-items:flex-start;gap:16px">
       <div style="font-size:2rem;flex-shrink:0">🇪🇺</div>
       <div>
-        <div style="font-weight:600;font-size:.95rem;color:var(--charcoal);margin-bottom:6px">Avrupa Birliği'ne İhracat</div>
-        <div style="font-size:.85rem;color:var(--mid);line-height:1.7">Almanya, Fransa, Hollanda, Belçika, Avusturya, İsviçre başta olmak üzere tüm AB ülkelerine ihracat yapıyoruz. Uluslararası kargo ve gümrük süreçlerinde tam destek sağlıyoruz.</div>
-        <div style="font-size:.78rem;color:var(--accent);margin-top:10px;font-weight:500">WhatsApp'tan ihracat bilgisi alın →</div>
+        <div style="font-weight:600;font-size:.95rem;color:var(--charcoal);margin-bottom:6px" data-i18n="eu_title">Avrupa Birliği'ne İhracat</div>
+        <div style="font-size:.85rem;color:var(--mid);line-height:1.7" data-i18n="eu_desc">Almanya, Fransa, Hollanda, Belçika, Avusturya, İsviçre başta olmak üzere tüm AB ülkelerine ihracat yapıyoruz. Uluslararası kargo ve gümrük süreçlerinde tam destek sağlıyoruz.</div>
+        <div style="font-size:.78rem;color:var(--accent);margin-top:10px;font-weight:500" data-i18n="eu_cta">WhatsApp'tan ihracat bilgisi alın →</div>
       </div>
     </div>
   </div>
@@ -435,28 +436,27 @@ footer { background: #1a1a18; padding: 40px 8vw; display: flex; align-items: cen
 <footer>
   <div class="footer-logo">Cambel<span>.</span></div>
   <div class="footer-links">
-    <a href="shop.html">Mağaza</a>
+    <a href="shop.html" data-i18n="nav_shop">Mağaza</a>
     <a href="account.html">Hesabım</a>
     <a href="#brandkit">Brand Kit</a>
-    <a href="#nasil">Nasıl Çalışır</a>
+    <a href="#nasil" data-i18n="nav_how">Nasıl Çalışır</a>
   </div>
   <div class="footer-links" style="margin-top:8px">
-    <a href="uyelik-sozlesmesi.html">Üyelik Sözleşmesi</a>
-    <a href="gizlilik-politikasi.html">Gizlilik & KVKK</a>
-    <a href="cerez-politikasi.html">Çerez Politikası</a>
-    <a href="mesafeli-satis-sozlesmesi.html">Mesafeli Satış</a>
-    <a href="iptal-iade.html">İptal & İade</a>
-          <a href="kargo-teslimat.html">Kargo & Teslimat</a>
-          <a href="yasal-bildirim.html">Yasal Bildirim</a>
+    <a href="uyelik-sozlesmesi.html" data-i18n="footer_contract">Üyelik Sözleşmesi</a>
+    <a href="gizlilik-politikasi.html" data-i18n="footer_privacy">Gizlilik & KVKK</a>
+    <a href="cerez-politikasi.html" data-i18n="footer_cookie">Çerez Politikası</a>
+    <a href="mesafeli-satis-sozlesmesi.html" data-i18n="footer_distance">Mesafeli Satış</a>
+    <a href="iptal-iade.html" data-i18n="footer_return">İptal & İade</a>
+          <a href="kargo-teslimat.html" data-i18n="footer_shipping">Kargo & Teslimat</a>
+          <a href="yasal-bildirim.html" data-i18n="footer_legal">Yasal Bildirim</a>
   </div>
-  <div class="footer-copy">© 2026 Cambel Tekstil · Bursa</div>
+  <div class="footer-copy" data-i18n="footer_copy">© 2026 Cambel Tekstil · Bursa</div>
 </footer>
 
 <a href="https://wa.me/905000000000" class="wa-float wa-link" target="_blank">
   <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.133 1.535 5.875L.057 23.547a.5.5 0 0 0 .609.613l5.842-1.528A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.898 0-3.668-.524-5.178-1.432l-.37-.22-3.837 1.004 1.023-3.736-.24-.385A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
 </a>
 
-<script src="lang.js"></script>
 <script type="module">
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getFirestore, getDocs, getDoc, doc, collection, query, where, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
