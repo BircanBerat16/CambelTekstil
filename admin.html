@@ -690,6 +690,11 @@ select.filter-select{
         </select>
       </div>
       <div class="form-group-m">
+        <label class="form-label-m">Tedarikçi Alış Fiyatı (₺)</label>
+        <input type="number" class="form-input-m" id="pPurchasePrice" placeholder="Tedarikçiye ödenecek birim fiyat">
+        <div class="form-hint">Bu fiyat tedarikçi panelinde görünür, müşterilere gösterilmez</div>
+      </div>
+      <div class="form-group-m">
         <label class="form-label-m">Trendyol Buybox Avantajı</label>
         <select class="form-input-m" id="pBuybox">
           <option value="false">Yok</option>
@@ -1486,6 +1491,7 @@ window.openAddProduct = (fromImport) => {
   ['pName','pPrice','pSalePrice','pStock','pSku','pSizes','pColors','pDesc','pMaterial','pVideo'].forEach(id => document.getElementById(id).value = '');
   ['pOekoTex','pGots','pDropshipping'].forEach(id => document.getElementById(id).value = 'false');
   document.getElementById('pSupplier').value = '';
+  document.getElementById('pPurchasePrice').value = '';
   document.getElementById('variantGridWrap').style.display = 'none';
   document.getElementById('simpleStockWrap').style.display = 'block';
   document.getElementById('variantGrid').innerHTML = '';
@@ -1659,6 +1665,7 @@ window.saveProduct = async () => {
     gots: document.getElementById('pGots').value === 'true',
     dropshipping: document.getElementById('pDropshipping').value === 'true',
     supplierId: document.getElementById('pSupplier').value || '',
+    purchasePrice: parseFloat(document.getElementById('pPurchasePrice').value)||0,
     saleType: document.getElementById('pSaleType').value,
     serialSizes: document.getElementById('pSaleType').value === 'serial'
       ? document.getElementById('pSerialSizes').value.split(',').map(s=>s.trim()).filter(Boolean)
