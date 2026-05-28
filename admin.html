@@ -516,12 +516,10 @@ select.filter-select{
       </div>
       <div class="form-row">
         <div class="form-group-m">
-          <label class="form-label-m">Kategori *</label>
-          <select class="form-input-m" id="pCategory" onchange="loadSubcats()"></select>
-        </div>
-        <div class="form-group-m">
-          <label class="form-label-m">Alt Kategori</label>
-          <select class="form-input-m" id="pSubcategory"></select>
+          <label class="form-label-m">Kategoriler * <span style="font-size:.72rem;color:var(--mid)">(birden fazla seçilebilir)</span></label>
+          <div id="pCategoryList" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;min-height:44px"></div>
+          <input type="hidden" id="pCategory">
+          <input type="hidden" id="pSubcategory">
         </div>
       </div>
       <div id="singleFields">
@@ -1715,24 +1713,50 @@ window.openEditProduct = async (id) => {
   document.getElementById('imgPreviews').innerHTML = pendingImages.map((im,i) =>
     `<div class="img-preview-item"><img src="${im.url}"><button class="img-preview-del" onclick="removeImg(${i})">✕</button></div>`
   ).join('');
-  populateCategorySelects(p.category, p.subcategory);
+  populateCategorySelects(p.categories || (p.category ? [p.category] : []), p.subcategory);
   openModal('productModal');
 };
 
 function populateCategorySelects(selectedCat, selectedSub) {
-  const catSel = document.getElementById('pCategory');
-  catSel.innerHTML = '<option value="">Kategori seç</option>' +
-    allCategories.map(c=>`<option value="${c.id}" ${c.id===selectedCat?'selected':''}>${c.name}</option>`).join('');
-  loadSubcats(selectedSub);
+  // Seçili kategorileri array olarak al
+  let selectedCats = [];
+  if (Array.isArray(selectedCat)) selectedCats = selectedCat;
+  else if (selectedCat) selectedCats = [selectedCat];
+
+  const list = document.getElementById('pCategoryList');
+  if (!list) return;
+
+  list.innerHTML = allCategories.map(c => `
+    <label style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:${selectedCats.includes(c.id)?'var(--accent)':'var(--surface)'};color:${selectedCats.includes(c.id)?'#fff':'var(--text)'};border-radius:20px;cursor:pointer;font-size:.8rem;border:1px solid ${selectedCats.includes(c.id)?'var(--accent)':'var(--border)'};transition:all .15s">
+      <input type="checkbox" value="${c.id}" ${selectedCats.includes(c.id)?'checked':''} style="display:none" onchange="toggleCategoryChip(this)">
+      ${c.name}
+    </label>`).join('');
+
+  // İlk seçili kategoriyi hidden input'a yaz (eski uyumluluk için)
+  document.getElementById('pCategory').value = selectedCats[0]||'';
 }
 
-window.loadSubcats = (selectedSub) => {
-  const catId = document.getElementById('pCategory').value;
-  const cat = allCategories.find(c=>c.id===catId);
-  const sel = document.getElementById('pSubcategory');
-  sel.innerHTML = '<option value="">Alt kategori seç</option>' +
-    (cat ? (cat.subcategories||[]).map(s=>`<option value="${s.id}" ${s.id===selectedSub?'selected':''}>${s.name}</option>`).join('') : '');
+window.toggleCategoryChip = (checkbox) => {
+  const label = checkbox.parentElement;
+  if (checkbox.checked) {
+    label.style.background = 'var(--accent)';
+    label.style.color = '#fff';
+    label.style.borderColor = 'var(--accent)';
+  } else {
+    label.style.background = 'var(--surface)';
+    label.style.color = 'var(--text)';
+    label.style.borderColor = 'var(--border)';
+  }
+  // Seçili kategorileri hidden input'a yaz
+  const selected = [...document.querySelectorAll('#pCategoryList input[type=checkbox]:checked')].map(c=>c.value);
+  document.getElementById('pCategory').value = selected[0]||'';
 };
+
+window.getSelectedCategories = () => {
+  return [...document.querySelectorAll('#pCategoryList input[type=checkbox]:checked')].map(c=>c.value);
+};
+
+window.loadSubcats = () => {}; // Artık kullanılmıyor
 
 window.saveProduct = async () => {
   const id = document.getElementById('editProductId').value;
@@ -1780,7 +1804,8 @@ window.saveProduct = async () => {
     variantStock: getVariantStock() || null,
     variantSkus: getVariantSkus() || null,
     sku: document.getElementById('pSku').value.trim(),
-    category: document.getElementById('pCategory').value,
+    category: getSelectedCategories()[0]||'',
+    categories: getSelectedCategories(),
     subcategory: document.getElementById('pSubcategory').value,
     sizes: document.getElementById('pSizes').value.split(',').map(s=>s.trim()).filter(Boolean),
     colors: document.getElementById('pColors').value.split(',').map(s=>s.trim()).filter(Boolean),
