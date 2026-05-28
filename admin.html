@@ -1150,6 +1150,12 @@ async function renderDashboard() {
 // ── PRODUCTS ──
 async function renderProducts() {
   const prods = await loadProducts();
+  // Tedarikçileri yükle ve dropdown'ı doldur
+  try {
+    const supSnap = await getDocs(collection(db,'suppliers'));
+    const suppliers = supSnap.docs.map(d=>({id:d.id,...d.data()}));
+    loadSupplierSelect(suppliers);
+  } catch(e) {}
   const c = document.getElementById('pageContent');
   c.innerHTML = `
     <div class="filter-bar">
