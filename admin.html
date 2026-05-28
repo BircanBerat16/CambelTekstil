@@ -2423,8 +2423,17 @@ async function loadAnalytics() {
 
     // Realtime Database — anlık ziyaretçi
     try {
+      const { initializeApp: initApp, getApps: gApps } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
       const { getDatabase, ref, onValue } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
-      const rtdb = getDatabase(app);
+      const rtdbConfig = {
+        apiKey: "AIzaSyCVi-UpOi31bMBC01NBgqloPWU5BdyABYI",
+        authDomain: "cambel-tekstil.firebaseapp.com",
+        projectId: "cambel-tekstil",
+        databaseURL: "https://cambel-tekstil-default-rtdb.europe-west1.firebasedatabase.app"
+      };
+      // Farklı isimle app oluştur
+      const rtdbApp = gApps().find(a=>a.name==='rtdb') || initApp(rtdbConfig, 'rtdb');
+      const rtdb = getDatabase(rtdbApp);
       const onlineRef = ref(rtdb, 'online');
       onValue(onlineRef, (snapshot) => {
         const data = snapshot.val() || {};
