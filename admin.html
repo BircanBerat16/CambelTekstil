@@ -1970,6 +1970,10 @@ async function renderOrders() {
   const ords = await loadOrders();
   const c = document.getElementById('pageContent');
   c.innerHTML = `
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div></div>
+      <button class="btn btn-dark" onclick="openManualOrder()">+ Manuel Sipariş Oluştur</button>
+    </div>
     <div class="filter-bar">
       <input type="text" class="search-input" placeholder="Sipariş ara..." oninput="filterOrders(this.value)">
       <select class="filter-select" onchange="filterOrdersByStatus(this.value)">
@@ -3310,6 +3314,191 @@ async function renderReports() {
       </div>
     </div>`;
 }
+
+// ── MANUEL SİPARİŞ ──
+let manualOrderItems = [];
+
+window.openManualOrder = async () => {
+  manualOrderItems = [];
+  const [prodSnap, memberSnap] = await Promise.all([
+    getDocs(collection(db,'products')),
+    getDocs(collection(db,'users'))
+  ]);
+  const products = prodSnap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.status==='active');
+  const members = memberSnap.docs.map(d=>({id:d.id,...d.data()}));
+  window._manualOrderMembers = members;
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay open';
+  modal.id = 'manualOrderModal';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:680px">
+      <div class="modal-header">
+        <div class="modal-title">Manuel Sipariş Oluştur</div>
+        <button class="modal-close" onclick="document.getElementById('manualOrderModal').remove()">✕</button>
+      </div>
+      <div class="modal-body" style="display:grid;gap:16px">
+        <!-- Kayıtlı üye seç -->
+        <div>
+          <label class="form-label-m">Kayıtlı Üyeden Seç (opsiyonel)</label>
+          <select class="form-input-m" id="mo_member" onchange="fillMemberInfo()">
+            <option value="">— Manuel Giriş —</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div><label class="form-label-m">Ad *</label><input class="form-input-m" id="mo_name" placeholder="Ad"></div>
+          <div><label class="form-label-m">Soyad *</label><input class="form-input-m" id="mo_surname" placeholder="Soyad"></div>
+          <div><label class="form-label-m">E-posta</label><input class="form-input-m" id="mo_email" placeholder="email@ornek.com"></div>
+          <div><label class="form-label-m">Telefon</label><input class="form-input-m" id="mo_phone" placeholder="05XX XXX XX XX"></div>
+        </div>
+        <div><label class="form-label-m">Teslimat Adresi *</label><textarea class="form-input-m" id="mo_address" placeholder="Adres, şehir, ilçe..." style="height:60px"></textarea></div>
+        <div><label class="form-label-m">Not</label><input class="form-input-m" id="mo_note" placeholder="Sipariş notu..."></div>
+
+        <div style="border-top:1px solid var(--border);padding-top:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:.82rem;font-weight:500">Ürünler</div>
+          </div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;margin-bottom:8px">
+            <select class="form-input-m" id="mo_product">
+              <option value="">Ürün seç...</option>
+              ${products.map(p=>`<option value="${p.id}" data-price="${p.salePrice||p.price||0}" data-name="${p.name}">${p.name} — ₺${p.salePrice||p.price||0}</option>`).join('')}
+            </select>
+            <input class="form-input-m" id="mo_size" placeholder="Beden">
+            <input class="form-input-m" id="mo_qty" type="number" value="1" min="1" placeholder="Adet">
+            <button class="btn btn-dark btn-sm" onclick="addManualOrderItem()">Ekle</button>
+          </div>
+          <div id="mo_items" style="display:grid;gap:6px"></div>
+        </div>
+
+        <div style="border-top:1px solid var(--border);padding-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div><label class="form-label-m">Ödeme Durumu</label>
+            <select class="form-input-m" id="mo_payment">
+              <option value="pending">Ödeme Bekleniyor</option>
+              <option value="paid">Ödeme Alındı</option>
+            </select>
+          </div>
+          <div><label class="form-label-m">Sipariş Durumu</label>
+            <select class="form-input-m" id="mo_status">
+              <option value="pending">Bekliyor</option>
+              <option value="confirmed">Onaylandı</option>
+              <option value="preparing">Hazırlanıyor</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:.85rem;color:var(--mid)">Toplam</span>
+          <span style="font-size:1.2rem;font-weight:600" id="mo_total">₺0</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="document.getElementById('manualOrderModal').remove()">İptal</button>
+        <button class="btn btn-dark" onclick="saveManualOrder()">✅ Siparişi Oluştur</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  // Üye listesini doldur
+  const memberSel = document.getElementById('mo_member');
+  if (memberSel) {
+    members.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = (m.name||m.brandName||'-') + ' — ' + (m.email||'');
+      memberSel.appendChild(opt);
+    });
+  }
+};
+
+window.fillMemberInfo = () => {
+  const sel = document.getElementById('mo_member');
+  const memberId = sel.value;
+  if (!memberId) return;
+  const member = window._manualOrderMembers?.find(m=>m.id===memberId);
+  if (!member) return;
+  const nameParts = (member.name||'').split(' ');
+  document.getElementById('mo_name').value = nameParts[0]||'';
+  document.getElementById('mo_surname').value = nameParts.slice(1).join(' ')||'';
+  document.getElementById('mo_email').value = member.email||'';
+  document.getElementById('mo_phone').value = member.phone||'';
+};
+
+window.addManualOrderItem = () => {
+  const sel = document.getElementById('mo_product');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt?.value) return;
+  const name = opt.getAttribute('data-name');
+  const price = parseFloat(opt.getAttribute('data-price'))||0;
+  const size = document.getElementById('mo_size').value.trim();
+  const qty = parseInt(document.getElementById('mo_qty').value)||1;
+  manualOrderItems.push({name, price, size, qty, image:''});
+  renderManualOrderItems();
+  sel.value = '';
+  document.getElementById('mo_size').value = '';
+  document.getElementById('mo_qty').value = 1;
+};
+
+function renderManualOrderItems() {
+  const container = document.getElementById('mo_items');
+  if (!container) return;
+  container.innerHTML = manualOrderItems.map((item, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:8px">
+      <div>
+        <div style="font-size:.85rem;font-weight:500">${item.name}</div>
+        <div style="font-size:.75rem;color:var(--mid)">${item.size||''} · ${item.qty} adet · ₺${item.price}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-weight:500">₺${(item.price*item.qty).toLocaleString('tr-TR',{maximumFractionDigits:0})}</span>
+        <button onclick="removeManualItem(${i})" style="background:none;border:none;cursor:pointer;color:var(--red)">🗑️</button>
+      </div>
+    </div>`).join('');
+  const total = manualOrderItems.reduce((s,i)=>s+i.price*i.qty, 0);
+  const totalEl = document.getElementById('mo_total');
+  if (totalEl) totalEl.textContent = '₺' + total.toLocaleString('tr-TR',{maximumFractionDigits:0});
+}
+
+window.removeManualItem = (idx) => {
+  manualOrderItems.splice(idx, 1);
+  renderManualOrderItems();
+};
+
+window.saveManualOrder = async () => {
+  const name = document.getElementById('mo_name').value.trim();
+  const surname = document.getElementById('mo_surname').value.trim();
+  const email = document.getElementById('mo_email').value.trim();
+  const phone = document.getElementById('mo_phone').value.trim();
+  const address = document.getElementById('mo_address').value.trim();
+  const note = document.getElementById('mo_note').value.trim();
+  const paymentStatus = document.getElementById('mo_payment').value;
+  const status = document.getElementById('mo_status').value;
+
+  if (!name||!surname||!address) { showToast('Ad, soyad ve adres zorunlu','error'); return; }
+  if (!manualOrderItems.length) { showToast('En az 1 ürün ekleyin','error'); return; }
+
+  const subtotal = manualOrderItems.reduce((s,i)=>s+i.price*i.qty, 0);
+  const orderNo = 'MNL' + Date.now().toString().slice(-6);
+
+  await addDoc(collection(db,'orders'), {
+    orderNo,
+    customerName: name + ' ' + surname,
+    customerEmail: email,
+    customerPhone: phone,
+    shippingAddress: address,
+    note,
+    items: manualOrderItems,
+    subtotal,
+    vatTotal: 0,
+    total: subtotal,
+    status,
+    paymentStatus,
+    source: 'manual',
+    createdAt: serverTimestamp()
+  });
+
+  document.getElementById('manualOrderModal').remove();
+  showToast('Sipariş oluşturuldu ✓','success');
+  renderOrders();
+};
 
 async function renderSuppliers() {
   const snap = await getDocs(collection(db,'suppliers'));
