@@ -1137,6 +1137,12 @@ async function renderDashboard() {
         <div class="stat-card-sub" id="visitorSub">Vercel Analytics</div>
         <div class="stat-card-icon">👁️</div>
       </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Anlık Ziyaretçi</div>
+        <div class="stat-card-num" id="onlineCount" style="color:#5CBA8A">—</div>
+        <div class="stat-card-sub" id="onlineSub">Şu an sitede</div>
+        <div class="stat-card-icon" style="font-size:1.2rem">🟢</div>
+      </div>
     </div>
 
     <!-- HEDEFLER -->
@@ -2372,6 +2378,7 @@ setTimeout(() => { loadAnalytics(); }, 500);
 
 async function loadAnalytics() {
   try {
+    // Firestore analytics
     const today = new Date().toISOString().split('T')[0];
     const el = document.getElementById('analyticsDate');
     if (el) el.textContent = new Date().toLocaleDateString('tr-TR', {day:'numeric',month:'long',year:'numeric'});
@@ -2412,6 +2419,29 @@ async function loadAnalytics() {
           <div style="font-size:.82rem;font-weight:500;color:var(--text);width:30px;text-align:right">${count}</div>
         </div>`).join('');
     }
+
+    // Realtime Database — anlık ziyaretçi
+    try {
+      const { getDatabase, ref, onValue } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+      const rtdb = getDatabase();
+      const onlineRef = ref(rtdb, 'online');
+      onValue(onlineRef, (snapshot) => {
+        const data = snapshot.val() || {};
+        const count = Object.keys(data).length;
+        const onlineEl = document.getElementById('onlineCount');
+        const onlineSubEl = document.getElementById('onlineSub');
+        if (onlineEl) onlineEl.textContent = count;
+        if (onlineSubEl) {
+          const pages = Object.values(data).reduce((acc, v) => {
+            acc[v.page] = (acc[v.page]||0) + 1;
+            return acc;
+          }, {});
+          const pageStr = Object.entries(pages).map(([p,n])=>`${p}(${n})`).join(', ');
+          onlineSubEl.textContent = count > 0 ? pageStr : 'Şu an sitede yok';
+        }
+      });
+    } catch(e) { console.log('RTDB error:', e); }
+
   } catch(e) { console.log('Analytics error:',e); }
 }
 
