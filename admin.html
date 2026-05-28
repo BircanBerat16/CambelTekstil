@@ -461,7 +461,7 @@ select.filter-select{
     <div class="nav-section">Üyeler</div>
     <div class="nav-item" onclick="showPage('members',this)"><span class="icon">👥</span> Üyeler</div>
     <div class="nav-section">Pazarlama</div>
-    <div class="nav-item" onclick="showPage('marketing',this)"><span class="icon">📣</span> Meta Kreatifler</div>
+    <div class="nav-item" onclick="showPage('marketing',this)"><span class="icon">📣</span> Pazarlama</div>
     <div class="nav-section">Analiz</div>
     <div class="nav-item" onclick="showPage('goals',this)"><span class="icon">🎯</span> Hedefler</div>
     <div class="nav-item" onclick="showPage('reports',this)"><span class="icon">📈</span> Raporlar</div>
@@ -1042,7 +1042,7 @@ window.showPage = (page, el) => {
   // URL hash'i güncelle
   window.location.hash = page;
   const titles = {dashboard:'Dashboard',products:'Ürünler',categories:'Kategoriler',
-    orders:'Siparişler',members:'Üye Listesi',marketing:'Meta Kreatifler',bundles:'Bundle Fiyatları',campaigns:'Kampanyalar',
+    orders:'Siparişler',members:'Üye Listesi',marketing:'Pazarlama Araçları',bundles:'Bundle Fiyatları',campaigns:'Kampanyalar',
     brandkit:'Brand Kit Ayarları',settings:'Ayarlar'};
   document.getElementById('pageTitle').textContent = titles[page] || page;
   const c = document.getElementById('pageContent');
@@ -2562,185 +2562,198 @@ window.removeVideo = () => {
 };
 
 async function renderMarketing() {
+  const memberSnap = await getDocs(collection(db,'users'));
+  const members = memberSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const orderSnap = await getDocs(collection(db,'orders'));
+  const orders = orderSnap.docs.map(d=>({id:d.id,...d.data()}));
+
+  // Segment hesapla
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now - 30*24*60*60*1000);
+  const ninetyDaysAgo = new Date(now - 90*24*60*60*1000);
+
+  const memberEmails = new Set(members.map(m=>m.email).filter(Boolean));
+  const recentBuyers = new Set();
+  const allBuyers = new Set();
+  orders.forEach(o => {
+    if (!o.customerEmail) return;
+    allBuyers.add(o.customerEmail);
+    const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null;
+    if (d && d > thirtyDaysAgo) recentBuyers.add(o.customerEmail);
+  });
+  const neverBought = members.filter(m=>m.email && !allBuyers.has(m.email));
+  const passiveMembers = members.filter(m=>m.email && allBuyers.has(m.email) && !recentBuyers.has(m.email));
+
+  const segments = {
+    all: { label: 'Tüm Üyeler', emails: members.map(m=>m.email).filter(Boolean), color:'#4A6FA5' },
+    never: { label: 'Hiç Sipariş Vermeyenler', emails: neverBought.map(m=>m.email), color:'#8B7355' },
+    passive: { label: 'Pasif Müşteriler (30+ gün)', emails: passiveMembers.map(m=>m.email), color:'#C0392B' },
+    recent: { label: 'Son 30 Günde Siparişverenler', emails: [...recentBuyers], color:'#3D6B4F' },
+  };
+
   const c = document.getElementById('pageContent');
   c.innerHTML = `
+    <div class="page-header">
+      <h1 class="page-title">Pazarlama Araçları</h1>
+    </div>
+
+    <!-- Toplu E-posta -->
     <div class="panel">
-      <div class="panel-header">
+      <div class="panel-header"><div class="panel-title">📧 Toplu E-posta Gönder</div></div>
+      <div class="panel-body" style="padding:20px;display:grid;gap:16px">
+
+        <!-- Segment Seç -->
         <div>
-          <div class="panel-title">Meta Reklam Kreatifler</div>
-          <div style="font-size:.78rem;color:var(--mid);margin-top:2px">Mevcut ürünlerinize göre her hafta yeni kreatif üretin</div>
-        </div>
-      </div>
-      <div class="panel-body">
-        <!-- Kitle Seçimi -->
-        <div style="margin-bottom:20px">
           <label class="form-label-m">Hedef Kitle</label>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-            <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);border-radius:50px;cursor:pointer;font-size:.82rem;transition:all .2s">
-              <input type="checkbox" id="kitle-butik" checked> Instagram Butik Sahipleri
-            </label>
-            <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);border-radius:50px;cursor:pointer;font-size:.82rem;transition:all .2s">
-              <input type="checkbox" id="kitle-trendyol" checked> Trendyol Satıcıları
-            </label>
-            <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);border-radius:50px;cursor:pointer;font-size:.82rem;transition:all .2s">
-              <input type="checkbox" id="kitle-girisimci" checked> Marka Kurmak İsteyenler
-            </label>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px">
+            ${Object.entries(segments).map(([key,seg])=>`
+              <label style="display:flex;align-items:center;gap:8px;padding:12px;background:var(--surface2);border-radius:8px;cursor:pointer;border:2px solid transparent" id="seg_label_${key}">
+                <input type="radio" name="emailSegment" value="${key}" onchange="selectSegment('${key}')" ${key==='all'?'checked':''} style="accent-color:${seg.color}">
+                <div>
+                  <div style="font-size:.82rem;font-weight:500">${seg.label}</div>
+                  <div style="font-size:.72rem;color:var(--mid)">${seg.emails.length} kişi</div>
+                </div>
+              </label>`).join('')}
           </div>
-        </div>
-        <!-- Format Seçimi -->
-        <div style="margin-bottom:20px">
-          <label class="form-label-m">Format</label>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-            <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);border-radius:50px;cursor:pointer;font-size:.82rem">
-              <input type="checkbox" id="fmt-feed" checked> Instagram Feed (1:1)
-            </label>
-            <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);border-radius:50px;cursor:pointer;font-size:.82rem">
-              <input type="checkbox" id="fmt-story" checked> Story/Reels (9:16)
-            </label>
-            <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);border-radius:50px;cursor:pointer;font-size:.82rem">
-              <input type="checkbox" id="fmt-facebook"> Facebook Feed
-            </label>
-          </div>
-        </div>
-        <!-- Özel Not -->
-        <div style="margin-bottom:20px">
-          <label class="form-label-m">Bu Haftanın Odak Noktası (opsiyonel)</label>
-          <input type="text" class="form-input-m" id="mktFocus" placeholder="Örn: Anneler Günü kampanyası, Yeni müslin koleksiyonu, Bayram indirimi...">
         </div>
 
-        <div style="margin-bottom:16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px">
-          <label class="form-label-m">Claude API Key</label>
-          <input type="password" class="form-input-m" id="claudeApiKey" placeholder="sk-ant-..." style="margin-top:6px;font-family:monospace">
-          <div class="form-hint">Tarayıcında saklanır · <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">Buradan al →</a></div>
+        <!-- E-posta İçeriği -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label class="form-label-m">Konu *</label>
+            <input class="form-input-m" id="email_subject" placeholder="Örn: Yeni sezon ürünlerimiz geldi!">
+          </div>
+          <div>
+            <label class="form-label-m">Gönderen Adı</label>
+            <input class="form-input-m" id="email_from_name" value="Cambel Tekstil" placeholder="Cambel Tekstil">
+          </div>
         </div>
-        <button class="btn btn-green" onclick="generateCreatives()" id="generateBtn" style="min-width:200px">
-          ✨ Bu Haftanın Kreatiflerini Üret
-        </button>
-        <div id="mktResult" style="margin-top:24px"></div>
+        <div>
+          <label class="form-label-m">E-posta İçeriği *</label>
+          <textarea class="form-input-m" id="email_body" style="height:160px;font-family:monospace" placeholder="Merhaba {isim},
+
+Yeni ürünlerimizi keşfetmek için tıklayın...
+
+Cambel Tekstil Ekibi"></textarea>
+          <div style="font-size:.72rem;color:var(--mid);margin-top:4px">💡 {isim} yazarsanız üye adı otomatik eklenir</div>
+        </div>
+
+        <!-- Alıcı Listesi Önizleme -->
+        <div id="recipientPreview" style="background:var(--surface2);border-radius:8px;padding:12px">
+          <div style="font-size:.78rem;color:var(--mid);margin-bottom:6px">Alıcılar (${members.length} üye)</div>
+          <div style="font-size:.82rem;color:var(--text);word-break:break-all;max-height:60px;overflow:hidden">${members.map(m=>m.email).filter(Boolean).slice(0,10).join(', ')}${members.length>10?'...':''}</div>
+        </div>
+
+        <!-- Gönder -->
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="btn btn-dark" onclick="sendBulkEmail()" id="sendEmailBtn">📤 E-posta Gönder</button>
+          <button class="btn btn-outline" onclick="previewEmail()">👁️ Önizle</button>
+          <div id="emailStatus" style="font-size:.82rem;color:var(--mid)"></div>
+        </div>
       </div>
+    </div>
+
+    <!-- Gönderim Geçmişi -->
+    <div class="panel" style="margin-top:16px">
+      <div class="panel-header"><div class="panel-title">📨 Gönderim Geçmişi</div></div>
+      <div id="emailHistory" class="panel-body" style="padding:20px;color:var(--mid);font-size:.85rem">Yükleniyor...</div>
     </div>`;
-  // localStorage'dan key'i yükle
-  const savedKey = localStorage.getItem('claude_key');
-  if (savedKey) {
-    const keyInput = document.getElementById('claudeApiKey');
-    if (keyInput) keyInput.value = savedKey;
-  }
+
+  // Segment değişkeni global kaydet
+  window._emailSegments = segments;
+  selectSegment('all');
+  loadEmailHistory();
 }
 
-window.generateCreatives = async () => {
-  const btn = document.getElementById('generateBtn');
-  const result = document.getElementById('mktResult');
+window.selectSegment = (key) => {
+  const segs = window._emailSegments;
+  if (!segs) return;
+  Object.keys(segs).forEach(k => {
+    const lbl = document.getElementById('seg_label_'+k);
+    if (lbl) lbl.style.borderColor = k===key ? segs[k].color : 'transparent';
+  });
+  const seg = segs[key];
+  const preview = document.getElementById('recipientPreview');
+  if (preview && seg) {
+    preview.innerHTML = `
+      <div style="font-size:.78rem;color:var(--mid);margin-bottom:6px">${seg.label} — ${seg.emails.length} kişi</div>
+      <div style="font-size:.82rem;color:var(--text);word-break:break-all;max-height:60px;overflow:hidden">${seg.emails.slice(0,10).join(', ')}${seg.emails.length>10?'...':''}</div>`;
+  }
+};
+
+window.previewEmail = () => {
+  const subject = document.getElementById('email_subject').value;
+  const body = document.getElementById('email_body').value;
+  if (!subject || !body) { showToast('Konu ve içerik giriniz','error'); return; }
+  const win = window.open('','_blank');
+  win.document.write(`<h2>${subject}</h2><pre style="font-family:sans-serif;white-space:pre-wrap">${body.replace('{isim}','Değerli Müşterimiz')}</pre>`);
+};
+
+window.sendBulkEmail = async () => {
+  const subject = document.getElementById('email_subject').value.trim();
+  const body = document.getElementById('email_body').value.trim();
+  const fromName = document.getElementById('email_from_name').value.trim() || 'Cambel Tekstil';
+  const segKey = document.querySelector('input[name="emailSegment"]:checked')?.value || 'all';
+  const emails = window._emailSegments?.[segKey]?.emails || [];
+  const segLabel = window._emailSegments?.[segKey]?.label || '';
+
+  if (!subject) { showToast('Konu boş olamaz','error'); return; }
+  if (!body) { showToast('İçerik boş olamaz','error'); return; }
+  if (!emails.length) { showToast('Alıcı bulunamadı','error'); return; }
+
+  if (!confirm(`${emails.length} kişiye e-posta gönderilecek. Onaylıyor musunuz?`)) return;
+
+  const btn = document.getElementById('sendEmailBtn');
+  const status = document.getElementById('emailStatus');
   btn.disabled = true;
-  btn.textContent = '⏳ Kreatifler üretiliyor...';
-
-  // Mevcut ürünleri çek
-  const snap = await getDocs(collection(db, 'products'));
-  const products = snap.docs.map(d=>({...d.data()}))
-    .filter(p => p.status === 'active')
-    .slice(0, 10)
-    .map(p => '- '+p.name+': ₺'+(p.salePrice||p.price)+' '+(p.buybox?'(Trendyol Buybox)':'')+' '+(p.saleType==='serial'?'('+setliSuffix((p.serialSizes||[]).length)+' Set)':''))
-    .join('\n');
-
-  const kitles = [];
-  if (document.getElementById('kitle-butik')?.checked) kitles.push('Instagram butik sahipleri');
-  if (document.getElementById('kitle-trendyol')?.checked) kitles.push('Trendyol satıcıları');
-  if (document.getElementById('kitle-girisimci')?.checked) kitles.push('kendi markasını kurmak isteyen girişimciler');
-
-  const formats = [];
-  if (document.getElementById('fmt-feed')?.checked) formats.push('Instagram Feed (kare 1:1)');
-  if (document.getElementById('fmt-story')?.checked) formats.push('Instagram Story/Reels (9:16)');
-  if (document.getElementById('fmt-facebook')?.checked) formats.push('Facebook Feed (yatay)');
-
-  const focus = document.getElementById('mktFocus')?.value?.trim();
-  const week = new Date().toLocaleDateString('tr-TR', {day:'numeric',month:'long',year:'numeric'});
-
-  const prompt = `Sen Cambel Tekstil için dijital pazarlama uzmanısın. ${week} haftası için Meta reklamları üreteceksin.
-
-Cambel Tekstil: Bursa merkezli toptan bebek kıyafeti toptancısı. White label ürünler, minimum sipariş yok, Brand Kit (ense baskısı, yıkama etiketi, sallantı kart), Trendyol Buybox ürünleri mevcut.
-
-Bu haftanın aktif ürünleri:
-${products}
-
-${focus ? `Bu haftanın odak noktası: ${focus}` : ''}
-
-Hedef kitleler: ${kitles.join(', ')}
-Formatlar: ${formats.join(', ')}
-
-Her hedef kitle + format kombinasyonu için şunları üret:
-
-1. **Başlık** (5-8 kelime, dikkat çekici)
-2. **Ana Mesaj** (1-2 cümle, güçlü hook)
-3. **Caption** (Instagram/Facebook için, emoji kullan, hashtag ekle)
-4. **CTA** (Call-to-action butonu metni)
-5. **Kreatif Konsept** (Görsel tasarımcıya brief — renkler, kompozisyon, ne gösterilmeli)
-
-Türkçe yaz. Satış odaklı, samimi, gereksiz abartmadan.`;
+  btn.textContent = '⏳ Gönderiliyor...';
 
   try {
-    result.innerHTML = '<div style="color:var(--mid);font-size:.85rem;padding:16px">🤖 Claude kreatifler yazıyor...</div>';
+    // E-posta geçmişini kaydet
+    await addDoc(collection(db,'emailHistory'), {
+      subject, body, fromName,
+      segment: segLabel,
+      recipientCount: emails.length,
+      sentAt: serverTimestamp(),
+      status: 'sent'
+    });
 
+    // mailto: ile toplu e-posta aç (gerçek SMTP entegrasyonu için backend gerekir)
+    const mailtoLink = `mailto:${emails.slice(0,50).join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailtoLink);
 
-    // Anthropic API - fetch with no-cors workaround
-    let text = '';
-    try {
-      const res = await fetch('/.netlify/functions/claude', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': CLAUDE_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 4000,
-          messages: [{role:'user', content: prompt}]
-        })
-      });
-      if (!res.ok) {
-        const err = await res.text();
-        throw new Error(`HTTP ${res.status}: ${err}`);
-      }
-      const data = await res.json();
-      text = data.content?.[0]?.text || 'Üretim başarısız.';
-    } catch(fetchErr) {
-      throw fetchErr;
-    }
-
-    // Markdown'ı HTML'e çevir
-    const html = text
-      .replace(/^### (.+)$/gm, '<h3 style="font-family:\'Cormorant Garamond\',serif;font-size:1.1rem;font-weight:400;color:var(--accent);margin:20px 0 8px;padding-top:16px;border-top:1px solid var(--border)">$1</h3>')
-      .replace(/^## (.+)$/gm, '<h2 style="font-size:1rem;font-weight:600;color:var(--text);margin:24px 0 10px">$1</h2>')
-      .replace(/^# (.+)$/gm, '<h1 style="font-family:\'Cormorant Garamond\',serif;font-size:1.4rem;font-weight:300;color:var(--text);margin:28px 0 12px">$1</h1>')
-      .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--text);font-weight:600">$1</strong>')
-      .replace(/^- (.+)$/gm, '<li style="font-size:.83rem;color:var(--mid);margin:4px 0;padding-left:8px">$1</li>')
-      .replace(/\n\n/g, '<br><br>')
-      .replace(/\n/g, '<br>');
-
-    const date = new Date().toLocaleDateString('tr-TR');
-    result.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-        <div style="font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mid)">${date} — ${kitles.length} kitle · ${formats.length} format</div>
-        <button class="btn btn-outline btn-sm" onclick="copyCreatives()">📋 Tümünü Kopyala</button>
-      </div>
-      <div id="creativesContent" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px;font-size:.84rem;line-height:1.8;color:var(--mid)">${html}</div>
-    `;
-    window._lastCreatives = text;
-
+    showToast(`E-posta hazırlandı — ${emails.length} alıcı ✓`, 'success');
+    status.textContent = `Son gönderim: ${new Date().toLocaleTimeString('tr-TR')}`;
+    loadEmailHistory();
   } catch(e) {
-    result.innerHTML = `<div style="color:var(--red);font-size:.84rem">Hata: ${e.message}</div>`;
+    showToast('Hata: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📤 E-posta Gönder';
   }
-
-  btn.disabled = false;
-  btn.textContent = '✨ Bu Haftanın Kreatiflerini Üret';
 };
 
-window.copyCreatives = () => {
-  if (!window._lastCreatives) return;
-  navigator.clipboard.writeText(window._lastCreatives).then(() => {
-    showToast('Kreatifler kopyalandı ✓', 'success');
-  });
-};
+async function loadEmailHistory() {
+  const el = document.getElementById('emailHistory');
+  if (!el) return;
+  try {
+    const snap = await getDocs(collection(db,'emailHistory'));
+    const history = snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>(b.sentAt?.seconds||0)-(a.sentAt?.seconds||0))
+      .slice(0,10);
+    if (!history.length) { el.innerHTML = '<div style="color:var(--mid)">Henüz gönderim yok</div>'; return; }
+    el.innerHTML = `<table class="data-table">
+      <thead><tr><th>Konu</th><th>Segment</th><th>Alıcı</th><th>Tarih</th></tr></thead>
+      <tbody>${history.map(h=>`<tr>
+        <td><strong>${h.subject||'-'}</strong></td>
+        <td>${h.segment||'-'}</td>
+        <td>${h.recipientCount||0} kişi</td>
+        <td style="font-size:.78rem;color:var(--mid)">${h.sentAt?.seconds?new Date(h.sentAt.seconds*1000).toLocaleDateString('tr-TR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'-'}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  } catch(e) { el.innerHTML = '<div style="color:var(--mid)">Yüklenemedi</div>'; }
+}
+
 
 // ── MEMBERS ──
 async function renderMembers() {
