@@ -1,7 +1,5 @@
 {
   "rewrites": [
-    { "source": "/api/claude", "destination": "/api/claude.js" },
-    { "source": "/api/send-email", "destination": "/api/send-email.js" },
-    { "source": "/(.*)", "destination": "/$1" }
+    { "source": "/((?!api/).*)", "destination": "/$1" }
   ]
 }
