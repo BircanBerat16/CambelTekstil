@@ -748,8 +748,11 @@ async function loadProducts() {
     ];
   }
   displayProducts = [...allProducts];
-  // Hash'ten ürün aç
-  setTimeout(() => checkProductHash(), 300);
+  // Hash'ten ürün aç — render bittikten sonra
+  setTimeout(() => {
+    renderProducts();
+    setTimeout(() => checkProductHash(), 500);
+  }, 100);
 }
 
 // ── SIDEBAR ──
@@ -952,7 +955,7 @@ function checkProductHash() {
   if (hash.startsWith('#urun-')) {
     const id = hash.replace('#urun-', '');
     const prod = allProducts.find(p => p.id === id);
-    if (prod) openPmodal(prod);
+    if (prod) openProduct(id, '');
   }
 }
 
