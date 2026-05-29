@@ -748,6 +748,8 @@ async function loadProducts() {
     ];
   }
   displayProducts = [...allProducts];
+  // Hash'ten ürün aç
+  setTimeout(() => checkProductHash(), 300);
 }
 
 // ── SIDEBAR ──
@@ -936,6 +938,23 @@ window.filterDropshipping = (el) => {
   applyFilters();
   renderProducts();
 };
+
+window.copyProductLink = (id) => {
+  const url = window.location.origin + '/shop.html#urun-' + id;
+  navigator.clipboard.writeText(url).then(() => {
+    showToast('Link kopyalandı ✓');
+  });
+};
+
+// Hash'ten ürün aç
+function checkProductHash() {
+  const hash = window.location.hash;
+  if (hash.startsWith('#urun-')) {
+    const id = hash.replace('#urun-', '');
+    const prod = allProducts.find(p => p.id === id);
+    if (prod) openPmodal(prod);
+  }
+}
 
 window.filterBuybox = (el) => {
   currentFilter = {category:'__buybox__', subcategory:''};
@@ -1160,7 +1179,10 @@ function renderPmodal() {
   ).join('');
   document.getElementById('pmodalInfo').innerHTML = `
     <div class="pmodal-cat">${getCatName(p.category)}</div>
-    <div class="pmodal-name">${p.name}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+      <div class="pmodal-name">${p.name}</div>
+      <button onclick="copyProductLink('${p.id}')" title="Linki Kopyala" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:.72rem;color:var(--mid);flex-shrink:0">🔗 Linki Kopyala</button>
+    </div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
       ${p.buybox ? '<span class="p-badge p-badge-buybox">🏆 Buybox</span>' : ''}
       ${p.brandKit ? '<span class="p-badge p-badge-kit">🎨 Brand Kit</span>' : ''}
