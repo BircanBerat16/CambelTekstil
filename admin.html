@@ -598,8 +598,12 @@ select.filter-select{
         <input type="number" class="form-input-m" id="pStock" placeholder="0">
       </div>
       <div class="form-group-m">
-        <label class="form-label-m">Açıklama</label>
-        <textarea class="form-input-m" id="pDesc" placeholder="Ürün açıklaması..."></textarea>
+        <label class="form-label-m" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Açıklama</span>
+          <button type="button" class="btn btn-outline btn-sm" onclick="generateProductDesc()" id="aiDescBtn" style="font-size:.72rem;gap:4px">✨ AI ile Oluştur</button>
+        </label>
+        <textarea class="form-input-m" id="pDesc" placeholder="Ürün açıklaması..." style="height:120px"></textarea>
+        <div id="aiDescStatus" style="font-size:.72rem;color:var(--mid);margin-top:4px;display:none">AI yazıyor...</div>
         <div class="form-group-m" style="margin-top:12px">
           <label class="form-label-m">Ürün Videosu</label>
           <input type="hidden" id="pVideo">
@@ -2707,26 +2711,35 @@ window.sendBulkEmail = async () => {
   const status = document.getElementById('emailStatus');
   btn.disabled = true;
   btn.textContent = '⏳ Gönderiliyor...';
+  status.textContent = '';
 
   try {
-    // E-posta geçmişini kaydet
-    await addDoc(collection(db,'emailHistory'), {
-      subject, body, fromName,
-      segment: segLabel,
-      recipientCount: emails.length,
-      sentAt: serverTimestamp(),
-      status: 'sent'
+    const response = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ to: emails, subject, body, fromName })
     });
+    const result = await response.json();
 
-    // mailto: ile toplu e-posta aç (gerçek SMTP entegrasyonu için backend gerekir)
-    const mailtoLink = `mailto:${emails.slice(0,50).join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(mailtoLink);
-
-    showToast(`E-posta hazırlandı — ${emails.length} alıcı ✓`, 'success');
-    status.textContent = `Son gönderim: ${new Date().toLocaleTimeString('tr-TR')}`;
-    loadEmailHistory();
+    if (response.ok) {
+      // Geçmişe kaydet
+      await addDoc(collection(db,'emailHistory'), {
+        subject, body, fromName,
+        segment: segLabel,
+        recipientCount: emails.length,
+        sent: result.sent || 0,
+        failed: result.failed || 0,
+        sentAt: serverTimestamp(),
+        status: 'sent'
+      });
+      showToast(`✅ ${result.sent} kişiye gönderildi${result.failed?', '+result.failed+' başarısız':''}`, 'success');
+      status.textContent = `Son gönderim: ${new Date().toLocaleTimeString('tr-TR')}`;
+      loadEmailHistory();
+    } else {
+      showToast('Hata: ' + (result.error||'Bilinmeyen hata'), 'error');
+    }
   } catch(e) {
-    showToast('Hata: ' + e.message, 'error');
+    showToast('Bağlantı hatası: ' + e.message, 'error');
   } finally {
     btn.disabled = false;
     btn.textContent = '📤 E-posta Gönder';
@@ -3193,6 +3206,77 @@ window.saveBrandKit = async () => {
 
 // ── SETTINGS ──
 // ── HEDEFLER ──
+window.generateProductDesc = async () => {
+  const name = document.getElementById('pName').value.trim();
+  const material = document.getElementById('pMaterial').value.trim();
+  const sizes = document.getElementById('pSizes').value.trim();
+  const colors = document.getElementById('pColors').value.trim();
+  const price = document.getElementById('pPrice').value.trim();
+  const oekoTex = document.getElementById('pOekoTex').value === 'true';
+  const gots = document.getElementById('pGots').value === 'true';
+  const brandKit = document.getElementById('pBrandKit').value === 'true';
+  const dropshipping = document.getElementById('pDropshipping').value === 'true';
+  const selectedCats = getSelectedCategories();
+  const catNames = selectedCats.map(id => allCategories.find(c=>c.id===id)?.name||id).join(', ');
+
+  if (!name) { showToast('Önce ürün adını girin','error'); return; }
+
+  const btn = document.getElementById('aiDescBtn');
+  const status = document.getElementById('aiDescStatus');
+  const textarea = document.getElementById('pDesc');
+  btn.disabled = true;
+  btn.textContent = '⏳ Yazıyor...';
+  status.style.display = 'block';
+
+  const prompt = `Sen Cambel Tekstil için ürün açıklaması yazıyorsun. Cambel, Türkiye'nin Bursa şehrinde faaliyet gösteren, bebek giyim sektörüne hizmet veren bir toptan B2B markasıdır. Müşterileri; Instagram butiği, Trendyol satıcısı veya kendi e-ticaret sitesi olan marka sahipleridir.
+
+Şu ürün için Türkçe açıklama yaz:
+
+Ürün Adı: ${name}
+Kategori: ${catNames||'Bebek Giyim'}
+Kumaş/Materyal: ${material||'Belirtilmemiş'}
+Bedenler: ${sizes||'Belirtilmemiş'}
+Renkler: ${colors||'Belirtilmemiş'}
+Fiyat: ${price ? '₺'+price : 'Belirtilmemiş'}
+${oekoTex?'✓ OEKO-TEX Sertifikalı':''}
+${gots?'✓ GOTS Organik Sertifikalı':''}
+${brandKit?'✓ Brand Kit Uyumlu (özel etiket basılabilir)':''}
+${dropshipping?'✓ Dropshipping Uyumlu':''}
+
+Açıklama şunları içermelidir:
+1. Ürünün bebek için faydaları ve özellikleri (2-3 cümle)
+2. Bir marka sahibinin bu ürünü satın alarak nasıl avantaj sağlayacağı — kâr marjı, müşteri memnuniyeti, marka değeri (2-3 cümle)
+3. Ürünü nasıl kişiselleştirebileceği — etiket, ambalaj, renk seçeneği vb. (1-2 cümle)
+
+Ton: Profesyonel ama sıcak. Satış odaklı ama abartısız. Maksimum 150 kelime. Başlık veya madde işareti kullanma, düz paragraf yaz.`;
+
+  try {
+    const response = await fetch('/api/claude', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '';
+    if (text) {
+      textarea.value = text.trim();
+      showToast('Açıklama oluşturuldu ✓', 'success');
+    } else {
+      showToast('AI yanıt vermedi', 'error');
+    }
+  } catch(e) {
+    showToast('Hata: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ AI ile Oluştur';
+    status.style.display = 'none';
+  }
+};
+
 async function renderGoals() {
   const now = new Date();
   const year = now.getFullYear();
