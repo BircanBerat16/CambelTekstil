@@ -1609,6 +1609,7 @@ window.toggleSerialFields = () => {
   document.getElementById('serialFields').style.display = isSerial ? 'block' : 'none';
   document.getElementById('singleFields').style.display = isSerial ? 'none' : 'block';
   document.getElementById('singleSizesField').style.display = isSerial ? 'none' : 'block';
+  buildVariantGrid();
 };
 
 window.calcUnitPrice = () => {
