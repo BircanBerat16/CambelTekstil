@@ -544,7 +544,7 @@ select.filter-select{
       <div id="serialFields" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:4px">
         <div class="form-group-m">
           <label class="form-label-m">Paket İçeriği (Bedenler)</label>
-          <input type="text" class="form-input-m" id="pSerialSizes" placeholder="Örn: 0-3ay, 3-6ay, 6-9ay, 9-12ay">
+          <input type="text" class="form-input-m" id="pSerialSizes" placeholder="Örn: 0-3ay, 3-6ay, 6-9ay, 9-12ay" oninput="calcUnitPrice();buildVariantGrid()">
           <div class="form-hint">Virgülle ayır — kaç beden varsa paket o kadar adettir</div>
         </div>
         <div class="form-row">
@@ -1388,7 +1388,9 @@ window.filterProducts = () => {
 };
 
 window.buildVariantGrid = () => {
-  const sizes = document.getElementById('pSizes').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const isSerial = document.getElementById('pSaleType').value === 'serial';
+  const sizesField = isSerial ? 'pSerialSizes' : 'pSizes';
+  const sizes = document.getElementById(sizesField).value.split(',').map(s=>s.trim()).filter(Boolean);
   const colors = document.getElementById('pColors').value.split(',').map(s=>s.trim()).filter(Boolean);
   const gridWrap = document.getElementById('variantGridWrap');
   const simpleStock = document.getElementById('simpleStockWrap');
@@ -1850,7 +1852,14 @@ window.saveProduct = async () => {
       : [],
     serialPrice: parseFloat(document.getElementById('pSerialPrice').value)||null,
     serialSalePrice: parseFloat(document.getElementById('pSerialSalePrice').value)||null,
-    unitPrice: parseFloat(document.getElementById('pUnitPrice').value)||null,
+    // Seri ürünlerde birim fiyatı kayıt anında yeniden hesapla
+    const serialSizesForCalc = document.getElementById('pSerialSizes').value.split(',').filter(s=>s.trim());
+    const serialPriceForCalc = parseFloat(document.getElementById('pSerialPrice').value)||0;
+    const computedUnitPrice = (isSerial && serialSizesForCalc.length && serialPriceForCalc)
+      ? serialPriceForCalc / serialSizesForCalc.length
+      : parseFloat(document.getElementById('pUnitPrice').value)||null;
+
+    unitPrice: computedUnitPrice,
     customizations: ['ense-baskisi','yikama-talimat','sallanti-kart','ambalaj','sticker','barkod'].filter(id => {
       const el = document.getElementById('cust_'+id);
       return el && el.checked;
