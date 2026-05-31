@@ -1852,14 +1852,11 @@ window.saveProduct = async () => {
       : [],
     serialPrice: parseFloat(document.getElementById('pSerialPrice').value)||null,
     serialSalePrice: parseFloat(document.getElementById('pSerialSalePrice').value)||null,
-    // Seri ürünlerde birim fiyatı kayıt anında yeniden hesapla
-    const serialSizesForCalc = document.getElementById('pSerialSizes').value.split(',').filter(s=>s.trim());
-    const serialPriceForCalc = parseFloat(document.getElementById('pSerialPrice').value)||0;
-    const computedUnitPrice = (isSerial && serialSizesForCalc.length && serialPriceForCalc)
-      ? serialPriceForCalc / serialSizesForCalc.length
-      : parseFloat(document.getElementById('pUnitPrice').value)||null;
-
-    unitPrice: computedUnitPrice,
+    unitPrice: (() => {
+      const sz = document.getElementById('pSerialSizes').value.split(',').filter(s=>s.trim());
+      const pr = parseFloat(document.getElementById('pSerialPrice').value)||0;
+      return (isSerial && sz.length && pr) ? pr / sz.length : parseFloat(document.getElementById('pUnitPrice').value)||null;
+    })(),
     customizations: ['ense-baskisi','yikama-talimat','sallanti-kart','ambalaj','sticker','barkod'].filter(id => {
       const el = document.getElementById('cust_'+id);
       return el && el.checked;
