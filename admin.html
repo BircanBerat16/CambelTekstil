@@ -1804,7 +1804,7 @@ window.saveProduct = async () => {
   const colors = document.getElementById('pColors').value.split(',').map(s=>s.trim()).filter(Boolean);
   // Renk bazlı görsel yükleme
   let colorImageUrls = {};
-  if (colors.length > 1 && Object.keys(colorImages).length > 0) {
+  if (Object.keys(colorImages).length > 0) {
     colorImageUrls = await uploadColorImages();
   }
   // Normal görsel yükleme (renk yoksa veya renk görseli yoksa)
