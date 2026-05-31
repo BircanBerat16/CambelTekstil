@@ -644,72 +644,7 @@ async function renderCustomRequests() {
           ${r.quotedPrice?'<div style="background:#FFF8EE;border-radius:8px;padding:10px 14px;font-size:.85rem"><strong>Fiyat Teklifi:</strong> <span style="font-weight:600;color:#2D7A50">₺'+Number(r.quotedPrice).toLocaleString('tr-TR')+'</span></div>':''}
         </div>`).join('')}
     </div>
-
-    <!-- Talep Formu Modal -->
-    <div id="customRequestModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
-      <div style="background:#fff;border-radius:16px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--sand)">
-          <div style="font-weight:600;font-size:1rem">Özel Üretim Talebi Oluştur</div>
-          <button onclick="document.getElementById('customRequestModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.2rem">✕</button>
-        </div>
-        <div style="padding:24px;display:grid;gap:16px">
-          <div>
-            <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Ürün Tipi *</label>
-            <select id="cr_productType" style="width:100%;padding:10px 14px;border:1px solid var(--sand);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem">
-              <option value="">Seçin...</option>
-              <option>Body</option><option>Tulum</option><option>Pijama Takımı</option>
-              <option>Müslin Battaniye</option><option>Hastane Çıkış Seti</option>
-              <option>Şapka & Patik Seti</option><option>Diğer</option>
-            </select>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div>
-              <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Kumaş/Materyal</label>
-              <input id="cr_material" type="text" placeholder="Örn: %100 organik pamuk" style="width:100%;padding:10px 14px;border:1px solid var(--sand);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem">
-            </div>
-            <div>
-              <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Renkler</label>
-              <input id="cr_colors" type="text" placeholder="Örn: Beyaz, Krem, Pudra" style="width:100%;padding:10px 14px;border:1px solid var(--sand);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem">
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div>
-              <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Bedenler</label>
-              <input id="cr_sizes" type="text" placeholder="Örn: 0-3, 3-6, 6-9 ay" style="width:100%;padding:10px 14px;border:1px solid var(--sand);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem">
-            </div>
-            <div>
-              <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Tahmini Adet</label>
-              <input id="cr_quantity" type="number" placeholder="Örn: 100" min="1" style="width:100%;padding:10px 14px;border:1px solid var(--sand);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem">
-            </div>
-          </div>
-          <div>
-            <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Özel Baskı / Etiket Detayları</label>
-            <textarea id="cr_branding" placeholder="Logo baskısı, etiket tasarımı, ambalaj tercihleri..." style="width:100%;padding:10px 14px;border:1px solid var(--sand);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem;height:80px;resize:none"></textarea>
-          </div>
-          <div>
-            <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Tahmini Teslimat Tarihi</label>
-            <input id="cr_deadline" type="date" style="width:100%;padding:10px 14px;border:1px solid var(--sand);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem">
-          </div>
-          <div>
-            <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Referans Görseller</label>
-            <div id="cr_imageList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
-            <label style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--sand);border-radius:8px;cursor:pointer;font-size:.82rem">
-              📎 Görsel Ekle
-              <input type="file" accept="image/*" multiple style="display:none" onchange="uploadCustomImages(this)">
-            </label>
-            <div id="cr_uploadStatus" style="font-size:.72rem;color:var(--mid);margin-top:4px"></div>
-          </div>
-          <div>
-            <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Ek Notlar</label>
-            <textarea id="cr_notes" placeholder="Diğer detaylar, özel istekler..." style="width:100%;padding:10px 14px;border:1px solid var(--sand);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem;height:80px;resize:none"></textarea>
-          </div>
-        </div>
-        <div style="padding:16px 24px;border-top:1px solid var(--sand);display:flex;justify-content:flex-end;gap:10px">
-          <button onclick="document.getElementById('customRequestModal').style.display='none'" style="padding:10px 20px;background:transparent;border:1px solid var(--sand);border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif">İptal</button>
-          <button onclick="submitCustomRequest()" id="cr_submitBtn" style="padding:10px 24px;background:var(--charcoal);color:var(--warm);border:none;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500">✅ Talebi Gönder</button>
-        </div>
-      </div>
-    </div>`;
+  `;
 }
 
 let _crImages = [];
@@ -881,5 +816,71 @@ window.addEventListener('hashchange', () => {
   } catch(e) { console.log('Presence error:', e); }
 })();
 </script>
+
+<!-- Özel Üretim Modal - Global -->
+<div id="customRequestModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
+  <div style="background:#fff;border-radius:16px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #e8e0d5">
+      <div style="font-weight:600;font-size:1rem">Özel Üretim Talebi Oluştur</div>
+      <button onclick="document.getElementById('customRequestModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.2rem">✕</button>
+    </div>
+    <div style="padding:24px;display:grid;gap:16px">
+      <div>
+        <label style="display:block;font-size:.78rem;color:#9B9690;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Ürün Tipi *</label>
+        <select id="cr_productType" style="width:100%;padding:10px 14px;border:1px solid #e8e0d5;border-radius:8px;font-family:DM Sans,sans-serif;font-size:.9rem">
+          <option value="">Seçin...</option>
+          <option>Body</option><option>Tulum</option><option>Pijama Takımı</option>
+          <option>Müslin Battaniye</option><option>Hastane Çıkış Seti</option>
+          <option>Şapka & Patik Seti</option><option>Diğer</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label style="display:block;font-size:.78rem;color:#9B9690;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Kumaş/Materyal</label>
+          <input id="cr_material" type="text" placeholder="Örn: %100 organik pamuk" style="width:100%;padding:10px 14px;border:1px solid #e8e0d5;border-radius:8px;font-family:DM Sans,sans-serif;font-size:.9rem">
+        </div>
+        <div>
+          <label style="display:block;font-size:.78rem;color:#9B9690;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Renkler</label>
+          <input id="cr_colors" type="text" placeholder="Örn: Beyaz, Krem, Pudra" style="width:100%;padding:10px 14px;border:1px solid #e8e0d5;border-radius:8px;font-family:DM Sans,sans-serif;font-size:.9rem">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label style="display:block;font-size:.78rem;color:#9B9690;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Bedenler</label>
+          <input id="cr_sizes" type="text" placeholder="Örn: 0-3, 3-6, 6-9 ay" style="width:100%;padding:10px 14px;border:1px solid #e8e0d5;border-radius:8px;font-family:DM Sans,sans-serif;font-size:.9rem">
+        </div>
+        <div>
+          <label style="display:block;font-size:.78rem;color:#9B9690;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Tahmini Adet</label>
+          <input id="cr_quantity" type="number" placeholder="Örn: 100" min="1" style="width:100%;padding:10px 14px;border:1px solid #e8e0d5;border-radius:8px;font-family:DM Sans,sans-serif;font-size:.9rem">
+        </div>
+      </div>
+      <div>
+        <label style="display:block;font-size:.78rem;color:#9B9690;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Özel Baskı / Etiket Detayları</label>
+        <textarea id="cr_branding" placeholder="Logo baskısı, etiket tasarımı, ambalaj tercihleri..." style="width:100%;padding:10px 14px;border:1px solid #e8e0d5;border-radius:8px;font-family:DM Sans,sans-serif;font-size:.9rem;height:80px;resize:none"></textarea>
+      </div>
+      <div>
+        <label style="display:block;font-size:.78rem;color:#9B9690;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Tahmini Teslimat Tarihi</label>
+        <input id="cr_deadline" type="date" style="width:100%;padding:10px 14px;border:1px solid #e8e0d5;border-radius:8px;font-family:DM Sans,sans-serif;font-size:.9rem">
+      </div>
+      <div>
+        <label style="display:block;font-size:.78rem;color:#9B9690;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Referans Görseller</label>
+        <div id="cr_imageList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
+        <label style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#f5ede0;border-radius:8px;cursor:pointer;font-size:.82rem">
+          📎 Görsel Ekle
+          <input type="file" accept="image/*" multiple style="display:none" onchange="uploadCustomImages(this)">
+        </label>
+        <div id="cr_uploadStatus" style="font-size:.72rem;color:#9B9690;margin-top:4px"></div>
+      </div>
+      <div>
+        <label style="display:block;font-size:.78rem;color:#9B9690;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Ek Notlar</label>
+        <textarea id="cr_notes" placeholder="Diğer detaylar, özel istekler..." style="width:100%;padding:10px 14px;border:1px solid #e8e0d5;border-radius:8px;font-family:DM Sans,sans-serif;font-size:.9rem;height:80px;resize:none"></textarea>
+      </div>
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid #e8e0d5;display:flex;justify-content:flex-end;gap:10px">
+      <button onclick="document.getElementById('customRequestModal').style.display='none'" style="padding:10px 20px;background:transparent;border:1px solid #e8e0d5;border-radius:8px;cursor:pointer;font-family:DM Sans,sans-serif">İptal</button>
+      <button onclick="submitCustomRequest()" id="cr_submitBtn" style="padding:10px 24px;background:#2A2825;color:#F5F0E8;border:none;border-radius:8px;cursor:pointer;font-family:DM Sans,sans-serif;font-weight:500">✅ Talebi Gönder</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
