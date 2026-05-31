@@ -1055,12 +1055,12 @@ function applyFilters() {
   // Renk varyantlarını ayrı kartlara genişlet
   const expanded = [];
   prods.forEach(p => {
-    if (p.colors && p.colors.length > 1 && p.variantStock) {
+    if (p.colors && p.colors.length > 1) {
       p.colors.forEach(color => {
         const colorKey = `${color}__`;
-        const colorStock = Object.entries(p.variantStock||{})
-          .filter(([k]) => k.startsWith(colorKey))
-          .reduce((s,[,v]) => s+v, 0);
+        const colorStock = p.variantStock
+          ? Object.entries(p.variantStock).filter(([k]) => k.startsWith(colorKey)).reduce((s,[,v]) => s+v, 0)
+          : Math.floor((p.stock||0) / p.colors.length);
         expanded.push({
           ...p,
           _variantColor: color,
