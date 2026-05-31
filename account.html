@@ -268,6 +268,7 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
       </div>
       <div class="acc-nav-item active" onclick="showAccPage('orders',this)"><span class="icon">📦</span> Siparişlerim</div>
       <div class="acc-nav-item" onclick="showAccPage('favorites',this)"><span class="icon">❤️</span> Favorilerim</div>
+      <div class="acc-nav-item" onclick="showAccPage('custom',this)"><span class="icon">🎨</span> Özel Üretim</div>
       <div class="acc-nav-item" onclick="showAccPage('brandkit',this)"><span class="icon">✏️</span> Brand Kit</div>
       <div class="acc-nav-item" onclick="showAccPage('profile',this)"><span class="icon">👤</span> Profil Bilgileri</div>
       <div class="acc-nav-item" onclick="doLogout()" style="margin-top:auto;color:var(--red)"><span class="icon">→</span> Çıkış Yap</div>
@@ -443,6 +444,7 @@ window.showAccPage = (page, el) => {
     case 'favorites': renderFavorites(); break;
     case 'brandkit':  renderBrandKit(); break;
     case 'profile':   renderProfile(); break;
+    case 'custom':    renderCustomRequests(); break;
   }
 };
 
@@ -592,6 +594,192 @@ async function renderBrandKit() {
 }
 
 // ── PROFILE ──
+// ── ÖZEL ÜRETİM ──
+async function renderCustomRequests() {
+  const main = document.getElementById('accMain');
+  main.innerHTML = '<div style="color:var(--mid);padding:20px">Yükleniyor...</div>';
+
+  const snap = await getDocs(query(collection(db,'customRequests'), where('userId','==',currentUser.uid)));
+  const requests = snap.docs.map(d=>({id:d.id,...d.data()}))
+    .sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+
+  const statusColors = {
+    pending: '#8B7355', reviewing: '#4A6FA5', quoted: '#2D7A50',
+    approved: '#3D6B4F', rejected: '#C0392B', completed: '#2D7A50'
+  };
+  const statusLabels = {
+    pending:'İnceleme Bekliyor', reviewing:'İnceleniyor', quoted:'Teklif Verildi',
+    approved:'Onaylandı', rejected:'Reddedildi', completed:'Tamamlandı'
+  };
+
+  main.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div class="acc-section-title" style="margin:0">🎨 Özel Üretim Taleplerim</div>
+      <button onclick="openCustomRequestForm()" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:var(--charcoal);color:var(--warm);border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;cursor:pointer">+ Yeni Talep</button>
+    </div>
+
+    ${!requests.length ? `
+      <div style="text-align:center;padding:60px 20px;color:var(--mid)">
+        <div style="font-size:3rem;margin-bottom:12px">🎨</div>
+        <div style="font-weight:500;margin-bottom:8px">Henüz özel üretim talebiniz yok</div>
+        <div style="font-size:.85rem">Kendi markanıza özel bebek giyim ürettirmek için talep oluşturun</div>
+      </div>` :
+      requests.map(r => `
+        <div style="background:var(--white);border:1px solid var(--sand);border-radius:12px;padding:20px;margin-bottom:12px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
+            <div>
+              <div style="font-weight:600;font-size:.95rem">${r.productType||'Özel Ürün'}</div>
+              <div style="font-size:.78rem;color:var(--mid);margin-top:2px">#${r.id.slice(-6).toUpperCase()} · ${r.createdAt?.seconds?new Date(r.createdAt.seconds*1000).toLocaleDateString('tr-TR'):''}</div>
+            </div>
+            <span style="padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:600;background:${statusColors[r.status]||'#8B7355'}22;color:${statusColors[r.status]||'#8B7355'}">${statusLabels[r.status]||r.status}</span>
+          </div>
+          ${r.images?.length ? `<div style="display:flex;gap:8px;margin-bottom:12px">${r.images.slice(0,3).map(img=>`<img src="${img}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--sand)">`).join('')}</div>` : ''}
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:.82rem;margin-bottom:12px">
+            ${r.material?`<div><span style="color:var(--mid)">Kumaş:</span> ${r.material}</div>`:''}
+            ${r.colors?`<div><span style="color:var(--mid)">Renk:</span> ${r.colors}</div>`:''}
+            ${r.quantity?`<div><span style="color:var(--mid)">Adet:</span> ${r.quantity}</div>`:''}
+          </div>
+          ${r.adminNote?`<div style="background:#EAF5EF;border-radius:8px;padding:10px 14px;font-size:.82rem;margin-bottom:8px"><strong>Cambel Notu:</strong> ${r.adminNote}</div>`:''}
+          ${r.quotedPrice?`<div style="background:#FFF8EE;border-radius:8px;padding:10px 14px;font-size:.85rem"><strong>Fiyat Teklifi:</strong> <span style="font-weight:600;color:#2D7A50">₺${Number(r.quotedPrice).toLocaleString('tr-TR')}</span></div>`:''}
+        </div>`).join('')}
+
+    <!-- Talep Formu Modal -->
+    <div id="customRequestModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
+      <div style="background:#fff;border-radius:16px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--sand)">
+          <div style="font-weight:600;font-size:1rem">Özel Üretim Talebi Oluştur</div>
+          <button onclick="document.getElementById('customRequestModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.2rem">✕</button>
+        </div>
+        <div style="padding:24px;display:grid;gap:16px">
+          <div>
+            <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Ürün Tipi *</label>
+            <select id="cr_productType" style="width:100%;padding:10px 14px;border:1px solid var(--sand);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem">
+              <option value="">Seçin...</option>
+              <option>Body</option><option>Tulum</option><option>Pijama Takımı</option>
+              <option>Müslin Battaniye</option><option>Hastane Çıkış Seti</option>
+              <option>Şapka & Patik Seti</option><option>Diğer</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Kumaş/Materyal</label>
+              <input id="cr_material" type="text" placeholder="Örn: %100 organik pamuk" style="width:100%;padding:10px 14px;border:1px solid var(--sand);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem">
+            </div>
+            <div>
+              <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Renkler</label>
+              <input id="cr_colors" type="text" placeholder="Örn: Beyaz, Krem, Pudra" style="width:100%;padding:10px 14px;border:1px solid var(--sand);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Bedenler</label>
+              <input id="cr_sizes" type="text" placeholder="Örn: 0-3, 3-6, 6-9 ay" style="width:100%;padding:10px 14px;border:1px solid var(--sand);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem">
+            </div>
+            <div>
+              <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Tahmini Adet</label>
+              <input id="cr_quantity" type="number" placeholder="Örn: 100" min="1" style="width:100%;padding:10px 14px;border:1px solid var(--sand);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem">
+            </div>
+          </div>
+          <div>
+            <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Özel Baskı / Etiket Detayları</label>
+            <textarea id="cr_branding" placeholder="Logo baskısı, etiket tasarımı, ambalaj tercihleri..." style="width:100%;padding:10px 14px;border:1px solid var(--sand);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem;height:80px;resize:none"></textarea>
+          </div>
+          <div>
+            <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Tahmini Teslimat Tarihi</label>
+            <input id="cr_deadline" type="date" style="width:100%;padding:10px 14px;border:1px solid var(--sand);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem">
+          </div>
+          <div>
+            <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Referans Görseller</label>
+            <div id="cr_imageList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
+            <label style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--sand);border-radius:8px;cursor:pointer;font-size:.82rem">
+              📎 Görsel Ekle
+              <input type="file" accept="image/*" multiple style="display:none" onchange="uploadCustomImages(this)">
+            </label>
+            <div id="cr_uploadStatus" style="font-size:.72rem;color:var(--mid);margin-top:4px"></div>
+          </div>
+          <div>
+            <label style="display:block;font-size:.78rem;color:var(--mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Ek Notlar</label>
+            <textarea id="cr_notes" placeholder="Diğer detaylar, özel istekler..." style="width:100%;padding:10px 14px;border:1px solid var(--sand);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem;height:80px;resize:none"></textarea>
+          </div>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid var(--sand);display:flex;justify-content:flex-end;gap:10px">
+          <button onclick="document.getElementById('customRequestModal').style.display='none'" style="padding:10px 20px;background:transparent;border:1px solid var(--sand);border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif">İptal</button>
+          <button onclick="submitCustomRequest()" id="cr_submitBtn" style="padding:10px 24px;background:var(--charcoal);color:var(--warm);border:none;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500">✅ Talebi Gönder</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+let _crImages = [];
+
+window.openCustomRequestForm = () => {
+  _crImages = [];
+  document.getElementById('cr_imageList').innerHTML = '';
+  ['cr_productType','cr_material','cr_colors','cr_sizes','cr_quantity','cr_branding','cr_deadline','cr_notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('customRequestModal').style.display = 'flex';
+};
+
+window.uploadCustomImages = async (input) => {
+  const status = document.getElementById('cr_uploadStatus');
+  const list = document.getElementById('cr_imageList');
+  status.textContent = 'Yükleniyor...';
+  for (const file of input.files) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', 'CambelTekstil');
+      const res = await fetch('https://api.cloudinary.com/v1_1/dplns9y0e/image/upload', {method:'POST', body:formData});
+      const data = await res.json();
+      if (data.secure_url) {
+        _crImages.push(data.secure_url);
+        const img = document.createElement('img');
+        img.src = data.secure_url;
+        img.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--sand)';
+        list.appendChild(img);
+      }
+    } catch(e) {}
+  }
+  status.textContent = _crImages.length + ' görsel yüklendi';
+};
+
+window.submitCustomRequest = async () => {
+  const productType = document.getElementById('cr_productType').value;
+  if (!productType) { alert('Lütfen ürün tipini seçin'); return; }
+
+  const btn = document.getElementById('cr_submitBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Gönderiliyor...';
+
+  try {
+    await addDoc(collection(db,'customRequests'), {
+      userId: currentUser.uid,
+      userEmail: currentUser.email,
+      userName: currentUser.displayName || '',
+      productType,
+      material: document.getElementById('cr_material').value,
+      colors: document.getElementById('cr_colors').value,
+      sizes: document.getElementById('cr_sizes').value,
+      quantity: document.getElementById('cr_quantity').value,
+      branding: document.getElementById('cr_branding').value,
+      deadline: document.getElementById('cr_deadline').value,
+      notes: document.getElementById('cr_notes').value,
+      images: _crImages,
+      status: 'pending',
+      createdAt: serverTimestamp()
+    });
+    document.getElementById('customRequestModal').style.display = 'none';
+    renderCustomRequests();
+  } catch(e) {
+    alert('Hata: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✅ Talebi Gönder';
+  }
+};
+
 function renderProfile() {
   const main = document.getElementById('accMain');
   main.innerHTML = `
