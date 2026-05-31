@@ -1613,8 +1613,9 @@ window.toggleSerialFields = () => {
 };
 
 window.calcUnitPrice = () => {
-  const sizes = document.getElementById('pSerialSizes').value.split(',').filter(s=>s.trim());
+  const sizes = document.getElementById('pSerialSizes').value.split(',').map(s=>s.trim()).filter(s=>s.length>0);
   const total = parseFloat(document.getElementById('pSerialPrice').value);
+  console.log('calcUnitPrice:', sizes, sizes.length, total);
   if (sizes.length && total) {
     document.getElementById('pUnitPrice').value = (total / sizes.length).toFixed(2);
   }
@@ -1854,9 +1855,10 @@ window.saveProduct = async () => {
     serialPrice: parseFloat(document.getElementById('pSerialPrice').value)||null,
     serialSalePrice: parseFloat(document.getElementById('pSerialSalePrice').value)||null,
     unitPrice: (() => {
-      const sz = document.getElementById('pSerialSizes').value.split(',').filter(s=>s.trim());
+      const sz = document.getElementById('pSerialSizes').value.split(',').map(s=>s.trim()).filter(s=>s.length>0);
       const pr = parseFloat(document.getElementById('pSerialPrice').value)||0;
-      return (isSerial && sz.length && pr) ? pr / sz.length : parseFloat(document.getElementById('pUnitPrice').value)||null;
+      console.log('unitPrice calc:', sz, sz.length, pr, isSerial);
+      return (isSerial && sz.length && pr) ? parseFloat((pr / sz.length).toFixed(2)) : parseFloat(document.getElementById('pUnitPrice').value)||null;
     })(),
     customizations: ['ense-baskisi','yikama-talimat','sallanti-kart','ambalaj','sticker','barkod'].filter(id => {
       const el = document.getElementById('cust_'+id);
