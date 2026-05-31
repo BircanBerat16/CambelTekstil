@@ -462,6 +462,7 @@ select.filter-select{
     <div class="nav-item" onclick="showPage('members',this)"><span class="icon">👥</span> Üyeler</div>
     <div class="nav-section">Pazarlama</div>
     <div class="nav-item" onclick="showPage('marketing',this)"><span class="icon">📣</span> Pazarlama</div>
+    <div class="nav-item" onclick="showPage('customRequests',this)"><span class="icon">🎨</span> Özel Üretim</div>
     <div class="nav-section">Analiz</div>
     <div class="nav-item" onclick="showPage('goals',this)"><span class="icon">🎯</span> Hedefler</div>
     <div class="nav-item" onclick="showPage('reports',this)"><span class="icon">📈</span> Raporlar</div>
@@ -797,6 +798,7 @@ select.filter-select{
     <div class="modal-body" id="orderModalBody"></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('orderModal')">Kapat</button>
+      <button class="btn btn-red" id="orderDeleteBtn" onclick="deleteOrder()" style="display:inline-flex;background:#7B2020">🗑️ Sil</button>
       <button class="btn btn-red" id="orderCancelBtn" onclick="cancelOrder()" style="display:none">✕ Siparişi İptal Et</button>
       <button class="btn btn-green" id="orderStatusBtn" onclick="updateOrderStatus()">Durumu Güncelle</button>
     </div>
@@ -1061,6 +1063,7 @@ window.showPage = (page, el) => {
     case 'bundles':   renderBundles();   break;
     case 'campaigns': renderCampaigns(); break;
     case 'brandkit':  renderBrandKit();  break;
+    case 'customRequests': renderCustomRequests(); break;
     case 'goals':     renderGoals();     break;
     case 'reports':   renderReports();   break;
     case 'suppliers': renderSuppliers(); break;
@@ -2314,6 +2317,15 @@ window.updateOrderStatus = async () => {
   await updateDoc(doc(db,'orders',currentOrderId), updateData);
   showToast(`Sipariş durumu: ${statusLabel(next)}`,'success');
   closeModal('orderModal');
+  renderOrders();
+};
+
+window.deleteOrder = async () => {
+  if (!currentOrderId) return;
+  if (!confirm('Bu siparişi kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) return;
+  await deleteDoc(doc(db,'orders',currentOrderId));
+  closeModal('orderModal');
+  showToast('Sipariş silindi','success');
   renderOrders();
 };
 
@@ -3849,6 +3861,119 @@ window.saveManualOrder = async () => {
   document.getElementById('manualOrderModal').remove();
   showToast('Sipariş oluşturuldu ✓','success');
   renderOrders();
+};
+
+// ── ÖZEL ÜRETİM TALEPLERİ ──
+async function renderCustomRequests() {
+  const snap = await getDocs(collection(db,'customRequests'));
+  const requests = snap.docs.map(d=>({id:d.id,...d.data()}))
+    .sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+
+  const statusColors = {
+    pending:'#8B7355', reviewing:'#4A6FA5', quoted:'#2D7A50',
+    approved:'#3D6B4F', rejected:'#C0392B', completed:'#2D7A50'
+  };
+  const statusLabels = {
+    pending:'İnceleme Bekliyor', reviewing:'İnceleniyor', quoted:'Teklif Verildi',
+    approved:'Onaylandı', rejected:'Reddedildi', completed:'Tamamlandı'
+  };
+
+  document.getElementById('pageContent').innerHTML = `
+    <div class="page-header">
+      <h1 class="page-title">Özel Üretim Talepleri</h1>
+      <p class="page-sub">${requests.length} talep</p>
+    </div>
+    <div class="panel">
+      <table class="data-table">
+        <thead><tr><th>Müşteri</th><th>Ürün Tipi</th><th>Adet</th><th>Tarih</th><th>Durum</th><th></th></tr></thead>
+        <tbody>
+          ${!requests.length ? '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--mid)">Henüz talep yok</td></tr>' :
+            requests.map(r => `<tr>
+              <td><strong>${r.userName||'-'}</strong><div style="font-size:.72rem;color:var(--mid)">${r.userEmail||''}</div></td>
+              <td>${r.productType||'-'}</td>
+              <td>${r.quantity||'-'}</td>
+              <td style="font-size:.78rem;color:var(--mid)">${r.createdAt?.seconds?new Date(r.createdAt.seconds*1000).toLocaleDateString('tr-TR'):'-'}</td>
+              <td><span style="padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:600;background:${statusColors[r.status]||'#8B7355'}22;color:${statusColors[r.status]||'#8B7355'}">${statusLabels[r.status]||r.status}</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="openCustomRequest('${r.id}')">İncele</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Detay Modal -->
+    <div class="modal-overlay" id="customRequestDetailModal">
+      <div class="modal" style="max-width:640px">
+        <div class="modal-header">
+          <div class="modal-title" id="crModalTitle">Talep Detayı</div>
+          <button class="modal-close" onclick="closeModal('customRequestDetailModal')">✕</button>
+        </div>
+        <div class="modal-body" id="crModalBody"></div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeModal('customRequestDetailModal')">Kapat</button>
+          <button class="btn btn-dark" onclick="saveCustomRequestReply()">💾 Kaydet</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+window.openCustomRequest = async (id) => {
+  const snap = await getDoc(doc(db,'customRequests',id));
+  const r = {id:snap.id,...snap.data()};
+  window._currentCRId = id;
+
+  const statusLabels = {
+    pending:'İnceleme Bekliyor', reviewing:'İnceleniyor', quoted:'Teklif Verildi',
+    approved:'Onaylandı', rejected:'Reddedildi', completed:'Tamamlandı'
+  };
+
+  document.getElementById('crModalTitle').textContent = r.productType + ' — ' + (r.userName||r.userEmail||'');
+  document.getElementById('crModalBody').innerHTML = `
+    <div style="display:grid;gap:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;background:var(--surface2);border-radius:10px;padding:16px">
+        ${r.material?`<div><div style="font-size:.7rem;color:var(--light);text-transform:uppercase;margin-bottom:3px">Kumaş</div><div>${r.material}</div></div>`:''}
+        ${r.colors?`<div><div style="font-size:.7rem;color:var(--light);text-transform:uppercase;margin-bottom:3px">Renkler</div><div>${r.colors}</div></div>`:''}
+        ${r.sizes?`<div><div style="font-size:.7rem;color:var(--light);text-transform:uppercase;margin-bottom:3px">Bedenler</div><div>${r.sizes}</div></div>`:''}
+        ${r.quantity?`<div><div style="font-size:.7rem;color:var(--light);text-transform:uppercase;margin-bottom:3px">Adet</div><div>${r.quantity}</div></div>`:''}
+        ${r.deadline?`<div><div style="font-size:.7rem;color:var(--light);text-transform:uppercase;margin-bottom:3px">Termin</div><div>${r.deadline}</div></div>`:''}
+      </div>
+      ${r.branding?`<div><div style="font-size:.78rem;color:var(--mid);margin-bottom:4px">Etiket/Baskı Detayları</div><div style="font-size:.85rem">${r.branding}</div></div>`:''}
+      ${r.notes?`<div><div style="font-size:.78rem;color:var(--mid);margin-bottom:4px">Notlar</div><div style="font-size:.85rem">${r.notes}</div></div>`:''}
+      ${r.images?.length?`<div><div style="font-size:.78rem;color:var(--mid);margin-bottom:8px">Referans Görseller</div><div style="display:flex;gap:8px;flex-wrap:wrap">${r.images.map(img=>`<img src="${img}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;cursor:pointer" onclick="window.open('${img}','_blank')">`).join('')}</div></div>`:''}
+
+      <div style="border-top:1px solid var(--border);padding-top:16px;display:grid;gap:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label class="form-label-m">Durum</label>
+            <select class="form-input-m" id="cr_status">
+              ${Object.entries(statusLabels).map(([v,l])=>`<option value="${v}" ${r.status===v?'selected':''}>${l}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="form-label-m">Fiyat Teklifi (₺)</label>
+            <input type="number" class="form-input-m" id="cr_price" value="${r.quotedPrice||''}" placeholder="Teklif fiyatı...">
+          </div>
+        </div>
+        <div>
+          <label class="form-label-m">Admin Notu (müşteriye görünür)</label>
+          <textarea class="form-input-m" id="cr_adminNote" style="height:80px" placeholder="Üretim süresi, detaylar...">${r.adminNote||''}</textarea>
+        </div>
+      </div>
+    </div>`;
+  openModal('customRequestDetailModal');
+};
+
+window.saveCustomRequestReply = async () => {
+  const id = window._currentCRId;
+  if (!id) return;
+  await updateDoc(doc(db,'customRequests',id), {
+    status: document.getElementById('cr_status').value,
+    quotedPrice: parseFloat(document.getElementById('cr_price').value)||null,
+    adminNote: document.getElementById('cr_adminNote').value,
+    updatedAt: serverTimestamp()
+  });
+  closeModal('customRequestDetailModal');
+  showToast('Talep güncellendi ✓','success');
+  renderCustomRequests();
 };
 
 async function renderSuppliers() {
