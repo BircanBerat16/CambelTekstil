@@ -1126,9 +1126,9 @@ async function renderDashboard() {
   c.innerHTML = `
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-card-label">Toplam Gelir</div>
-        <div class="stat-card-num">₺${totalRevenue.toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}</div>
-        <div class="stat-card-sub">${ords.length} sipariş</div>
+        <div class="stat-card-label">Bu Ay Ciro</div>
+        <div class="stat-card-num">₺${mRev.toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}</div>
+        <div class="stat-card-sub">${monthNames[month]} ${year}</div>
         <div class="stat-card-icon">💰</div>
       </div>
       <div class="stat-card">
