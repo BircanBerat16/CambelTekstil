@@ -798,8 +798,9 @@ select.filter-select{
     <div class="modal-body" id="orderModalBody"></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('orderModal')">Kapat</button>
-      <button class="btn btn-red" id="orderDeleteBtn" onclick="deleteOrder()" style="display:inline-flex;background:#7B2020">🗑️ Sil</button>
-      <button class="btn btn-red" id="orderCancelBtn" onclick="cancelOrder()" style="display:none">✕ Siparişi İptal Et</button>
+      <button class="btn btn-outline" onclick="printOrder()">🖨️ Yazdır</button>
+      <button class="btn btn-red" id="orderDeleteBtn" onclick="deleteOrder()" style="background:#7B2020">🗑️ Sil</button>
+      <button class="btn btn-red" id="orderCancelBtn" onclick="cancelOrder()" style="display:none">✕ İptal Et</button>
       <button class="btn btn-green" id="orderStatusBtn" onclick="updateOrderStatus()">Durumu Güncelle</button>
     </div>
   </div>
@@ -2180,7 +2181,10 @@ window.openOrder = async (id) => {
   const itemsList = document.createElement('div');
   itemsList.id = 'orderItemsList';
   (o.items||[]).forEach((item, idx) => {
-    const img = item.image || productMap[item.name]?.images?.[0] || '';
+    const prod = productMap[item.name];
+    // Renk varyantına göre görsel seç
+    const colorImg = item.color && prod?.colorImages ? prod.colorImages[item.color] : null;
+    const img = colorImg || item.image || prod?.images?.[0] || '';
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)';
     row.id = 'orderItem_' + idx;
@@ -2327,6 +2331,90 @@ window.updateOrderStatus = async () => {
   showToast(`Sipariş durumu: ${statusLabel(next)}`,'success');
   closeModal('orderModal');
   renderOrders();
+};
+
+window.printOrder = async () => {
+  if (!currentOrderId) return;
+  const snap = await getDoc(doc(db,'orders',currentOrderId));
+  const o = {id:snap.id,...snap.data()};
+  const orderNo = (o.orderNo||o.id.slice(-6)).toUpperCase();
+  const date = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000).toLocaleDateString('tr-TR') : '-';
+
+  const itemsHtml = (o.items||[]).map(item => `
+    <tr>
+      <td style="padding:8px;border-bottom:1px solid #eee">${item.name}</td>
+      <td style="padding:8px;border-bottom:1px solid #eee;text-align:center">${item.color||'-'}</td>
+      <td style="padding:8px;border-bottom:1px solid #eee;text-align:center">${item.size||'-'}</td>
+      <td style="padding:8px;border-bottom:1px solid #eee;text-align:center">${item.qty||1}</td>
+      <td style="padding:8px;border-bottom:1px solid #eee;text-align:right">₺${((item.price||0)*(item.qty||1)).toLocaleString('tr-TR',{minimumFractionDigits:2})}</td>
+    </tr>`).join('');
+
+  const win = window.open('','_blank','width=800,height=600');
+  win.document.write(`<!DOCTYPE html><html><head>
+    <title>Sipariş #${orderNo}</title>
+    <meta charset="UTF-8">
+    <style>
+      body{font-family:Arial,sans-serif;padding:32px;color:#333;max-width:700px;margin:0 auto}
+      h1{font-size:1.4rem;margin-bottom:4px}
+      .meta{font-size:.85rem;color:#666;margin-bottom:24px}
+      .section{margin-bottom:20px}
+      .section-title{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:#999;margin-bottom:8px}
+      table{width:100%;border-collapse:collapse}
+      th{text-align:left;padding:8px;border-bottom:2px solid #333;font-size:.82rem}
+      .total-row{font-weight:600;font-size:1rem}
+      .footer{margin-top:40px;font-size:.75rem;color:#999;text-align:center;border-top:1px solid #eee;padding-top:16px}
+      @media print{button{display:none}}
+    </style>
+  </head><body>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px">
+      <div>
+        <div style="font-size:.75rem;color:#999;letter-spacing:.08em;text-transform:uppercase">Cambel Tekstil</div>
+        <h1>Sipariş #${orderNo}</h1>
+        <div class="meta">${date} · ${statusLabel(o.status)||o.status}</div>
+      </div>
+      <button onclick="window.print()" style="padding:8px 20px;background:#2A2825;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.85rem">🖨️ Yazdır</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px">
+      <div>
+        <div class="section-title">Müşteri</div>
+        <div style="font-weight:600">${o.customerName||'-'}</div>
+        <div style="font-size:.85rem;color:#666">${o.customerEmail||''}</div>
+        <div style="font-size:.85rem;color:#666">${o.customerPhone||''}</div>
+      </div>
+      <div>
+        <div class="section-title">Teslimat Adresi</div>
+        <div style="font-size:.85rem">${o.shippingAddress||'-'}</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Ürünler</div>
+      <table>
+        <thead><tr>
+          <th>Ürün</th><th style="text-align:center">Renk</th>
+          <th style="text-align:center">Beden</th><th style="text-align:center">Adet</th>
+          <th style="text-align:right">Tutar</th>
+        </tr></thead>
+        <tbody>${itemsHtml}</tbody>
+      </table>
+    </div>
+
+    <div style="margin-left:auto;max-width:250px">
+      <table>
+        <tr><td style="padding:6px 0;color:#666">Ara Toplam</td><td style="padding:6px 0;text-align:right">₺${(o.subtotal||0).toLocaleString('tr-TR',{minimumFractionDigits:2})}</td></tr>
+        ${o.discountAmt ? '<tr><td style="padding:6px 0;color:#e74c3c">İskonto</td><td style="padding:6px 0;text-align:right;color:#e74c3c">-₺'+o.discountAmt.toLocaleString('tr-TR',{minimumFractionDigits:2})+'</td></tr>' : ''}
+        ${o.vatTotal ? '<tr><td style="padding:6px 0;color:#666">KDV</td><td style="padding:6px 0;text-align:right">₺'+o.vatTotal.toLocaleString('tr-TR',{minimumFractionDigits:2})+'</td></tr>' : ''}
+        <tr class="total-row"><td style="padding:8px 0;border-top:2px solid #333">Toplam</td><td style="padding:8px 0;text-align:right;border-top:2px solid #333">₺${(o.total||0).toLocaleString('tr-TR',{minimumFractionDigits:2})}</td></tr>
+      </table>
+    </div>
+
+    ${o.note ? '<div style="margin-top:16px;padding:12px;background:#f9f9f9;border-radius:6px;font-size:.85rem"><strong>Not:</strong> '+o.note+'</div>' : ''}
+    ${o.trackingNo ? '<div style="margin-top:12px;padding:12px;background:#f0f9f4;border-radius:6px;font-size:.85rem"><strong>Kargo Takip No:</strong> '+o.trackingNo+'</div>' : ''}
+
+    <div class="footer">Cambel Tekstil · bircan@cambeltekstil.com · +90 530 959 68 16</div>
+  </body></html>`);
+  win.document.close();
 };
 
 window.deleteOrder = async () => {
