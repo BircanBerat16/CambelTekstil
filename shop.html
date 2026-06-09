@@ -1647,7 +1647,7 @@ function addToCart(product, size, color, customization, qty) {
       key, id: product.id, name: product.name,
       price: finalPrice, basePrice, cambelExtra,
       size, color, qty,
-      image: product.images?.[0] || '',
+      image: (color && product.colorImages?.[color]) || product.images?.[0] || '',
       customization,
       cambelDays: customization === 'cambel' ? product.cambelDays : null,
       saleType: product.saleType,
