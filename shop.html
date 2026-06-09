@@ -1379,6 +1379,7 @@ window.selectSize = (s, el) => {
 };
 window.selectColor = (c, el) => {
   selectedColor = c;
+  console.log('selectColor called:', c, '→ selectedColor:', selectedColor);
   selectedQty = 1;
   document.querySelectorAll('.color-opt').forEach(e=>e.classList.remove('sel'));
   el.classList.add('sel');
@@ -1393,9 +1394,20 @@ window.setModalQty = (val) => {
 };
 
 function updateVariantStock() {
-  if (!selectedProduct?.variantStock) return;
-  const key = `${selectedColor}__${selectedSize}`;
-  const stock = selectedProduct.variantStock[key] ?? 0;
+  if (!selectedProduct) return;
+  let stock = 0;
+
+  if (selectedProduct.variantStock) {
+    // Renk + beden kombinasyonu varsa
+    const key = `${selectedColor}__${selectedSize}`;
+    stock = selectedProduct.variantStock[key] ?? 0;
+  } else if (selectedProduct.colors?.length > 1) {
+    // Renk varyantı var ama variantStock yok — toplam stoğu renk sayısına böl
+    stock = Math.floor((selectedProduct.stock||0) / selectedProduct.colors.length);
+  } else {
+    stock = selectedProduct.stock || 0;
+  }
+
   const addBtn = document.querySelector('.pmodal-info .btn-add-cart');
   if (addBtn) {
     addBtn.disabled = stock <= 0;
@@ -1423,6 +1435,7 @@ window.changeModalQty = (delta) => {
 
 window.addToCartFromModal = () => {
   if (!selectedProduct) return;
+  console.log('addToCartFromModal → selectedColor:', selectedColor, 'selectedSize:', selectedSize);
   if (selectedProduct.customizations?.length && !selectedCustomization) {
     showToast('Lütfen kişiselleştirme seçeneği seçin','');
     return;
