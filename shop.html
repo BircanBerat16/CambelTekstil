@@ -1158,7 +1158,11 @@ function getSubcatName(catId, subcatId) {
 window.openProduct = (id, initialColor) => {
   selectedProduct = allProducts.find(p=>p.id===id);
   if (!selectedProduct) return;
-  selectedSize = selectedProduct.sizes?.[0] || '';
+  // Seri ürünlerde serialSizes, tekli ürünlerde sizes
+  const sizesArr = selectedProduct.saleType === 'serial'
+    ? (selectedProduct.serialSizes || [])
+    : (selectedProduct.sizes || []);
+  selectedSize = sizesArr[0] || '';
   selectedColor = initialColor || selectedProduct.colors?.[0] || '';
   selectedQty = 1;
   selectedCustomization = null;
@@ -1615,7 +1619,9 @@ window.openCheckout = () => {
 function addToCart(product, size, color, customization, qty) {
   qty = qty || 1;
   const custKey = customization || 'none';
-  const key = `${product.id}_${size}_${color}_${custKey}`;
+  // Seri ürünlerde size boş olabilir, color ile ayırt et
+  const sizeKey = size || (product.saleType === 'serial' ? 'seri' : '');
+  const key = `${product.id}_${sizeKey}_${color}_${custKey}`;
   const existing = cart.find(i=>i.key===key);
 
   const basePrice = product.saleType === 'serial'
