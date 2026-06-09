@@ -1094,7 +1094,11 @@ async function renderDashboard() {
   const quarter = Math.ceil(month / 3);
 
   const activeOrds = ords.filter(o=>o.status!=='cancelled');
-  function isThisMonth(o) { const d = o.createdAt?.seconds ? new Date(o.createdAt.seconds*1000) : null; return d && d.getFullYear()===year && d.getMonth()+1===month && o.status!=='cancelled'; }
+  function isThisMonth(o) { 
+    if (!o.createdAt?.seconds) return false;
+    const d = new Date(o.createdAt.seconds*1000); 
+    return d.getFullYear()===year && d.getMonth()+1===month && o.status!=='cancelled'; 
+  }
   function calcProfit(filterFn) {
     return activeOrds.filter(filterFn).reduce((s,o) => {
       return s + (o.items||[]).reduce((ps,item) => {
@@ -1370,7 +1374,7 @@ function renderProductRows(prods) {
       <td data-label="Durum">${statusBadge(p.status)}</td>
       <td>
         <button class="btn btn-outline btn-sm" onclick="openEditProduct('${p.id}')">✏️ Düzenle</button>
-        <button class="btn btn-red btn-sm" onclick="deleteProduct('${p.id}','${p.name}')">🗑️ Sil</button>
+        <button class="btn btn-red btn-sm" onclick="deleteProduct('${p.id}')">🗑️ Sil</button>
       </td>
     </tr>`;
   }).join('');
@@ -1895,7 +1899,9 @@ window.saveProduct = async () => {
   renderProducts();
 };
 
-window.deleteProduct = async (id, name) => {
+window.deleteProduct = async (id) => {
+  const snap = await getDoc(doc(db,'products',id));
+  const name = snap.exists() ? snap.data().name : id;
   if (!confirm(`"${name}" ürününü silmek istediğinden emin misin?`)) return;
   await deleteDoc(doc(db,'products',id));
   showToast('Ürün silindi','');
